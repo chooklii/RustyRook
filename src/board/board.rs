@@ -3,7 +3,7 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::figures::{figures::Figure, Pawn::Pawn, color::Color};
+use crate::figures::{figures::Figure, blablabla::Pawn, color::Color};
 
 impl Default for Chessboard{
     fn default() -> Chessboard {
@@ -95,25 +95,25 @@ impl Chessboard{
             self.positions.set(n, true);
         }
     
-        self.figures.insert(0, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(1, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(2, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(3, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(4, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(5, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(6, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(7, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(8, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(9, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(10, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(11, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(12, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(13, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(14, Box::new(Pawn{..Default::default()}));
-        self.figures.insert(15, Box::new(Pawn{..Default::default()}));
+        self.figures.insert(0, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(1, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(2, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(3, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(4, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(5, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(6, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(7, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(11, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(13, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
+        self.figures.insert(15, Figure::Pawn(Pawn{..Default::default()}));
 
         // testing
-        self.figures.insert(16, Box::new(Pawn{color: Color::Black, ..Default::default()}));
+        self.figures.insert(16, Figure::Pawn(Pawn{color: Color::Black,..Default::default()}));
         self.positions.set(16, true);
         
     }
@@ -121,7 +121,7 @@ impl Chessboard{
 
 pub struct Chessboard {
     pub positions: Bitmap<64>,
-    pub figures: HashMap<usize, Box<dyn Figure>>
+    pub figures: HashMap<usize, Figure>
 }
 
 

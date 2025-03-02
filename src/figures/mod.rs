@@ -1,3 +1,4 @@
 pub mod figures;
 pub mod color;
-pub mod Pawn;
+pub mod blablabla;
+pub mod position;
