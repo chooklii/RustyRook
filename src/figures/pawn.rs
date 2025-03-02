@@ -1,6 +1,6 @@
 use crate::board::board::Chessboard;
-use crate::figures::position::calculate_next_position;
 use crate::figures::color::Color;
+use crate::figures::position::calculate_next_position;
 
 #[derive(Default)]
 pub struct Pawn {
@@ -9,27 +9,43 @@ pub struct Pawn {
 }
 
 impl Pawn {
-    pub fn get_color(&self) -> &Color {
-        &self.color
-    }
-
     pub fn set_moved(&mut self) {
         self.has_moved = true;
+    }
+
+    pub fn take_left_position(&self, one_step_forward: &usize) -> usize {
+        match self.color {
+            Color::White => one_step_forward - 1,
+            Color::Black => one_step_forward + 1,
+        }
+    }
+
+    pub fn take_right_position(&self, one_step_forward: &usize) -> usize {
+        match self.color {
+            Color::White => one_step_forward + 1,
+            Color::Black => one_step_forward - 1,
+        }
     }
 
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
         let mut possible_moves = Vec::new();
         let one_step_forward = calculate_next_position(&self.color, own_position, 8);
 
-        // all rows, but a row are able to take on the left
-        if !board.is_in_a_row(own_position) {
-            if let Some(id) = self.check_taking(board, one_step_forward - 1) {
+        // en passant is missing
+
+        // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
+        if !board.figure_can_move_forward(&one_step_forward, &self.color){
+            return possible_moves
+        }
+
+        if board.figure_can_move_left(own_position, &self.color) {
+            if let Some(id) = self.check_taking(board, self.take_left_position(&one_step_forward)) {
                 possible_moves.push(id);
             }
         }
-        // all rows, but h row are able to take on the right
-        if !board.is_in_h_row(own_position) {
-            if let Some(id) = self.check_taking(board, one_step_forward + 1) {
+        if board.figure_can_move_right(own_position, &self.color) {
+            if let Some(id) = self.check_taking(board, self.take_right_position(&one_step_forward))
+            {
                 possible_moves.push(id);
             }
         }
@@ -54,9 +70,7 @@ impl Pawn {
 
     fn check_taking(&self, board: &Chessboard, position: usize) -> Option<usize> {
         if board.positions.get(position) {
-            let field = board.figures.get(&position);
-            let field_color = field.unwrap().get_color();
-            if field_color != self.get_color() {
+            if board.get_opponents(&self.color).contains_key(&position) {
                 return Some(position);
             }
         }
@@ -85,7 +99,9 @@ mod tests {
         };
         let board = Chessboard {
             positions,
-            figures: HashMap::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
         };
 
         let moves = figure.possible_moves(&board, &12);
@@ -96,9 +112,9 @@ mod tests {
     #[test]
     fn test_take_from_a_to_h() {
         let mut positions = Bitmap::<64>::new();
-        let mut figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
 
-        figures.insert(
+        white_figures.insert(
             23,
             Figure::Pawn(Pawn {
                 color: Color::Black,
@@ -113,7 +129,12 @@ mod tests {
         let figure = Pawn {
             ..Default::default()
         };
-        let board = Chessboard { positions, figures };
+        let board = Chessboard {
+            positions,
+            white_figures,
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
 
         let moves = figure.possible_moves(&board, &16);
 

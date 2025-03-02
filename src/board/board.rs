@@ -3,13 +3,23 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::figures::{figures::Figure, blablabla::Pawn, color::Color};
+use crate::figures::{figures::Figure, pawn::Pawn, color::Color};
+
+
+pub struct Chessboard {
+    pub positions: Bitmap<64>,
+    pub white_figures: HashMap<usize, Figure>,
+    pub black_figures: HashMap<usize, Figure>,
+    pub current_move: Color
+}
 
 impl Default for Chessboard{
     fn default() -> Chessboard {
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            figures:  HashMap::new()
+            white_figures:  HashMap::new(),
+            black_figures:  HashMap::new(),
+            current_move: Color::White
         };
         board.set_to_default();
         board
@@ -17,6 +27,28 @@ impl Default for Chessboard{
 }
 
 impl Chessboard{
+
+    pub fn set_current_move(&mut self){
+        match self.current_move{
+            Color::Black => self.current_move = Color::White,
+            Color::White => self.current_move = Color::Black
+        }
+    }
+
+    // color from here can prob. be removed and just use by currentMove Color (no need to calculate for other side?)
+    pub fn get_opponents(&self, color: &Color) -> &HashMap<usize, Figure>{
+        match color{
+            Color::White => &self.black_figures,
+            Color::Black => &self.white_figures
+        }
+    }
+
+    pub fn get_next_player_figures(&self) -> &HashMap<usize, Figure>{
+        match self.current_move{
+            Color::White => &self.white_figures,
+            Color::Black => &self.black_figures
+        } 
+    }
 
     pub fn make_move(&mut self, mov: &str){
         let validated_move = self.validate_string_position(mov);
@@ -29,16 +61,31 @@ impl Chessboard{
         let new_field  = self.get_position_id(to_row, to_column);
 
         self.move_figure(old_field, new_field);
+        self.set_current_move();
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize){
         self.positions.set(from.into(), false);
         self.positions.set(to.into(), true);
 
-        self.figures.remove(&to);
-        let mut moved_figure = self.figures.remove(&from).unwrap();
+        match self.current_move {
+            Color::White => self.move_white_figure(from, to),
+            Color::Black => self.move_black_figure(from, to),
+        }
+    }
+
+    fn move_black_figure(&mut self, from: usize, to: usize){
+        self.white_figures.remove(&to);
+        let mut moved_figure = self.black_figures.remove(&from).unwrap();
         moved_figure.set_moved();
-        self.figures.insert(to, moved_figure);
+        self.black_figures.insert(to, moved_figure);
+    }
+
+    fn move_white_figure(&mut self, from: usize, to: usize){
+        self.black_figures.remove(&to);
+        let mut moved_figure = self.white_figures.remove(&from).unwrap();
+        moved_figure.set_moved();
+        self.white_figures.insert(to, moved_figure);
     }
 
     fn validate_string_position<'a>(&'a self, mov: &'a str) -> Option<(&'a str, u8, &'a str, u8)>{
@@ -76,52 +123,62 @@ impl Chessboard{
         }
     }
 
-    pub fn is_in_a_row(&self, field: &usize) -> bool{
-        field % 8 == 0
+    pub fn figure_can_move_left(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field % 8 != 0,
+            Color::Black => field & 8 != 7
+        }
     } 
 
-    pub fn is_in_h_row(&self, field: &usize) -> bool{
-        field % 8 == 7
+    pub fn figure_can_move_right(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field % 8 != 7,
+            Color::Black => field & 8 != 0
+        }
+    }
+
+    pub fn figure_can_move_forward(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field <= &55,
+            Color::Black => field >= &8
+        }
+    }
+
+    pub fn figure_can_move_backward(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field >=&8,
+            Color::Black => field <=&55
+        }
     }
 
     pub fn set_to_default(&mut self){
         self.positions = Bitmap::<64>::new();
-        self.figures = HashMap::new();
+        self.black_figures = HashMap::new();
+        self.white_figures = HashMap::new();
 
         for n in 0..16{
             self.positions.set(n, true);
         }
+        /* 
         for n in 47..64{
             self.positions.set(n, true);
         }
+        */
     
-        self.figures.insert(0, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(1, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(2, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(3, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(4, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(5, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(6, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(7, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(11, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(13, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
-        self.figures.insert(15, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(11, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(13, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(15, Figure::Pawn(Pawn{..Default::default()}));
 
         // testing
-        self.figures.insert(16, Figure::Pawn(Pawn{color: Color::Black,..Default::default()}));
+        self.black_figures.insert(16, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.positions.set(16, true);
         
     }
-}
-
-pub struct Chessboard {
-    pub positions: Bitmap<64>,
-    pub figures: HashMap<usize, Figure>
 }
 
 
@@ -130,22 +187,47 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_a_row(){
+    fn test_move_left(){
         let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.is_in_a_row(&8));
-        assert_eq!(true, board.is_in_a_row(&56));
-        assert_eq!(true, board.is_in_a_row(&32));
-        assert_eq!(false, board.is_in_a_row(&25));
-        assert_eq!(false, board.is_in_a_row(&30));
+        assert_eq!(false, board.figure_can_move_left(&8, &Color::White));
+        assert_eq!(true, board.figure_can_move_left(&15, &Color::Black));
+        assert_eq!(false, board.figure_can_move_left(&56, &Color::White));
+        assert_eq!(false, board.figure_can_move_left(&32, &Color::White));
+        assert_eq!(true, board.figure_can_move_left(&25, &Color::White));
+        assert_eq!(true, board.figure_can_move_left(&30, &Color::White));
     }
 
     #[test]
-    fn test_h_row(){
+    fn test_move_right(){
         let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.is_in_h_row(&7));
-        assert_eq!(true, board.is_in_h_row(&31));
-        assert_eq!(true, board.is_in_h_row(&39));
-        assert_eq!(false, board.is_in_h_row(&18));
-        assert_eq!(false, board.is_in_h_row(&38));
+        assert_eq!(false, board.figure_can_move_right(&7, &Color::White));
+        assert_eq!(true, board.figure_can_move_right(&15, &Color::Black));
+        assert_eq!(false, board.figure_can_move_right(&31, &Color::White));
+        assert_eq!(false, board.figure_can_move_right(&39, &Color::White));
+        assert_eq!(true, board.figure_can_move_right(&18, &Color::White));
+        assert_eq!(true, board.figure_can_move_right(&38, &Color::White));
+        assert_eq!(false, board.figure_can_move_right(&16, &Color::Black));
+    }
+
+    #[test]
+    fn test_move_forward(){
+        let board = Chessboard{..Default::default()};
+        assert_eq!(true, board.figure_can_move_forward(&27, &Color::Black));
+        assert_eq!(true, board.figure_can_move_forward(&27, &Color::White));
+        assert_eq!(true, board.figure_can_move_forward(&0, &Color::White));
+        assert_eq!(false, board.figure_can_move_forward(&0, &Color::Black));
+        assert_eq!(true, board.figure_can_move_forward(&60, &Color::Black));
+        assert_eq!(false, board.figure_can_move_forward(&60, &Color::White));
+    }
+
+    #[test]
+    fn test_move_backward(){
+        let board = Chessboard{..Default::default()};
+        assert_eq!(true, board.figure_can_move_backward(&27, &Color::Black));
+        assert_eq!(true, board.figure_can_move_backward(&27, &Color::White));
+        assert_eq!(false, board.figure_can_move_backward(&0, &Color::White));
+        assert_eq!(true, board.figure_can_move_backward(&0, &Color::Black));
+        assert_eq!(false, board.figure_can_move_backward(&60, &Color::Black));
+        assert_eq!(true, board.figure_can_move_backward(&60, &Color::White)); 
     }
 }

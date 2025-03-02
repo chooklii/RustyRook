@@ -7,7 +7,7 @@ pub fn calculate_move(board: &Chessboard ){
 }
 
 fn get_all_possible_moves(board: &Chessboard){
-    for (key, val) in board.figures.iter() { 
+    for (key, val) in board.get_next_player_figures().iter() { 
         println!("{}{:?}", key, val.possible_moves(board, &key));
     }
 }
