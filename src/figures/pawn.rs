@@ -1,6 +1,5 @@
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
-use crate::figures::position::calculate_next_position;
 
 #[derive(Default)]
 pub struct Pawn {
@@ -20,31 +19,59 @@ impl Pawn {
         }
     }
 
-    pub fn take_right_position(&self, one_step_forward: &usize) -> usize {
+    fn take_right_position(&self, one_step_forward: &usize) -> usize {
         match self.color {
             Color::White => one_step_forward + 1,
             Color::Black => one_step_forward - 1,
         }
     }
 
+    fn figure_can_move_left(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field % 8 != 0,
+            Color::Black => field % 8 != 7
+        }
+    } 
+
+    fn figure_can_move_right(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field % 8 != 7,
+            Color::Black => field % 8 != 0
+        }
+    }
+
+    fn figure_can_move_forward(&self, field: &usize, color: &Color) -> bool{
+        match color{
+            Color::White => field <= &55,
+            Color::Black => field >= &8
+        }
+    }
+
+    fn calculate_forward_position(&self, own_position: &usize, movement: usize) -> usize {
+        match self.color {
+            Color::Black => return own_position - movement,
+            Color::White => return own_position + movement,
+        }
+    }
+
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
         let mut possible_moves = Vec::new();
-        let one_step_forward = calculate_next_position(&self.color, own_position, 8);
+        let one_step_forward = self.calculate_forward_position(own_position, 8);
 
         // en passant is missing
 
         // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
-        if !board.figure_can_move_forward(&one_step_forward, &self.color){
+        if !self.figure_can_move_forward(&one_step_forward, &self.color){
             return possible_moves
         }
 
-        if board.figure_can_move_left(own_position, &self.color) {
-            if let Some(id) = self.check_taking(board, self.take_left_position(&one_step_forward)) {
+        if self.figure_can_move_left(own_position, &self.color) {
+            if let Some(id) = board.check_taking(&self.color, self.take_left_position(&one_step_forward)) {
                 possible_moves.push(id);
             }
         }
-        if board.figure_can_move_right(own_position, &self.color) {
-            if let Some(id) = self.check_taking(board, self.take_right_position(&one_step_forward))
+        if self.figure_can_move_right(own_position, &self.color) {
+            if let Some(id) = board.check_taking(&self.color, self.take_right_position(&one_step_forward))
             {
                 possible_moves.push(id);
             }
@@ -55,7 +82,7 @@ impl Pawn {
             possible_moves.push(one_step_forward);
 
             // two fields forward
-            let two_steps_forward = calculate_next_position(&self.color, own_position, 16);
+            let two_steps_forward = self.calculate_forward_position(own_position, 16);
 
             if !self.has_moved
                 && !board.positions.get(one_step_forward)
@@ -68,14 +95,6 @@ impl Pawn {
         possible_moves
     }
 
-    fn check_taking(&self, board: &Chessboard, position: usize) -> Option<usize> {
-        if board.positions.get(position) {
-            if board.get_opponents(&self.color).contains_key(&position) {
-                return Some(position);
-            }
-        }
-        None
-    }
 }
 
 #[cfg(test)]

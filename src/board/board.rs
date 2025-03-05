@@ -3,7 +3,7 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::figures::{figures::Figure, pawn::Pawn, color::Color};
+use crate::figures::{color::Color, figures::Figure, knight::Knight, pawn::Pawn, rock::Rock, Bishop::Bishop};
 
 
 pub struct Chessboard {
@@ -123,32 +123,29 @@ impl Chessboard{
         }
     }
 
-    pub fn figure_can_move_left(&self, field: &usize, color: &Color) -> bool{
-        match color{
-            Color::White => field % 8 != 0,
-            Color::Black => field & 8 != 7
-        }
+    pub fn figure_can_move_left(&self, field: &usize) -> bool{
+        field % 8 != 0
     } 
 
-    pub fn figure_can_move_right(&self, field: &usize, color: &Color) -> bool{
-        match color{
-            Color::White => field % 8 != 7,
-            Color::Black => field & 8 != 0
-        }
+    pub fn figure_can_move_right(&self, field: &usize) -> bool{
+        field % 8 != 7
     }
 
-    pub fn figure_can_move_forward(&self, field: &usize, color: &Color) -> bool{
-        match color{
-            Color::White => field <= &55,
-            Color::Black => field >= &8
-        }
+    pub fn figure_can_move_forward(&self, field: &usize) -> bool{
+        field <= &55
     }
 
-    pub fn figure_can_move_backward(&self, field: &usize, color: &Color) -> bool{
-        match color{
-            Color::White => field >=&8,
-            Color::Black => field <=&55
+    pub fn figure_can_move_backward(&self, field: &usize) -> bool{
+        field >=&8
+    }
+
+    pub fn check_taking(&self, color: &Color, position: usize) -> Option<usize> {
+        if self.positions.get(position) {
+            if self.get_opponents(color).contains_key(&position) {
+                return Some(position);
+            }
         }
+        None
     }
 
     pub fn set_to_default(&mut self){
@@ -164,7 +161,13 @@ impl Chessboard{
             self.positions.set(n, true);
         }
         */
-    
+        self.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        self.white_figures.insert(1, Figure::Knight(Knight{..Default::default()}));
+        self.white_figures.insert(2, Figure::Bishop(Bishop{..Default::default()}));
+
+        self.white_figures.insert(5, Figure::Bishop(Bishop{..Default::default()}));
+        self.white_figures.insert(6, Figure::Knight(Knight{..Default::default()}));
+        self.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
         self.white_figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
         self.white_figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
         self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
@@ -189,45 +192,43 @@ mod tests {
     #[test]
     fn test_move_left(){
         let board = Chessboard{..Default::default()};
-        assert_eq!(false, board.figure_can_move_left(&8, &Color::White));
-        assert_eq!(true, board.figure_can_move_left(&15, &Color::Black));
-        assert_eq!(false, board.figure_can_move_left(&56, &Color::White));
-        assert_eq!(false, board.figure_can_move_left(&32, &Color::White));
-        assert_eq!(true, board.figure_can_move_left(&25, &Color::White));
-        assert_eq!(true, board.figure_can_move_left(&30, &Color::White));
+        assert_eq!(false, board.figure_can_move_left(&8));
+        assert_eq!(true, board.figure_can_move_left(&15));
+        assert_eq!(false, board.figure_can_move_left(&56));
+        assert_eq!(false, board.figure_can_move_left(&32));
+        assert_eq!(true, board.figure_can_move_left(&25));
+        assert_eq!(true, board.figure_can_move_left(&30));
     }
 
     #[test]
     fn test_move_right(){
-        let board = Chessboard{..Default::default()};
-        assert_eq!(false, board.figure_can_move_right(&7, &Color::White));
-        assert_eq!(true, board.figure_can_move_right(&15, &Color::Black));
-        assert_eq!(false, board.figure_can_move_right(&31, &Color::White));
-        assert_eq!(false, board.figure_can_move_right(&39, &Color::White));
-        assert_eq!(true, board.figure_can_move_right(&18, &Color::White));
-        assert_eq!(true, board.figure_can_move_right(&38, &Color::White));
-        assert_eq!(false, board.figure_can_move_right(&16, &Color::Black));
+        let board: Chessboard = Chessboard{..Default::default()};
+        assert_eq!(false, board.figure_can_move_right(&7));
+        assert_eq!(false, board.figure_can_move_right(&15));
+        assert_eq!(false, board.figure_can_move_right(&31));
+        assert_eq!(false, board.figure_can_move_right(&39));
+        assert_eq!(true, board.figure_can_move_right(&18));
+        assert_eq!(true, board.figure_can_move_right(&38));
+        assert_eq!(true, board.figure_can_move_right(&16));
     }
 
     #[test]
     fn test_move_forward(){
         let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.figure_can_move_forward(&27, &Color::Black));
-        assert_eq!(true, board.figure_can_move_forward(&27, &Color::White));
-        assert_eq!(true, board.figure_can_move_forward(&0, &Color::White));
-        assert_eq!(false, board.figure_can_move_forward(&0, &Color::Black));
-        assert_eq!(true, board.figure_can_move_forward(&60, &Color::Black));
-        assert_eq!(false, board.figure_can_move_forward(&60, &Color::White));
+        assert_eq!(true, board.figure_can_move_forward(&27));
+        assert_eq!(true, board.figure_can_move_forward(&27));
+        assert_eq!(true, board.figure_can_move_forward(&0));
+        assert_eq!(true, board.figure_can_move_forward(&0));
+        assert_eq!(false, board.figure_can_move_forward(&60));
     }
 
     #[test]
     fn test_move_backward(){
         let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.figure_can_move_backward(&27, &Color::Black));
-        assert_eq!(true, board.figure_can_move_backward(&27, &Color::White));
-        assert_eq!(false, board.figure_can_move_backward(&0, &Color::White));
-        assert_eq!(true, board.figure_can_move_backward(&0, &Color::Black));
-        assert_eq!(false, board.figure_can_move_backward(&60, &Color::Black));
-        assert_eq!(true, board.figure_can_move_backward(&60, &Color::White)); 
+        assert_eq!(true, board.figure_can_move_backward(&27));
+        assert_eq!(true, board.figure_can_move_backward(&27));
+        assert_eq!(false, board.figure_can_move_backward(&0));
+        assert_eq!(false, board.figure_can_move_backward(&0));
+        assert_eq!(true, board.figure_can_move_backward(&60)); 
     }
 }
