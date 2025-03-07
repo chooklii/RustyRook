@@ -7,88 +7,94 @@ pub struct Rock {
     pub has_moved: bool,
 }
 
+// the Rooooook is also part of the Queen
+pub fn get_rook_moves(board: &Chessboard, color: &Color,  position: &usize) -> Vec<usize> {
+    let mut possible_moves = Vec::new();
+
+    move_forward(board,color, position, &mut possible_moves);
+    move_backward(board, color,position, &mut possible_moves);
+    move_left(board, color,position, &mut possible_moves);
+    move_right(board, color,position, &mut possible_moves);
+    possible_moves
+}
+
+fn move_forward(board: &Chessboard, color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
+    if board.figure_can_move_forward(own_position) {
+        let next_position: usize = own_position + 8;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                positions.push(next_position);
+            }
+        } else {
+            positions.push(next_position);
+            move_forward(board, color, &next_position, positions);
+        }
+    }
+}
+
+fn move_backward(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
+    if board.figure_can_move_backward(own_position) {
+        let next_position: usize = own_position - 8;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                positions.push(next_position);
+            }
+        } else {
+            positions.push(next_position);
+            move_backward(board, color, &next_position, positions);
+        }
+    }
+}
+
+fn move_left(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
+    if board.figure_can_move_left(own_position) {
+        let next_position: usize = own_position - 1;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                positions.push(next_position);
+            }
+        } else {
+            positions.push(next_position);
+            move_left(board, color, &next_position, positions);
+        }
+    }
+}
+
+fn move_right(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
+    if board.figure_can_move_right(own_position) {
+        let next_position: usize = own_position + 1;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                positions.push(next_position);
+            }
+        } else {
+            positions.push(next_position);
+            move_right(board, color, &next_position, positions);
+        }
+    }
+}
+
 impl Rock {
     pub fn set_moved(&mut self) {
         self.has_moved = true;
     }
 
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
-        let mut possible_moves = Vec::new();
-
-        self.move_forward(board, own_position, &mut possible_moves);
-        self.move_backward(board, own_position, &mut possible_moves);
-        self.move_left(board, own_position, &mut possible_moves);
-        self.move_right(board, own_position, &mut possible_moves);
-        possible_moves
+        get_rook_moves(board, &self.color, own_position)
     }
 
-    fn move_forward(&self, board: &Chessboard, own_position: &usize, positions: &mut Vec<usize>) {
-        if board.figure_can_move_forward(own_position) {
-            let next_position: usize = own_position + 8;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    positions.push(next_position);
-                }
-            } else {
-                positions.push(next_position);
-                return self.move_forward(board, &next_position, positions);
-            }
-        }
-    }
-
-    fn move_backward(&self, board: &Chessboard, own_position: &usize, positions: &mut Vec<usize>) {
-        if board.figure_can_move_backward(own_position) {
-            let next_position: usize = own_position - 8;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    positions.push(next_position);
-                }
-            } else {
-                positions.push(next_position);
-                return self.move_backward(board, &next_position, positions);
-            }
-        }
-    }
-
-    fn move_left(&self, board: &Chessboard, own_position: &usize, positions: &mut Vec<usize>) {
-        if board.figure_can_move_left(own_position) {
-            let next_position: usize = own_position - 1;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    positions.push(next_position);
-                }
-            } else {
-                positions.push(next_position);
-                return self.move_left(board, &next_position, positions);
-            }
-        }
-    }
-
-    fn move_right(&self, board: &Chessboard, own_position: &usize, positions: &mut Vec<usize>) {
-        if board.figure_can_move_right(own_position) {
-            let next_position: usize = own_position + 1;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    positions.push(next_position);
-                }
-            } else {
-                positions.push(next_position);
-                return self.move_right(board, &next_position, positions);
-            }
-        }
-    }
 }
 
 #[cfg(test)]

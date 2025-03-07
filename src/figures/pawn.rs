@@ -54,6 +54,15 @@ impl Pawn {
         }
     }
 
+    fn check_taking(&self, board: &Chessboard, position: usize) -> Option<usize> {
+        if board.positions.get(position) {
+            if board.get_opponents(&self.color).contains_key(&position) {
+                return Some(position);
+            }
+        }
+        None
+    }
+
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
         let mut possible_moves = Vec::new();
         let one_step_forward = self.calculate_forward_position(own_position, 8);
@@ -66,12 +75,12 @@ impl Pawn {
         }
 
         if self.figure_can_move_left(own_position, &self.color) {
-            if let Some(id) = board.check_taking(&self.color, self.take_left_position(&one_step_forward)) {
+            if let Some(id) = self.check_taking(board, self.take_left_position(&one_step_forward)) {
                 possible_moves.push(id);
             }
         }
         if self.figure_can_move_right(own_position, &self.color) {
-            if let Some(id) = board.check_taking(&self.color, self.take_right_position(&one_step_forward))
+            if let Some(id) = self.check_taking(board, self.take_right_position(&one_step_forward))
             {
                 possible_moves.push(id);
             }

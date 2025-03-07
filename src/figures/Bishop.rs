@@ -6,88 +6,89 @@ pub struct Bishop {
     pub color: Color,
 }
 
-impl Bishop {
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
-        let mut moves = Vec::new();
+// Queen is a Bishop as well - reuse this
+pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize) -> Vec<usize>{
+    let mut moves = Vec::new();
+    move_back_left(board, color, position, &mut moves);
+    move_forward_left(board,color, position, &mut moves);
+    move_backward_right(board,color, position, &mut moves);
+    move_forward_right(board,color, position, &mut moves);
+    moves
+}
 
-        self.move_back_left(board, own_position, &mut moves);
-        self.move_forward_left(board, own_position, &mut moves);
-        self.move_backward_right(board, own_position, &mut moves);
-        self.move_forward_right(board, own_position, &mut moves);
-        moves
-    }
-
-    fn move_back_left(&self, board: &Chessboard, own_position: &usize, moves: &mut Vec<usize>) {
-        if board.figure_can_move_left(own_position) && board.figure_can_move_backward(own_position)
-        {
-            let next_position = own_position - 9;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    moves.push(next_position);
-                }
-            } else {
+fn move_back_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
+    if board.figure_can_move_left(own_position) && board.figure_can_move_backward(own_position){
+        let next_position = own_position - 9;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
                 moves.push(next_position);
-                self.move_back_left(board, &next_position, moves);
             }
-        }
-    }
-
-    fn move_forward_left(&self, board: &Chessboard, own_position: &usize, moves: &mut Vec<usize>) {
-        if board.figure_can_move_left(own_position) && board.figure_can_move_forward(own_position){
-            let next_position = own_position +7;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    moves.push(next_position);
-                }
-            } else {
-                moves.push(next_position);
-                self.move_forward_left(board, &next_position, moves);
-            }
-        }
-    }
-
-    fn move_forward_right(&self, board: &Chessboard, own_position: &usize, moves: &mut Vec<usize>) {
-        if board.figure_can_move_right(own_position) && board.figure_can_move_forward(own_position){
-            let next_position = own_position + 9;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    moves.push(next_position);
-                }
-            } else {
-                moves.push(next_position);
-                self.move_forward_right(board, &next_position, moves);
-            }
-        }
-    }
-
-    fn move_backward_right(&self, board: &Chessboard, own_position: &usize, moves: &mut Vec<usize>) {
-        if board.figure_can_move_right(own_position) && board.figure_can_move_backward(own_position){
-            let next_position = own_position -7;
-            if board.positions.get(next_position) {
-                if board
-                    .get_opponents(&self.color)
-                    .contains_key(&next_position)
-                {
-                    moves.push(next_position);
-                }
-            } else {
-                moves.push(next_position);
-                self.move_backward_right(board, &next_position, moves);
-            }
+        } else {
+            moves.push(next_position);
+            move_back_left(board, color, &next_position, moves);
         }
     }
 }
 
+fn move_forward_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
+    if board.figure_can_move_left(own_position) && board.figure_can_move_forward(own_position){
+        let next_position = own_position +7;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                moves.push(next_position);
+            }
+        } else {
+            moves.push(next_position);
+            move_forward_left(board, color, &next_position, moves);
+        }
+    }
+}
 
+fn move_forward_right(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
+    if board.figure_can_move_right(own_position) && board.figure_can_move_forward(own_position){
+        let next_position = own_position + 9;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                moves.push(next_position);
+            }
+        } else {
+            moves.push(next_position);
+            move_forward_right(board, color, &next_position, moves);
+        }
+    }
+}
+
+fn move_backward_right(board: &Chessboard,color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
+    if board.figure_can_move_right(own_position) && board.figure_can_move_backward(own_position){
+        let next_position = own_position -7;
+        if board.positions.get(next_position) {
+            if board
+                .get_opponents(color)
+                .contains_key(&next_position)
+            {
+                moves.push(next_position);
+            }
+        } else {
+            moves.push(next_position);
+            move_backward_right(board, color,&next_position, moves);
+        }
+    }
+}
+
+impl Bishop {
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
+        get_bishop_moves(board, &self.color, own_position)
+    }
+}
 
 #[cfg(test)]
 mod tests {

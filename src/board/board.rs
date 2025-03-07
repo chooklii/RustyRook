@@ -3,7 +3,7 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::figures::{color::Color, figures::Figure, knight::Knight, pawn::Pawn, rock::Rock, Bishop::Bishop};
+use crate::figures::{color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, Bishop::Bishop};
 
 
 pub struct Chessboard {
@@ -139,15 +139,6 @@ impl Chessboard{
         field >=&8
     }
 
-    pub fn check_taking(&self, color: &Color, position: usize) -> Option<usize> {
-        if self.positions.get(position) {
-            if self.get_opponents(color).contains_key(&position) {
-                return Some(position);
-            }
-        }
-        None
-    }
-
     pub fn set_to_default(&mut self){
         self.positions = Bitmap::<64>::new();
         self.black_figures = HashMap::new();
@@ -164,7 +155,8 @@ impl Chessboard{
         self.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
         self.white_figures.insert(1, Figure::Knight(Knight{..Default::default()}));
         self.white_figures.insert(2, Figure::Bishop(Bishop{..Default::default()}));
-
+        self.white_figures.insert(3, Figure::Queen(Queen{..Default::default()}));
+        self.white_figures.insert(4, Figure::King(King{..Default::default()}));
         self.white_figures.insert(5, Figure::Bishop(Bishop{..Default::default()}));
         self.white_figures.insert(6, Figure::Knight(Knight{..Default::default()}));
         self.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
