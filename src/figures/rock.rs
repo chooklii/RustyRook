@@ -1,7 +1,7 @@
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Rock {
     pub color: Color,
     pub has_moved: bool,

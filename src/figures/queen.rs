@@ -4,7 +4,7 @@ use super::{color::Color, rock::get_rook_moves, Bishop::get_bishop_moves};
 
 
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Queen{
     pub color: Color
 }

@@ -6,6 +6,7 @@ use regex::Regex;
 use crate::figures::{color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, Bishop::Bishop};
 
 
+#[derive(Clone)]
 pub struct Chessboard {
     pub positions: Bitmap<64>,
     pub white_figures: HashMap<usize, Figure>,
@@ -143,15 +144,17 @@ impl Chessboard{
         self.positions = Bitmap::<64>::new();
         self.black_figures = HashMap::new();
         self.white_figures = HashMap::new();
+        self.current_move = Color::White;
 
         for n in 0..16{
             self.positions.set(n, true);
         }
-        /* 
-        for n in 47..64{
+        
+        for n in 47..63{
             self.positions.set(n, true);
         }
-        */
+        
+        // white
         self.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
         self.white_figures.insert(1, Figure::Knight(Knight{..Default::default()}));
         self.white_figures.insert(2, Figure::Bishop(Bishop{..Default::default()}));
@@ -169,9 +172,23 @@ impl Chessboard{
         self.white_figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
         self.white_figures.insert(15, Figure::Pawn(Pawn{..Default::default()}));
 
-        // testing
-        self.black_figures.insert(16, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.positions.set(16, true);
+        // black
+        self.black_figures.insert(48, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(49, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(51, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(52, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(53, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(54, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(56, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(57, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(58, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(59, Figure::Queen(Queen{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(60, Figure::King(King{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(61, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(62, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(63, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
         
     }
 }

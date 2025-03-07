@@ -1,7 +1,7 @@
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Bishop {
     pub color: Color,
 }

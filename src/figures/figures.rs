@@ -1,6 +1,9 @@
 use crate::board::board::Chessboard;
 use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, Bishop::Bishop, king::King};
 
+use super::knight;
+
+#[derive(Clone)]
 pub enum Figure {
     Pawn(Pawn),
     Rock(Rock),
@@ -29,6 +32,17 @@ impl Figure {
             Figure::Knight(knight) => knight.possible_moves(board, own_position),
             Figure::Queen(queen) => queen.possible_moves(board, own_position),
             Figure::King(king) => king.possible_moves(board, own_position)
+        }
+    }
+
+    pub fn get_weight(&self) -> u8{
+        match self{
+            Figure::Bishop(_) => 3,
+            Figure::King(_) => 100,
+            Figure::Queen(_) => 9,
+            Figure::Knight(_) => 3,
+            Figure::Pawn(_) => 1,
+            Figure::Rock(_) => 5
         }
     }
 }

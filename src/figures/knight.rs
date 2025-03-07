@@ -2,7 +2,7 @@ use crate::board::board::Chessboard;
 
 use super::color::Color;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Knight {
     pub color: Color
 }

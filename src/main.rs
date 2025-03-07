@@ -1,12 +1,13 @@
 use std::io::{self};
 use board::board::Chessboard;
-use engine::engine::calculate_move;
+use engine::engine::search_for_best_move;
 use simple_file_logger::init_logger;
 use log::info;
 
 mod board;
 mod figures;
 mod engine;
+mod evaluation;
 
 
 fn main(){
@@ -38,7 +39,7 @@ fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
 }
 
 fn make_move(board: &Chessboard){
-    calculate_move(&board);
+    search_for_best_move(&board);
 }
 
 fn quit(){
