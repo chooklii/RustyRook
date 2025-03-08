@@ -62,7 +62,6 @@ impl Chessboard{
         let new_field  = self.get_position_id(to_row, to_column);
 
         self.move_figure(old_field, new_field);
-        self.set_current_move();
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize){
@@ -73,6 +72,7 @@ impl Chessboard{
             Color::White => self.move_white_figure(from, to),
             Color::Black => self.move_black_figure(from, to),
         }
+        self.set_current_move();
     }
 
     fn move_black_figure(&mut self, from: usize, to: usize){
@@ -146,6 +146,7 @@ impl Chessboard{
         self.white_figures = HashMap::new();
         self.current_move = Color::White;
 
+         
         for n in 0..16{
             self.positions.set(n, true);
         }
@@ -153,6 +154,7 @@ impl Chessboard{
         for n in 47..63{
             self.positions.set(n, true);
         }
+        
         
         // white
         self.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
@@ -190,6 +192,19 @@ impl Chessboard{
         self.black_figures.insert(62, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(63, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
         
+        
+        // testing
+
+        /*
+        self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(46, Figure::Pawn(Pawn{..Default::default()}));
+        self.black_figures.insert(19, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.positions.set(19, true);
+        self.positions.set(55, true);
+        self.positions.set(10, true);
+        self.positions.set(46, true);
+        */
     }
 }
 

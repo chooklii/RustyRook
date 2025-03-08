@@ -161,7 +161,6 @@ mod tests {
         };
 
         let possible_moves = figure.possible_moves(&board, &11);
-        println!("{:?}", possible_moves);
         assert_eq!(14, possible_moves.len())
     }
 }
