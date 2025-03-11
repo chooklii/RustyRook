@@ -6,7 +6,7 @@ use crate::board::board::Chessboard;
 pub struct Evaluation {
     white_pieces_value: u8,
     black_pieces_value: u8,
-    net_rating: i32
+    pub net_rating: i16
 }
 
 impl Ord for Evaluation {
@@ -35,7 +35,7 @@ pub fn evaluate(board: &Chessboard) -> Evaluation {
     Evaluation {
         white_pieces_value,
         black_pieces_value,
-        net_rating: i32::from(white_pieces_value) - i32::from(black_pieces_value)
+        net_rating: i16::from(white_pieces_value) - i16::from(black_pieces_value)
 
     }
 }

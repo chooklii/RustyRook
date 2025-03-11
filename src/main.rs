@@ -33,7 +33,7 @@ fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
     for single_move in move_vec{
         // ignore both for now - should not be needed as ucinewgame resets game
         if single_move != "position" && single_move != "startpos" && single_move != "moves" {
-            board.make_move(single_move);
+            board.update_position_from_uci_input(single_move);
         }
     }
 }

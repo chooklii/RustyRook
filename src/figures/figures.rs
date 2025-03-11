@@ -45,4 +45,23 @@ impl Figure {
             Figure::Rock(_) => 5
         }
     }
+
+    pub fn get_name(&self) -> String{
+        match self{
+            Figure::Bishop(_) => String::from("B"),
+            Figure::King(_) => String::from("K"),
+            Figure::Queen(_) => String::from("Q"),
+            Figure::Knight(_) => String::from("H"), // Horse
+            Figure::Pawn(_) => String::from("P"),
+            Figure::Rock(_) => String::from("R")
+        }
+    }
+
+    // check for checks and castle
+    pub fn is_king(&self) -> bool{
+        match self{
+            Figure::King(_) => true,
+            _ => false
+        }
+    }
 }

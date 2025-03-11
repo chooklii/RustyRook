@@ -29,6 +29,23 @@ impl Default for Chessboard{
 
 impl Chessboard{
 
+    // convert board to unique position key 
+    pub fn position_key(&self) -> String{
+        let mut key = String::new();
+        for n in 0..63{
+            if !self.positions.get(n){
+                key.push_str("0");
+            }else if self.white_figures.contains_key(&n) {
+                key.push_str("W");  
+                key.push_str(&self.white_figures.get(&n).unwrap().get_name());
+            }else if self.black_figures.contains_key(&n) {
+                key.push_str("B");
+                key.push_str(&self.black_figures.get(&n).unwrap().get_name());  
+            }
+        }
+        key
+    }
+
     pub fn set_current_move(&mut self){
         match self.current_move{
             Color::Black => self.current_move = Color::White,
@@ -51,20 +68,68 @@ impl Chessboard{
         } 
     }
 
-    pub fn make_move(&mut self, mov: &str){
-        let validated_move = self.validate_string_position(mov);
-        if validated_move.is_none(){
-            return;
+    pub fn update_position_from_uci_input(&mut self, mov: &str){
+        if let Some((from_row, from_column, to_row, to_column)) = self.validate_string_position(mov){
+            let old_field  = self.get_position_id(from_row, from_column);
+            let new_field  = self.get_position_id(to_row, to_column);
+            
+            self.move_figure(old_field, new_field);            
         }
-        let (from_row, from_column, to_row, to_column) = validated_move.unwrap();
+    }
 
-        let old_field  = self.get_position_id(from_row, from_column);
-        let new_field  = self.get_position_id(to_row, to_column);
+    fn castle(&mut self, old_field: usize, new_field: usize){
+        // not white - nor black castle
+        // white castle 4 -> 2/6 || black castle 60 -> 58/62
+        if !((old_field == 4 && (new_field == 2 || new_field == 6)) || ((old_field == 60) && (new_field == 58 || new_field == 62))){
+            return
+        }
+        if old_field == 4{
+            self.white_castle(old_field, new_field);
+        }
+        else if old_field == 60{
+            self.black_castle(old_field, new_field);
+        }
+    }
 
-        self.move_figure(old_field, new_field);
+    fn black_castle(&mut self, old_field: usize, new_field: usize){
+        if let Some(figure) = self.black_figures.get(&old_field){
+            if figure.is_king(){
+                // lange rutsche
+                if new_field == 58{
+                    self.move_black_figure(56, 59);
+                    self.positions.set(56, false);
+                    self.positions.set(59, true);
+                }
+                if new_field == 62{
+                    self.move_black_figure(63, 61);
+                    self.positions.set(63, false);
+                    self.positions.set(61, true);
+                }
+            }
+        }
+    }
+
+    fn white_castle(&mut self, old_field: usize, new_field: usize){
+        if let Some(figure) = self.white_figures.get(&old_field){
+            if figure.is_king(){
+                if new_field == 2{
+                    self.move_white_figure(0, 3);
+                    self.positions.set(0, false);
+                    self.positions.set(3, true);
+                }
+                if new_field == 6{
+                    self.move_white_figure(7, 5);
+                    self.positions.set(7, false);
+                    self.positions.set(5, true);
+                }
+            }
+        }
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize){
+        // if move is caste move rook as well
+        self.castle(from, to);
+
         self.positions.set(from.into(), false);
         self.positions.set(to.into(), true);
 
@@ -90,6 +155,7 @@ impl Chessboard{
     }
 
     fn validate_string_position<'a>(&'a self, mov: &'a str) -> Option<(&'a str, u8, &'a str, u8)>{
+        // first validate that input is in valid format - then split it into x/y for both positions (new and old)
         let valid_move_regex = Regex::new(r"\A[abcdefgh][1-8][abcdefgh][1-8]").unwrap();
         let valid_move = valid_move_regex.captures(mov);
 
@@ -191,20 +257,6 @@ impl Chessboard{
         self.black_figures.insert(61, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(62, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(63, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
-        
-        
-        // testing
-
-        /*
-        self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(46, Figure::Pawn(Pawn{..Default::default()}));
-        self.black_figures.insert(19, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.positions.set(19, true);
-        self.positions.set(55, true);
-        self.positions.set(10, true);
-        self.positions.set(46, true);
-        */
     }
 }
 
@@ -254,5 +306,97 @@ mod tests {
         assert_eq!(false, board.figure_can_move_backward(&0));
         assert_eq!(false, board.figure_can_move_backward(&0));
         assert_eq!(true, board.figure_can_move_backward(&60)); 
+    }
+
+    #[test]
+    fn short_castle_white(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
+
+        board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(4, Figure::King(King{..Default::default()}));
+        board.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
+        board.positions.set(0, true);
+        board.positions.set(4, true);
+        board.positions.set(7, true);
+
+        board.update_position_from_uci_input("e1g1");
+        assert_eq!(board.positions.get(6), true);
+        assert_eq!(board.positions.get(5), true);
+        assert_eq!(board.positions.get(7), false);
+        assert_eq!(board.positions.get(4), false);
+    }
+
+    #[test]
+    fn long_castle_white(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
+
+        board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(4, Figure::King(King{..Default::default()}));
+        board.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
+        board.positions.set(0, true);
+        board.positions.set(4, true);
+        board.positions.set(7, true);
+
+        board.update_position_from_uci_input("e1c1");
+        assert_eq!(board.positions.get(3), true);
+        assert_eq!(board.positions.get(2), true);
+        assert_eq!(board.positions.get(0), false);
+        assert_eq!(board.positions.get(4), false);
+    }
+
+    #[test]
+    fn short_castle_black(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+        };
+
+        board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(60, Figure::King(King{..Default::default()}));
+        board.black_figures.insert(63, Figure::Rock(Rock{..Default::default()}));
+        board.positions.set(56, true);
+        board.positions.set(60, true);
+        board.positions.set(63, true);
+
+        board.update_position_from_uci_input("e8c8");
+        assert_eq!(board.positions.get(58), true);
+        assert_eq!(board.positions.get(59), true);
+        assert_eq!(board.positions.get(56), false);
+        assert_eq!(board.positions.get(60), false);
+    }
+
+    #[test]
+    fn long_castle_black(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+        };
+
+        board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(60, Figure::King(King{..Default::default()}));
+        board.black_figures.insert(63, Figure::Rock(Rock{..Default::default()}));
+        board.positions.set(56, true);
+        board.positions.set(60, true);
+        board.positions.set(63, true);
+
+        board.update_position_from_uci_input("e8g8");
+        assert_eq!(board.positions.get(61), true);
+        assert_eq!(board.positions.get(62), true);
+        assert_eq!(board.positions.get(60), false);
+        assert_eq!(board.positions.get(63), false);
     }
 }
