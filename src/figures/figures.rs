@@ -1,7 +1,5 @@
 use crate::board::board::Chessboard;
-use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, Bishop::Bishop, king::King};
-
-use super::knight;
+use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, bishop::Bishop, king::King};
 
 #[derive(Clone)]
 pub enum Figure {
