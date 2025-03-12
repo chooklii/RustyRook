@@ -24,14 +24,23 @@ impl Figure {
         }
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
+    pub fn has_moved(&self) -> bool{
+        match self {
+            Figure::Rock(rock) => rock.has_moved,
+            Figure::King(king) => king.has_moved,
+            Figure::Pawn(pawn) => pawn.has_moved,
+            _ => false
+        }   
+    }
+
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>) -> Vec<usize> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
             Figure::Rock(rock) => rock.possible_moves(board, own_position),
             Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
             Figure::Knight(knight) => knight.possible_moves(board, own_position),
             Figure::Queen(queen) => queen.possible_moves(board, own_position),
-            Figure::King(king) => king.possible_moves(board, own_position)
+            Figure::King(king) => king.possible_moves(board, own_position, &opponent_moves)
         }
     }
 
@@ -61,6 +70,13 @@ impl Figure {
     pub fn is_king(&self) -> bool{
         match self{
             Figure::King(_) => true,
+            _ => false
+        }
+    }
+
+    pub fn is_rook(&self) -> bool{
+        match self{
+            Figure::Rock(_) => true,
             _ => false
         }
     }

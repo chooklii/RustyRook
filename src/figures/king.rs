@@ -31,7 +31,12 @@ impl King {
         }
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
+    pub fn possible_moves(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        opponent_moves: &Vec<usize>,
+    ) -> Vec<usize> {
         let mut possible_moves = Vec::new();
 
         let can_move_backward = board.figure_can_move_backward(own_position);
@@ -64,23 +69,79 @@ impl King {
             self.check_move(board, own_position + 1, &mut possible_moves);
         }
 
-        // castle missing
-
+        // castle
+        if !self.has_moved && !opponent_moves.contains(own_position) {
+            match self.color {
+                Color::White => self.white_castle(&board, &opponent_moves, &mut possible_moves),
+                Color::Black => self.black_castle(&board, &opponent_moves, &mut possible_moves),
+            }
+        }
         possible_moves
+    }
+
+    fn is_possible_castle(
+        &self,
+        board: &Chessboard,
+        opponent_moves: &Vec<usize>,
+        rook_field: &usize,
+        new_king_position: usize,
+        field_between: usize,
+    ) -> bool {
+        // rook is in the corner, has not moved && all fields between them are not in danger
+        if let Some(figure) = board.get_next_player_figures().get(rook_field) {
+            return figure.is_rook()
+                && !figure.has_moved()
+                && !(opponent_moves.contains(&field_between)
+                    || opponent_moves.contains(&new_king_position)
+                    || board.positions.get(field_between)
+                    || board.positions.get(new_king_position));
+        }
+        return false;
+    }
+
+    fn white_castle(
+        &self,
+        board: &Chessboard,
+        opponent_moves: &Vec<usize>,
+        possible_moves: &mut Vec<usize>,
+    ) {
+        // short
+        if self.is_possible_castle(board, opponent_moves, &7, 6, 5) {
+            possible_moves.push(6);
+        }
+        // long
+        if self.is_possible_castle(board, opponent_moves, &0, 2, 3) {
+            possible_moves.push(2);
+        }
+    }
+
+    fn black_castle(
+        &self,
+        board: &Chessboard,
+        opponent_moves: &Vec<usize>,
+        possible_moves: &mut Vec<usize>,
+    ) {
+        // short
+        if self.is_possible_castle(board, opponent_moves, &63, 62, 61){
+            possible_moves.push(62);
+        }
+        // long
+        if self.is_possible_castle(board, opponent_moves, &55, 58, 59){
+            possible_moves.push(58);
+        }
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use crate::figures::{figures::Figure, rock::Rock};
     use bitmaps::Bitmap;
+    use std::collections::HashMap;
+
     use super::*;
 
-
     #[test]
-    fn move_empty_board(){
+    fn move_empty_board() {
         let figure = King {
             color: Color::Black,
             ..Default::default()
@@ -92,14 +153,143 @@ mod tests {
             current_move: Color::White,
         };
 
-        let moves = figure.possible_moves(&board, &10);
+        let moves = figure.possible_moves(&board, &10, &Vec::new());
         assert_eq!(8, moves.len());
 
-        let moves = figure.possible_moves(&board, &0);
+        let moves = figure.possible_moves(&board, &0, &Vec::new());
         assert_eq!(3, moves.len());
 
-        let moves = figure.possible_moves(&board, &31);
+        let moves = figure.possible_moves(&board, &31, &Vec::new());
         assert_eq!(5, moves.len());
+    }
 
+    #[test]
+    fn castle_on_empty_board() {
+        let figure = King {
+            color: Color::White,
+            ..Default::default()
+        };
+
+        let mut positions = Bitmap::<64>::new();
+
+        positions.set(0, true);
+        positions.set(4, true);
+        positions.set(7, true);
+
+        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+
+        white_figures.insert(
+            0,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+        white_figures.insert(
+            7,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+
+        let board = Chessboard {
+            positions,
+            white_figures,
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
+
+        let own_moves = figure.possible_moves(&board, &4, &Vec::new());
+
+        // can castle left and right
+        assert_eq!(7, own_moves.len());
+
+        assert_eq!(true, own_moves.contains(&6));
+        assert_eq!(true, own_moves.contains(&2));
+    }
+
+    #[test]
+    fn not_able_to_castle_long() {
+        let figure = King {
+            color: Color::White,
+            ..Default::default()
+        };
+
+        let mut positions = Bitmap::<64>::new();
+        positions.set(0, true);
+        positions.set(4, true);
+        positions.set(7, true);
+
+        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        white_figures.insert(
+            0,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+        white_figures.insert(
+            7,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+
+        let board = Chessboard {
+            positions,
+            white_figures,
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
+
+        let mut opponent_moves: Vec<usize> = Vec::new();
+        opponent_moves.push(2);
+
+        let own_moves = figure.possible_moves(&board, &4, &opponent_moves);
+
+        assert_eq!(6, own_moves.len());
+        assert_eq!(true, own_moves.contains(&6));
+        assert_eq!(false, own_moves.contains(&2));
+    }
+
+    #[test]
+    fn not_able_to_castle() {
+        let figure = King {
+            color: Color::White,
+            ..Default::default()
+        };
+
+        let mut positions = Bitmap::<64>::new();
+        positions.set(0, true);
+        positions.set(2, true);
+        positions.set(4, true);
+        positions.set(6, true);
+        positions.set(7, true);
+
+        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        white_figures.insert(
+            0,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+        white_figures.insert(
+            7,
+            Figure::Rock(Rock {
+                ..Default::default()
+            }),
+        );
+
+        let board = Chessboard {
+            positions,
+            white_figures,
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+        };
+
+        let own_moves = figure.possible_moves(&board, &4, &Vec::new());
+
+        // castle is not possible as there are figures in the way
+        assert_eq!(5, own_moves.len());
+        assert_eq!(false, own_moves.contains(&6));
+        assert_eq!(false, own_moves.contains(&2));
     }
 }
