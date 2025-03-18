@@ -99,8 +99,6 @@ impl Rock {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use bitmaps::Bitmap;
 
     use super::*;
@@ -116,9 +114,7 @@ mod tests {
         };
         let board = Chessboard {
             positions,
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let possible_moves = figure.possible_moves(&board, &0);
@@ -138,9 +134,7 @@ mod tests {
         };
         let board = Chessboard {
             positions,
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let possible_moves = figure.possible_moves(&board, &26);
@@ -155,9 +149,7 @@ mod tests {
         };
         let board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let possible_moves = figure.possible_moves(&board, &11);

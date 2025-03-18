@@ -12,7 +12,7 @@ impl Pawn {
         self.has_moved = true;
     }
 
-    pub fn take_left_position(&self, one_step_forward: &usize) -> usize {
+    fn take_left_position(&self, one_step_forward: &usize) -> usize {
         match self.color {
             Color::White => one_step_forward - 1,
             Color::Black => one_step_forward + 1,
@@ -23,6 +23,20 @@ impl Pawn {
         match self.color {
             Color::White => one_step_forward + 1,
             Color::Black => one_step_forward - 1,
+        }
+    }
+
+    fn en_passant_position_left(&self, own_position: &usize) -> usize{
+        match self.color {
+            Color::White => own_position- 1,
+            Color::Black => own_position + 1,
+        }
+    }
+
+    fn en_passant_position_right(&self, own_position: &usize) -> usize{
+        match self.color {
+            Color::White => own_position + 1,
+            Color::Black => own_position - 1,
         }
     }
 
@@ -73,17 +87,30 @@ impl Pawn {
 
         let one_step_forward = self.calculate_forward_position(own_position, 8);
 
-        // en passant is missing
-
         if self.figure_can_move_left(own_position, &self.color) {
-            if let Some(id) = self.check_taking(board, self.take_left_position(&one_step_forward)) {
+            let take_left_position = self.take_left_position(&one_step_forward);
+            // regular take left
+            if let Some(id) = self.check_taking(board, take_left_position) {
                 possible_moves.push(id);
+            }
+            // en passant left
+            else if let Some(possible_en_passant) = board.en_passant{
+                if self.en_passant_position_left(own_position) == possible_en_passant{
+                    possible_moves.push(take_left_position)
+                }
             }
         }
         if self.figure_can_move_right(own_position, &self.color) {
-            if let Some(id) = self.check_taking(board, self.take_right_position(&one_step_forward))
-            {
+            let take_right_position = self.take_right_position(&one_step_forward);
+            // regular take right
+            if let Some(id) = self.check_taking(board,take_right_position){
                 possible_moves.push(id);
+            }
+            // en passant right
+            else if let Some(possible_en_passant) = board.en_passant{
+                if self.en_passant_position_right(own_position) == possible_en_passant{
+                    possible_moves.push(take_right_position)
+                }
             }
         }
 
@@ -127,9 +154,7 @@ mod tests {
         };
         let board = Chessboard {
             positions,
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &12);
@@ -160,13 +185,66 @@ mod tests {
         let board = Chessboard {
             positions,
             white_figures,
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &16);
 
         // should not be able to take from Field 16(A3) to 23(H3)
         assert_eq!(0, moves.len());
+    }
+
+    #[test]
+    fn test_en_passant_left() {
+        let mut positions = Bitmap::<64>::new();
+
+        positions.set(35, true);
+
+        let figure = Pawn {
+            ..Default::default()
+        };
+
+        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        opponents.insert(34, Figure::Pawn(Pawn {
+            ..Default::default()
+        }));
+
+        let board = Chessboard {
+            positions,
+            black_figures: opponents,
+            en_passant: Some(34),
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &35);
+        assert_eq!(true, moves.contains(&42));
+    }
+
+    #[test]
+    fn test_en_passant_right() {
+        let mut positions = Bitmap::<64>::new();
+
+        positions.set(26, true);
+
+        let figure = Pawn {
+            color: Color::Black,
+            ..Default::default()
+        };
+
+        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        opponents.insert(27, Figure::Pawn(Pawn {
+            ..Default::default()
+        }));
+
+        let board = Chessboard {
+            positions,
+            white_figures: opponents,
+            current_move: Color::Black,
+            en_passant: Some(27),
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &26);
+        assert_eq!(true, moves.contains(&19));
     }
 }

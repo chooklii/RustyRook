@@ -11,16 +11,19 @@ pub struct Chessboard {
     pub positions: Bitmap<64>,
     pub white_figures: HashMap<usize, Figure>,
     pub black_figures: HashMap<usize, Figure>,
-    pub current_move: Color
+    pub current_move: Color,
+    // possible field with figure that can be taken en passant
+    pub en_passant: Option<usize>
 }
 
 impl Default for Chessboard{
     fn default() -> Chessboard {
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures:  HashMap::new(),
-            black_figures:  HashMap::new(),
-            current_move: Color::White
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None
         };
         board.set_to_default();
         board
@@ -77,6 +80,37 @@ impl Chessboard{
         }
     }
 
+    fn en_passant(&mut self, old_field: usize, new_field: usize){
+        match self.current_move{
+            Color::White => self.white_en_passant(old_field, new_field),
+            Color::Black => self.black_en_passant(old_field, new_field)
+        }
+    }
+
+    fn white_en_passant(&mut self, old_field: usize, new_field: usize){
+        if new_field == old_field +16 {
+            if let Some(figure) = self.white_figures.get(&old_field){
+                if figure.is_pawn(){
+                    self.en_passant = Some(new_field);
+                    return;
+                }
+            }
+        }
+        self.en_passant = None;
+    }
+
+    fn black_en_passant(&mut self, old_field: usize, new_field: usize){
+        if old_field == new_field +16 {
+            if let Some(figure) = self.black_figures.get(&old_field){
+                if figure.is_pawn(){
+                    self.en_passant = Some(new_field);
+                    return;
+                }
+            }
+        }
+        self.en_passant = None;
+    }
+
     fn castle(&mut self, old_field: usize, new_field: usize){
         // not white - nor black castle
         // white castle 4 -> 2/6 || black castle 60 -> 58/62
@@ -129,7 +163,7 @@ impl Chessboard{
     pub fn move_figure(&mut self, from: usize, to: usize){
         // if move is caste move rook as well
         self.castle(from, to);
-
+        self.en_passant(from, to);
         self.positions.set(from.into(), false);
         self.positions.set(to.into(), true);
 
@@ -315,6 +349,7 @@ mod tests {
             white_figures: HashMap::new(),
             black_figures: HashMap::new(),
             current_move: Color::White,
+            en_passant: None
         };
 
         board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
@@ -338,6 +373,7 @@ mod tests {
             white_figures: HashMap::new(),
             black_figures: HashMap::new(),
             current_move: Color::White,
+            en_passant: None
         };
 
         board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
@@ -361,6 +397,7 @@ mod tests {
             white_figures: HashMap::new(),
             black_figures: HashMap::new(),
             current_move: Color::Black,
+            en_passant: None
         };
 
         board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
@@ -384,6 +421,7 @@ mod tests {
             white_figures: HashMap::new(),
             black_figures: HashMap::new(),
             current_move: Color::Black,
+            en_passant: None
         };
 
         board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
@@ -398,5 +436,39 @@ mod tests {
         assert_eq!(board.positions.get(62), true);
         assert_eq!(board.positions.get(60), false);
         assert_eq!(board.positions.get(63), false);
+    }
+
+    #[test]
+    fn test_en_passant(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            en_passant: None
+        };
+
+        board.black_figures.insert(52, Figure::Pawn(Pawn{..Default::default()}));
+        board.positions.set(52, true);
+        board.move_figure(52, 36);
+
+        assert_eq!(board.en_passant, Some(36));
+    }
+
+    #[test]
+    fn test_no_en_passant(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            en_passant: None
+        };
+
+        board.black_figures.insert(52, Figure::Pawn(Pawn{..Default::default()}));
+        board.positions.set(52, true);
+        board.move_figure(52, 44);
+
+        assert_eq!(board.en_passant, None);
     }
 }

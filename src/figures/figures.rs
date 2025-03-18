@@ -78,4 +78,11 @@ impl Figure {
             _ => false
         }
     }
+
+    pub fn is_pawn(&self) -> bool{
+        match self{
+            Figure::Pawn(_) => true,
+            _ => false
+        }
+    }
 }

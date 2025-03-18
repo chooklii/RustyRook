@@ -92,8 +92,6 @@ impl Bishop {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use bitmaps::Bitmap;
 
     use super::*;
@@ -106,9 +104,7 @@ mod tests {
         };
         let board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &27);
@@ -130,9 +126,7 @@ mod tests {
         positions.set(25, true);
         let board = Chessboard {
             positions,
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &18);
@@ -149,9 +143,7 @@ mod tests {
         positions.set(13, true);
         let board = Chessboard {
             positions,
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &20);

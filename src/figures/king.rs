@@ -147,10 +147,7 @@ mod tests {
             ..Default::default()
         };
         let board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let moves = figure.possible_moves(&board, &10, &Vec::new());
@@ -194,8 +191,7 @@ mod tests {
         let board = Chessboard {
             positions,
             white_figures,
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let own_moves = figure.possible_moves(&board, &4, &Vec::new());
@@ -236,8 +232,7 @@ mod tests {
         let board = Chessboard {
             positions,
             white_figures,
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let mut opponent_moves: Vec<usize> = Vec::new();
@@ -281,8 +276,7 @@ mod tests {
         let board = Chessboard {
             positions,
             white_figures,
-            black_figures: HashMap::new(),
-            current_move: Color::White,
+            ..Default::default()
         };
 
         let own_moves = figure.possible_moves(&board, &4, &Vec::new());
