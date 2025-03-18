@@ -49,7 +49,7 @@ impl Chessboard{
         key
     }
 
-    pub fn set_current_move(&mut self){
+    fn set_current_move(&mut self){
         match self.current_move{
             Color::Black => self.current_move = Color::White,
             Color::White => self.current_move = Color::Black
@@ -80,14 +80,14 @@ impl Chessboard{
         }
     }
 
-    fn en_passant(&mut self, old_field: usize, new_field: usize){
+    fn possible_future_en_passant(&mut self, old_field: usize, new_field: usize){
         match self.current_move{
-            Color::White => self.white_en_passant(old_field, new_field),
-            Color::Black => self.black_en_passant(old_field, new_field)
+            Color::White => self.possible_white_en_passant(old_field, new_field),
+            Color::Black => self.possible_black_en_passant(old_field, new_field)
         }
     }
 
-    fn white_en_passant(&mut self, old_field: usize, new_field: usize){
+    fn possible_white_en_passant(&mut self, old_field: usize, new_field: usize){
         if new_field == old_field +16 {
             if let Some(figure) = self.white_figures.get(&old_field){
                 if figure.is_pawn(){
@@ -99,7 +99,7 @@ impl Chessboard{
         self.en_passant = None;
     }
 
-    fn black_en_passant(&mut self, old_field: usize, new_field: usize){
+    fn possible_black_en_passant(&mut self, old_field: usize, new_field: usize){
         if old_field == new_field +16 {
             if let Some(figure) = self.black_figures.get(&old_field){
                 if figure.is_pawn(){
@@ -109,6 +109,10 @@ impl Chessboard{
             }
         }
         self.en_passant = None;
+    }
+
+    fn en_passant(&mut self, old_field: usize, new_field: usize){
+
     }
 
     fn castle(&mut self, old_field: usize, new_field: usize){
@@ -163,9 +167,12 @@ impl Chessboard{
     pub fn move_figure(&mut self, from: usize, to: usize){
         // if move is caste move rook as well
         self.castle(from, to);
+        // if move is en passant remove opponent (from field we did not move to!)
         self.en_passant(from, to);
-        self.positions.set(from.into(), false);
-        self.positions.set(to.into(), true);
+        // check for possible future en_passant options
+        self.possible_future_en_passant(from, to);
+        self.positions.set(from, false);
+        self.positions.set(to, true);
 
         match self.current_move {
             Color::White => self.move_white_figure(from, to),
