@@ -111,9 +111,58 @@ impl Chessboard{
         self.en_passant = None;
     }
 
-    fn en_passant(&mut self, old_field: usize, new_field: usize){
-
+    fn check_and_execute_en_passant(&mut self, old_field: usize, new_field: usize){
+        // no possible en passant no need to check any longer
+        if self.en_passant.is_none(){
+            return;
+        }
+        let is_en_passant = match self.current_move{
+            Color::White => self.is_en_passant_white(old_field, new_field),
+            Color::Black => self.is_en_passant_black(old_field, new_field)
+        };
+        if !is_en_passant{
+            return;
+        }
+        // we have none checked en_passant at this point
+        let en_passanted_figure = self.en_passant.unwrap();
+        self.positions.set(en_passanted_figure, false);
+        match self.current_move{
+            Color::Black => self.white_figures.remove(&en_passanted_figure),
+            Color::White => self.black_figures.remove(&en_passanted_figure)
+        };
     }
+
+    fn is_en_passant_black(&mut self, old_field: usize, new_field: usize) -> bool{
+        if let Some(possible_en_passant_field) = self.en_passant{
+            // post en passant would be one column less than possible en passant"ed" pawn
+            if possible_en_passant_field -8 != new_field{
+                return false;
+            }
+            if self.figure_can_move_left(&old_field) && possible_en_passant_field -1 == old_field{
+                return true;
+            }
+            if self.figure_can_move_right(&old_field) && possible_en_passant_field +1 == old_field {
+                return true;
+            }
+            }
+            return false;
+        }
+
+    fn is_en_passant_white(&mut self, old_field: usize, new_field: usize) -> bool{
+        if let Some(possible_en_passant_field) = self.en_passant{
+            // post en passant would be one column more than possible en passant"ed" pawn
+            if possible_en_passant_field +8 != new_field{
+                return false;
+            }
+            if self.figure_can_move_left(&old_field) && possible_en_passant_field +1 == old_field{
+                return true;
+            }
+            if self.figure_can_move_right(&old_field) && possible_en_passant_field -1 == old_field {
+                return true;
+            }
+            }
+            return false;
+        }
 
     fn castle(&mut self, old_field: usize, new_field: usize){
         // not white - nor black castle
@@ -168,7 +217,7 @@ impl Chessboard{
         // if move is caste move rook as well
         self.castle(from, to);
         // if move is en passant remove opponent (from field we did not move to!)
-        self.en_passant(from, to);
+        self.check_and_execute_en_passant(from, to);
         // check for possible future en_passant options
         self.possible_future_en_passant(from, to);
         self.positions.set(from, false);
@@ -477,5 +526,40 @@ mod tests {
         board.move_figure(52, 44);
 
         assert_eq!(board.en_passant, None);
+    }
+
+    #[test]
+    fn test_if_en_passanted_figure_is_removed_black(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            en_passant: Some(26)
+        }; 
+        board.white_figures.insert(26, Figure::Pawn(Pawn{..Default::default()}));
+        board.black_figures.insert(25, Figure::Pawn(Pawn { color: Color::Black, ..Default::default()}));
+
+        board.move_figure(25, 18);
+
+        assert_eq!(0, board.white_figures.len());
+        assert_eq!(false, board.positions.get(26))
+    }
+
+    #[test]
+    fn test_if_en_passanted_figure_is_removed_white(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: Some(36)
+        }; 
+        board.black_figures.insert(36, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        board.white_figures.insert(35, Figure::Pawn(Pawn { ..Default::default()}));
+        board.move_figure(35, 44);
+
+        assert_eq!(0, board.black_figures.len());
+        assert_eq!(false, board.positions.get(36))
     }
 }
