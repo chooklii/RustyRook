@@ -76,7 +76,8 @@ impl King {
                 Color::Black => self.black_castle(&board, &opponent_moves, &mut possible_moves),
             }
         }
-        possible_moves
+        // filter out fields opponent can take
+        possible_moves.into_iter().filter(|position|!opponent_moves.contains(position)).collect()
     }
 
     fn is_possible_castle(

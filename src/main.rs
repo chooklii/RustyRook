@@ -7,6 +7,7 @@ use log::info;
 mod board;
 mod figures;
 mod engine;
+mod helper;
 mod evaluation;
 
 

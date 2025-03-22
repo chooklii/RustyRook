@@ -79,6 +79,20 @@ impl Figure {
         }
     }
 
+    pub fn is_queen(&self) -> bool{
+        match self{
+            Figure::Queen(_) => true,
+            _ => false
+        }
+    }
+
+    pub fn is_bishop(&self) -> bool{
+        match self{
+            Figure::Bishop(_) => true,
+            _ => false
+        }
+    }
+
     pub fn is_pawn(&self) -> bool{
         match self{
             Figure::Pawn(_) => true,
