@@ -3,7 +3,7 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::figures::{color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, bishop::Bishop};
+use crate::{figures::{bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rock::Rock}, helper::movement::{figure_can_move_left, figure_can_move_right}};
 
 
 #[derive(Clone)]
@@ -138,10 +138,10 @@ impl Chessboard{
             if possible_en_passant_field -8 != new_field{
                 return false;
             }
-            if self.figure_can_move_left(&old_field) && possible_en_passant_field -1 == old_field{
+            if figure_can_move_left(&old_field) && possible_en_passant_field -1 == old_field{
                 return true;
             }
-            if self.figure_can_move_right(&old_field) && possible_en_passant_field +1 == old_field {
+            if figure_can_move_right(&old_field) && possible_en_passant_field +1 == old_field {
                 return true;
             }
             }
@@ -154,10 +154,10 @@ impl Chessboard{
             if possible_en_passant_field +8 != new_field{
                 return false;
             }
-            if self.figure_can_move_left(&old_field) && possible_en_passant_field +1 == old_field{
+            if figure_can_move_left(&old_field) && possible_en_passant_field +1 == old_field{
                 return true;
             }
-            if self.figure_can_move_right(&old_field) && possible_en_passant_field -1 == old_field {
+            if figure_can_move_right(&old_field) && possible_en_passant_field -1 == old_field {
                 return true;
             }
             }
@@ -280,22 +280,6 @@ impl Chessboard{
         }
     }
 
-    pub fn figure_can_move_left(&self, field: &usize) -> bool{
-        field % 8 != 0
-    } 
-
-    pub fn figure_can_move_right(&self, field: &usize) -> bool{
-        field % 8 != 7
-    }
-
-    pub fn figure_can_move_forward(&self, field: &usize) -> bool{
-        field <= &55
-    }
-
-    pub fn figure_can_move_backward(&self, field: &usize) -> bool{
-        field >=&8
-    }
-
     pub fn set_to_default(&mut self){
         self.positions = Bitmap::<64>::new();
         self.black_figures = HashMap::new();
@@ -354,49 +338,6 @@ impl Chessboard{
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_move_left(){
-        let board = Chessboard{..Default::default()};
-        assert_eq!(false, board.figure_can_move_left(&8));
-        assert_eq!(true, board.figure_can_move_left(&15));
-        assert_eq!(false, board.figure_can_move_left(&56));
-        assert_eq!(false, board.figure_can_move_left(&32));
-        assert_eq!(true, board.figure_can_move_left(&25));
-        assert_eq!(true, board.figure_can_move_left(&30));
-    }
-
-    #[test]
-    fn test_move_right(){
-        let board: Chessboard = Chessboard{..Default::default()};
-        assert_eq!(false, board.figure_can_move_right(&7));
-        assert_eq!(false, board.figure_can_move_right(&15));
-        assert_eq!(false, board.figure_can_move_right(&31));
-        assert_eq!(false, board.figure_can_move_right(&39));
-        assert_eq!(true, board.figure_can_move_right(&18));
-        assert_eq!(true, board.figure_can_move_right(&38));
-        assert_eq!(true, board.figure_can_move_right(&16));
-    }
-
-    #[test]
-    fn test_move_forward(){
-        let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.figure_can_move_forward(&27));
-        assert_eq!(true, board.figure_can_move_forward(&27));
-        assert_eq!(true, board.figure_can_move_forward(&0));
-        assert_eq!(true, board.figure_can_move_forward(&0));
-        assert_eq!(false, board.figure_can_move_forward(&60));
-    }
-
-    #[test]
-    fn test_move_backward(){
-        let board = Chessboard{..Default::default()};
-        assert_eq!(true, board.figure_can_move_backward(&27));
-        assert_eq!(true, board.figure_can_move_backward(&27));
-        assert_eq!(false, board.figure_can_move_backward(&0));
-        assert_eq!(false, board.figure_can_move_backward(&0));
-        assert_eq!(true, board.figure_can_move_backward(&60)); 
-    }
 
     #[test]
     fn short_castle_white(){

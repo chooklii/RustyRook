@@ -1,4 +1,4 @@
-use crate::board::board::Chessboard;
+use crate::{board::board::Chessboard, helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right}};
 
 use super::color::Color;
 
@@ -39,10 +39,10 @@ impl King {
     ) -> Vec<usize> {
         let mut possible_moves = Vec::new();
 
-        let can_move_backward = board.figure_can_move_backward(own_position);
-        let can_move_left = board.figure_can_move_left(own_position);
-        let can_move_right = board.figure_can_move_right(own_position);
-        let can_move_forward = board.figure_can_move_forward(own_position);
+        let can_move_backward = figure_can_move_backward(own_position);
+        let can_move_left = figure_can_move_left(own_position);
+        let can_move_right = figure_can_move_right(own_position);
+        let can_move_forward = figure_can_move_forward(own_position);
 
         if can_move_backward {
             self.check_move(board, own_position - 8, &mut possible_moves);

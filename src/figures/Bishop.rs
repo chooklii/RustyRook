@@ -1,5 +1,6 @@
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
+use crate::helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right};
 
 #[derive(Default, Clone)]
 pub struct Bishop {
@@ -17,7 +18,7 @@ pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize) -> V
 }
 
 fn move_back_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if board.figure_can_move_left(own_position) && board.figure_can_move_backward(own_position){
+    if figure_can_move_left(own_position) && figure_can_move_backward(own_position){
         let next_position = own_position - 9;
         if board.positions.get(next_position) {
             if board
@@ -34,7 +35,7 @@ fn move_back_left(board: &Chessboard, color: &Color, own_position: &usize, moves
 }
 
 fn move_forward_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if board.figure_can_move_left(own_position) && board.figure_can_move_forward(own_position){
+    if figure_can_move_left(own_position) && figure_can_move_forward(own_position){
         let next_position = own_position +7;
         if board.positions.get(next_position) {
             if board
@@ -51,7 +52,7 @@ fn move_forward_left(board: &Chessboard, color: &Color, own_position: &usize, mo
 }
 
 fn move_forward_right(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if board.figure_can_move_right(own_position) && board.figure_can_move_forward(own_position){
+    if figure_can_move_right(own_position) && figure_can_move_forward(own_position){
         let next_position = own_position + 9;
         if board.positions.get(next_position) {
             if board
@@ -68,7 +69,7 @@ fn move_forward_right(board: &Chessboard, color: &Color, own_position: &usize, m
 }
 
 fn move_backward_right(board: &Chessboard,color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if board.figure_can_move_right(own_position) && board.figure_can_move_backward(own_position){
+    if figure_can_move_right(own_position) && figure_can_move_backward(own_position){
         let next_position = own_position -7;
         if board.positions.get(next_position) {
             if board

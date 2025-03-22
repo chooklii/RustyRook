@@ -1,5 +1,6 @@
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
+use crate::helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right};
 
 #[derive(Default, Clone)]
 pub struct Rock {
@@ -19,7 +20,7 @@ pub fn get_rook_moves(board: &Chessboard, color: &Color,  position: &usize) -> V
 }
 
 fn move_forward(board: &Chessboard, color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
-    if board.figure_can_move_forward(own_position) {
+    if figure_can_move_forward(own_position) {
         let next_position: usize = own_position + 8;
         if board.positions.get(next_position) {
             if board
@@ -36,7 +37,7 @@ fn move_forward(board: &Chessboard, color: &Color, own_position: &usize, positio
 }
 
 fn move_backward(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
-    if board.figure_can_move_backward(own_position) {
+    if figure_can_move_backward(own_position) {
         let next_position: usize = own_position - 8;
         if board.positions.get(next_position) {
             if board
@@ -53,7 +54,7 @@ fn move_backward(board: &Chessboard,color: &Color, own_position: &usize, positio
 }
 
 fn move_left(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
-    if board.figure_can_move_left(own_position) {
+    if figure_can_move_left(own_position) {
         let next_position: usize = own_position - 1;
         if board.positions.get(next_position) {
             if board
@@ -70,7 +71,7 @@ fn move_left(board: &Chessboard,color: &Color, own_position: &usize, positions: 
 }
 
 fn move_right(board: &Chessboard,color: &Color, own_position: &usize, positions: &mut Vec<usize>) {
-    if board.figure_can_move_right(own_position) {
+    if figure_can_move_right(own_position) {
         let next_position: usize = own_position + 1;
         if board.positions.get(next_position) {
             if board

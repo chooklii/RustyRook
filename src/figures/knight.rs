@@ -1,4 +1,4 @@
-use crate::board::board::Chessboard;
+use crate::{board::board::Chessboard, helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right}};
 
 use super::color::Color;
 
@@ -21,10 +21,10 @@ impl Knight {
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
         let mut possible_moves = Vec::new();
 
-        let can_move_one_left = board.figure_can_move_left(own_position);
-        let can_move_one_right = board.figure_can_move_right(own_position);
-        let can_move_one_backward = board.figure_can_move_backward(own_position);
-        let can_move_one_forward = board.figure_can_move_forward(own_position);
+        let can_move_one_left = figure_can_move_left(own_position);
+        let can_move_one_right = figure_can_move_right(own_position);
+        let can_move_one_backward = figure_can_move_backward(own_position);
+        let can_move_one_forward = figure_can_move_forward(own_position);
 
         let can_move_two_left = can_move_one_left && own_position % 8 != 1;
         let can_move_two_right = can_move_one_right && own_position % 8 != 6;
