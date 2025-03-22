@@ -79,7 +79,6 @@ impl Pawn {
 
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
         let mut possible_moves = Vec::new();
-
         // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
         if !self.figure_can_move_forward(&own_position, &self.color) {
             return possible_moves;
@@ -113,7 +112,6 @@ impl Pawn {
                 }
             }
         }
-
         // one field forward
         if !board.positions.get(one_step_forward) {
             possible_moves.push(one_step_forward);
@@ -128,7 +126,6 @@ impl Pawn {
                 }
             }
         }
-
         possible_moves
     }
 }
@@ -192,6 +189,25 @@ mod tests {
 
         // should not be able to take from Field 16(A3) to 23(H3)
         assert_eq!(0, moves.len());
+    }
+
+    // Black H Pawn is not working - test driven fix 
+    #[test]
+    fn test_black_h_pawn_with_free_path(){
+        let mut board = Chessboard{
+            current_move: Color::Black,
+            ..Default::default()
+        };
+        board.set_to_default();
+
+        let figure = Pawn {
+            color: Color::Black,
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &55);
+
+        assert_eq!(2, moves.len());
     }
 
     #[test]

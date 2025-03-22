@@ -307,7 +307,7 @@ impl Chessboard{
             self.positions.set(n, true);
         }
         
-        for n in 47..63{
+        for n in 48..63{
             self.positions.set(n, true);
         }
         

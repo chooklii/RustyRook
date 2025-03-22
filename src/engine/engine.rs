@@ -25,10 +25,10 @@ pub struct MoveWithRating {
 }
 
 pub fn search_for_best_move(board: &Chessboard) {
-    let max_depth: u8 = 3;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     let mut checked_positions: HashSet<String> = HashSet::new();
-    if let (Some(best_move), calculations, checked, duplicates) = calculate(
+    if let (Some(best_move), calculations, checked) = calculate(
         board,
         &mut checked_positions,
         &mut -30000,
@@ -37,11 +37,10 @@ pub fn search_for_best_move(board: &Chessboard) {
         1,
     ) {
         println!(
-            "Calculated Positions {} - with Checks {} and Duplicates {} and took {:?}",
+            "Calculated Positions {} and took {:?} - with checks {}",
             calculations,
-            checked,
-            duplicates,
-            now.elapsed()
+            now.elapsed(),
+            checked
         );
         println!("Best Move Net Rating {:?}", &best_move.rating);
         send_move(&best_move.from, &best_move.to);
@@ -55,26 +54,20 @@ fn calculate(
     beta: &mut i16,
     max_depth: u8,
     depth: u8,
-) -> (Option<MoveWithRating>, u64, u64, u64) {
+) -> (Option<MoveWithRating>, u64, u64) {
     // get moves from opponent to check for castle rights
     let opponent_moves: Vec<usize> = get_fields_thread_by_opponent(&board);
     let moves: Vec<PossibleMove> =
         get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves);
+
     let mut best_move_rating: i16 = init_best_move(&board.current_move);
     let mut best_move: Option<MoveWithRating> = None;
     let mut calculated_positions: u64 = 0;
     let mut checked: u64 = 0;
-    let mut duplicates: u64 = 0;
 
     for single in moves.iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to);
-
-        let duplicate_position =
-            !check_if_position_should_be_calculated(&new_board, checked_positions);
-        if duplicate_position {
-            duplicates += 1;
-        }
 
         let self_in_check = check_if_checked(&new_board);
 
@@ -84,73 +77,47 @@ fn calculate(
             checked += 1;
         }
 
-        if !self_in_check && !duplicate_position {
-            if depth < max_depth {
-                if let (Some(move_evaluation), calculated_moves, checked_moves, duplicate_moves) =
-                    calculate(
-                        &new_board,
-                        checked_positions,
-                        alpha,
-                        beta,
-                        max_depth,
-                        depth + 1,
-                    )
-                {
-                    calculated_positions += calculated_moves;
-                    checked += checked_moves;
-                    duplicates += duplicate_moves;
+        if depth < max_depth {
+            if let (Some(move_evaluation), calculated_moves, calculated_checks) = calculate(
+                &new_board,
+                checked_positions,
+                alpha,
+                beta,
+                max_depth,
+                depth + 1,
+            ) {
+                calculated_positions += calculated_moves;
+                checked += calculated_checks;
 
-                    // alpha beta prunning
-                    if false && board.current_move.eq(&Color::White) {
-                        if move_evaluation.rating.net_rating > *beta {
-                            break;
-                        }
-                        if move_evaluation.rating.net_rating > *alpha {
-                            *alpha = move_evaluation.rating.net_rating;
-                        }
-                    }
-                    if false && board.current_move.eq(&Color::Black) {
-                        if move_evaluation.rating.net_rating < *alpha {
-                            break;
-                        }
-                        if move_evaluation.rating.net_rating < *beta {
-                            *beta = move_evaluation.rating.net_rating;
-                        }
-                    }
-
-                    if check_if_is_better_move(
-                        &board.current_move,
-                        best_move_rating,
-                        move_evaluation.rating.net_rating,
-                    ) {
-                        best_move_rating = move_evaluation.rating.net_rating;
-                        best_move = Some(MoveWithRating {
-                            from: single.from,
-                            to: single.to,
-                            rating: move_evaluation.rating,
-                        });
-                    }
-                }
-            } else {
-                let evaluation = evaluate(&new_board);
-                calculated_positions += 1;
                 if check_if_is_better_move(
                     &board.current_move,
                     best_move_rating,
-                    evaluation.net_rating,
+                    move_evaluation.rating.net_rating,
                 ) {
-                    best_move_rating = evaluation.net_rating;
+                    best_move_rating = move_evaluation.rating.net_rating;
                     best_move = Some(MoveWithRating {
                         from: single.from,
                         to: single.to,
-                        rating: evaluation,
+                        rating: move_evaluation.rating,
                     });
                 }
+            }
+        } else {
+            let evaluation = evaluate(&new_board);
+            calculated_positions += 1;
+            if check_if_is_better_move(&board.current_move, best_move_rating, evaluation.net_rating)
+            {
+                best_move_rating = evaluation.net_rating;
+                best_move = Some(MoveWithRating {
+                    from: single.from,
+                    to: single.to,
+                    rating: evaluation,
+                });
             }
         }
     }
 
-    return (best_move, calculated_positions, checked, duplicates);
+    return (best_move, calculated_positions, checked);
 }
 
 fn init_best_move(turn: &Color) -> i16 {
