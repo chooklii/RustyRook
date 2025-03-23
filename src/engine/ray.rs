@@ -1,5 +1,3 @@
-// File Contains Logic to check for possible pinned Figures
-
 use crate::{
     board::board::Chessboard,
     helper::movement::{
@@ -10,21 +8,17 @@ use crate::{
     },
 };
 
+// File Contains Logic to check for possible pinned Figures
+
 // Opposite Ray-Directions
-pub fn get_pinned_pieces(board: &Chessboard) -> Vec<usize> {
+pub fn get_pinned_pieces(board: &Chessboard, king_position: &usize) -> Vec<usize> {
     let mut pinned_pieces: Vec<usize> = Vec::new();
 
-    if let Some((position, _)) = board
-        .get_next_player_figures()
-        .iter()
-        .find(|x| x.1.is_king())
-    {
-        let mut figures_pinned_by_rooks = rock_pins(board, position);
-        pinned_pieces.append(&mut figures_pinned_by_rooks);
+    let mut figures_pinned_by_rooks = rock_pins(board, king_position);
+    pinned_pieces.append(&mut figures_pinned_by_rooks);
 
-        let mut figures_pinned_by_bishop = bishop_pins(board, position);
-        pinned_pieces.append(&mut figures_pinned_by_bishop);
-    }
+    let mut figures_pinned_by_bishop = bishop_pins(board, king_position);
+    pinned_pieces.append(&mut figures_pinned_by_bishop);
 
     pinned_pieces
 }
@@ -275,7 +269,7 @@ mod tests {
         // white dummy move to give the move to black
         board.move_figure(8, 16);
 
-        let pinned = get_pinned_pieces(&board);
+        let pinned = get_pinned_pieces(&board, &60);
         // e pawn and knight on 42
         assert_eq!(2, pinned.len());
     }

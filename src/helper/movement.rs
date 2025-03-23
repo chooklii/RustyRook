@@ -14,7 +14,6 @@ pub fn figure_can_move_backward(field: &usize) -> bool{
     field >=&8
 }
 
-
 // bishop movements
 
 pub fn figure_can_move_forward_and_left(field: &usize) -> bool{

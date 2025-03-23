@@ -10,7 +10,7 @@ use crate::{
     engine::ray::get_pinned_pieces
 };
 
-use super::sender::send_move;
+use super::{checked::get_fields_to_prevent_check, sender::send_move};
 
 #[derive(Debug)]
 pub struct PossibleMove {
@@ -43,6 +43,10 @@ pub fn search_for_best_move(board: &Chessboard) {
     }
 }
 
+fn get_own_king(board: &Chessboard) -> (&usize, &Figure){
+    // if at any point there is no king for the color its prob. better to fail anyways (unwrap)
+    board.get_next_player_figures().iter().find(|fig| fig.1.is_king()).unwrap()
+}
 
 fn calculate(
     board: &Chessboard,
@@ -50,12 +54,22 @@ fn calculate(
     max_depth: u8,
     depth: u8,
 ) -> (Option<MoveWithRating>, u64, u64) {
-    // get moves from opponent to check for castle rights
+    // get moves from opponent
     let opponent_moves: Vec<usize> = get_fields_thread_by_opponent(&board);
-    let moves: Vec<PossibleMove> =
-        get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves);
+    let moves: Vec<PossibleMove> = get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves);
 
-    let own_pinned_pieces = get_pinned_pieces(board);
+    // if opponent moves include own king -> we are in check
+    let (king_position, own_king) = get_own_king(board);
+
+    let is_in_check = opponent_moves.contains(king_position);
+    let possible_fields_to_remove_check: Vec<usize> = if is_in_check{
+        get_fields_to_prevent_check(board, king_position, &opponent_moves)
+    }else{
+        Vec::new()
+    };
+
+
+    let own_pinned_pieces = get_pinned_pieces(board, king_position);
     let not_pinned_moves: Vec<&PossibleMove> = moves.iter().filter(|x| !own_pinned_pieces.contains(&x.from)).collect();
 
     let mut best_move_rating: i16 = init_best_move(&board.current_move);
