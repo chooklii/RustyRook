@@ -1,6 +1,6 @@
 use crate::board::board::Chessboard;
 
-use super::{color::Color, rock::get_rook_moves, bishop::get_bishop_moves};
+use super::{color::Color, rook::get_rook_moves, bishop::get_bishop_moves};
 
 
 

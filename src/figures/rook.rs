@@ -3,7 +3,7 @@ use crate::figures::color::Color;
 use crate::helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right};
 
 #[derive(Default, Clone)]
-pub struct Rock {
+pub struct Rook {
     pub color: Color,
     pub has_moved: bool,
 }
@@ -87,7 +87,7 @@ fn move_right(board: &Chessboard,color: &Color, own_position: &usize, positions:
     }
 }
 
-impl Rock {
+impl Rook {
     pub fn set_moved(&mut self) {
         self.has_moved = true;
     }
@@ -110,7 +110,7 @@ mod tests {
 
         positions.set(24, true);
         positions.set(1, true);
-        let figure = Rock {
+        let figure = Rook {
             ..Default::default()
         };
         let board = Chessboard {
@@ -129,7 +129,7 @@ mod tests {
         positions.set(18, true);
         positions.set(25, true);
         positions.set(27, true);
-        let figure = Rock {
+        let figure = Rook {
             color: Color::Black,
             ..Default::default()
         };
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_movement_on_empty_board() {
-        let figure = Rock {
+        let figure = Rook {
             color: Color::Black,
             ..Default::default()
         };

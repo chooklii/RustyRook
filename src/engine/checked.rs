@@ -202,7 +202,7 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::figures::{bishop::Bishop, color::Color, figures::Figure, king::King, rock::Rock};
+    use crate::figures::{bishop::Bishop, color::Color, figures::Figure, king::King, rook::Rook};
 
     use super::*;
 
@@ -227,7 +227,7 @@ mod tests {
         );
         board.black_figures.insert(
             16,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 color: Color::Black,
                 ..Default::default()
             }),

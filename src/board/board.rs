@@ -3,7 +3,7 @@ use std::{collections::HashMap, usize};
 use bitmaps::Bitmap;
 use regex::Regex;
 
-use crate::{figures::{bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rock::Rock}, helper::movement::{figure_can_move_left, figure_can_move_right}};
+use crate::{figures::{bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rook::Rook}, helper::movement::{figure_can_move_left, figure_can_move_right}};
 
 
 #[derive(Clone)]
@@ -297,14 +297,14 @@ impl Chessboard{
         
         
         // white
-        self.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        self.white_figures.insert(0, Figure::Rook(Rook{..Default::default()}));
         self.white_figures.insert(1, Figure::Knight(Knight{..Default::default()}));
         self.white_figures.insert(2, Figure::Bishop(Bishop{..Default::default()}));
         self.white_figures.insert(3, Figure::Queen(Queen{..Default::default()}));
         self.white_figures.insert(4, Figure::King(King{..Default::default()}));
         self.white_figures.insert(5, Figure::Bishop(Bishop{..Default::default()}));
         self.white_figures.insert(6, Figure::Knight(Knight{..Default::default()}));
-        self.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
+        self.white_figures.insert(7, Figure::Rook(Rook{..Default::default()}));
         self.white_figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
         self.white_figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
         self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
@@ -323,14 +323,14 @@ impl Chessboard{
         self.black_figures.insert(53, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(54, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(56, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(56, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(57, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(58, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(59, Figure::Queen(Queen{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(60, Figure::King(King{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(61, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(62, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(63, Figure::Rock(Rock{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(63, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
     }
 }
 
@@ -349,9 +349,9 @@ mod tests {
             en_passant: None
         };
 
-        board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(0, Figure::Rook(Rook{..Default::default()}));
         board.white_figures.insert(4, Figure::King(King{..Default::default()}));
-        board.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(7, Figure::Rook(Rook{..Default::default()}));
         board.positions.set(0, true);
         board.positions.set(4, true);
         board.positions.set(7, true);
@@ -373,9 +373,9 @@ mod tests {
             en_passant: None
         };
 
-        board.white_figures.insert(0, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(0, Figure::Rook(Rook{..Default::default()}));
         board.white_figures.insert(4, Figure::King(King{..Default::default()}));
-        board.white_figures.insert(7, Figure::Rock(Rock{..Default::default()}));
+        board.white_figures.insert(7, Figure::Rook(Rook{..Default::default()}));
         board.positions.set(0, true);
         board.positions.set(4, true);
         board.positions.set(7, true);
@@ -397,9 +397,9 @@ mod tests {
             en_passant: None
         };
 
-        board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(56, Figure::Rook(Rook{..Default::default()}));
         board.black_figures.insert(60, Figure::King(King{..Default::default()}));
-        board.black_figures.insert(63, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(63, Figure::Rook(Rook{..Default::default()}));
         board.positions.set(56, true);
         board.positions.set(60, true);
         board.positions.set(63, true);
@@ -421,9 +421,9 @@ mod tests {
             en_passant: None
         };
 
-        board.black_figures.insert(56, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(56, Figure::Rook(Rook{..Default::default()}));
         board.black_figures.insert(60, Figure::King(King{..Default::default()}));
-        board.black_figures.insert(63, Figure::Rock(Rock{..Default::default()}));
+        board.black_figures.insert(63, Figure::Rook(Rook{..Default::default()}));
         board.positions.set(56, true);
         board.positions.set(60, true);
         board.positions.set(63, true);

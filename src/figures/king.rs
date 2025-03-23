@@ -135,7 +135,7 @@ impl King {
 
 #[cfg(test)]
 mod tests {
-    use crate::figures::{figures::Figure, rock::Rock};
+    use crate::figures::{figures::Figure, rook::Rook};
     use bitmaps::Bitmap;
     use std::collections::HashMap;
 
@@ -178,13 +178,13 @@ mod tests {
 
         white_figures.insert(
             0,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );
         white_figures.insert(
             7,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );
@@ -219,13 +219,13 @@ mod tests {
         let mut white_figures: HashMap<usize, Figure> = HashMap::new();
         white_figures.insert(
             0,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );
         white_figures.insert(
             7,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );
@@ -263,13 +263,13 @@ mod tests {
         let mut white_figures: HashMap<usize, Figure> = HashMap::new();
         white_figures.insert(
             0,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );
         white_figures.insert(
             7,
-            Figure::Rock(Rock {
+            Figure::Rook(Rook {
                 ..Default::default()
             }),
         );

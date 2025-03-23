@@ -1,10 +1,10 @@
 use crate::board::board::Chessboard;
-use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rock::Rock, bishop::Bishop, king::King};
+use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rook::Rook, bishop::Bishop, king::King};
 
 #[derive(Clone)]
 pub enum Figure {
     Pawn(Pawn),
-    Rock(Rock),
+    Rook(Rook),
     Bishop(Bishop),
     Knight(Knight),
     Queen(Queen),
@@ -15,7 +15,7 @@ impl Figure {
     pub fn set_moved(&mut self) {
         match self {
             Figure::Pawn(pawn) => pawn.set_moved(),
-            Figure::Rock(rock) => rock.set_moved(),
+            Figure::Rook(rook) => rook.set_moved(),
             Figure::King(king) => king.set_moved(),
             // bishop, queen and knight dont care
             _ => (),
@@ -24,7 +24,7 @@ impl Figure {
 
     pub fn has_moved(&self) -> bool{
         match self {
-            Figure::Rock(rock) => rock.has_moved,
+            Figure::Rook(rook) => rook.has_moved,
             Figure::King(king) => king.has_moved,
             Figure::Pawn(pawn) => pawn.has_moved,
             _ => false
@@ -34,7 +34,7 @@ impl Figure {
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>) -> Vec<usize> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
-            Figure::Rock(rock) => rock.possible_moves(board, own_position),
+            Figure::Rook(rook) => rook.possible_moves(board, own_position),
             Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
             Figure::Knight(knight) => knight.possible_moves(board, own_position),
             Figure::Queen(queen) => queen.possible_moves(board, own_position),
@@ -49,7 +49,7 @@ impl Figure {
             Figure::Queen(_) => 9,
             Figure::Knight(_) => 3,
             Figure::Pawn(_) => 1,
-            Figure::Rock(_) => 5
+            Figure::Rook(_) => 5
         }
     }
 
@@ -60,7 +60,7 @@ impl Figure {
             Figure::Queen(_) => String::from("Q"),
             Figure::Knight(_) => String::from("H"), // Horse
             Figure::Pawn(_) => String::from("P"),
-            Figure::Rock(_) => String::from("R")
+            Figure::Rook(_) => String::from("R")
         }
     }
 
@@ -74,7 +74,7 @@ impl Figure {
 
     pub fn is_rook(&self) -> bool{
         match self{
-            Figure::Rock(_) => true,
+            Figure::Rook(_) => true,
             _ => false
         }
     }

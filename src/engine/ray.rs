@@ -14,7 +14,7 @@ use crate::{
 pub fn get_pinned_pieces(board: &Chessboard, king_position: &usize) -> Vec<usize> {
     let mut pinned_pieces: Vec<usize> = Vec::new();
 
-    let mut figures_pinned_by_rooks = rock_pins(board, king_position);
+    let mut figures_pinned_by_rooks = rook_pins(board, king_position);
     pinned_pieces.append(&mut figures_pinned_by_rooks);
 
     let mut figures_pinned_by_bishop = bishop_pins(board, king_position);
@@ -126,7 +126,7 @@ fn possible_opponent_bishop_or_queen(
     return None;
 }
 
-fn rock_pins(board: &Chessboard, king_position: &usize) -> Vec<usize> {
+fn rook_pins(board: &Chessboard, king_position: &usize) -> Vec<usize> {
     let mut pieces_pined_by_rook: Vec<usize> = Vec::new();
 
     // left
@@ -164,7 +164,7 @@ fn get_pinned_piece_by_rook(
     backwards: bool,
 ) -> Option<usize> {
     if let Some(opponent_figure_in_line) =
-        possible_opponent_rock_or_queen(board, king_position, movement_check, next_field, backwards)
+        possible_opponent_rook_or_queen(board, king_position, movement_check, next_field, backwards)
     {
         return get_possible_pinned_piece(
             board,
@@ -178,7 +178,7 @@ fn get_pinned_piece_by_rook(
     return None;
 }
 
-// check for pins between opponent rock and own king
+// check for pins between opponent rook and own king
 // one opponent piece === no pin
 // more than one own piece == no pin
 // one own piece = pin
@@ -219,7 +219,7 @@ fn get_possible_pinned_piece(
     return possible_pinned_piece;
 }
 
-fn possible_opponent_rock_or_queen(
+fn possible_opponent_rook_or_queen(
     board: &Chessboard,
     field_position: &usize,
     movement_check: fn(&usize) -> bool,
@@ -237,7 +237,7 @@ fn possible_opponent_rock_or_queen(
                 return Some(field);
             }
         }
-        return possible_opponent_rock_or_queen(
+        return possible_opponent_rook_or_queen(
             board,
             &field,
             movement_check,
@@ -262,7 +262,7 @@ mod tests {
         board.move_figure(3, 33);
         // move black pawn forward
         board.move_figure(51, 35);
-        // white rock to pin center
+        // white rook to pin center
         board.move_figure(0, 20);
         // black knight into pin of queen
         board.move_figure(57, 42);
