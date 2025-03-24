@@ -87,7 +87,6 @@ fn get_pinned_piece_by_bishop(
         return get_possible_pinned_piece(
             board,
             opponent_figure_in_line,
-            // todo
             *king_position,
             next_field,
             backwards,
@@ -120,7 +119,7 @@ fn possible_opponent_bishop_or_queen(
             &field,
             movement_check,
             next_field,
-            negative,
+            negative
         );
     }
     return None;
@@ -169,7 +168,6 @@ fn get_pinned_piece_by_rook(
         return get_possible_pinned_piece(
             board,
             opponent_figure_in_line,
-            // todo
             *king_position,
             next_field,
             backwards,

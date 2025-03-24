@@ -9,33 +9,39 @@ use crate::{
     },
 };
 
-// get all the fields we can place a figure to prevent a active check by the opponent
+// get all the fields we can place a figure (not king) to prevent a active check by the opponent
 pub fn get_fields_to_prevent_check(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
 ) -> Vec<usize> {
-    let mut possible_fields: Vec<usize> = Vec::new();
-
     let count_of_checks = opponent_moves
         .iter()
         .filter(|field| field.eq(&king_position))
         .count();
     // if there is more than one check only moving the king can save us
     if count_of_checks > 1 {
-        return possible_fields;
+        return Vec::new();
     }
     if let Some(rook_checking_field) =
-        check_and_get_rook_movement_check_field(board, king_position, opponent_moves)
-    {
-        return possible_fields;
+        check_and_get_rook_movement_check_field(board, king_position, opponent_moves){
+        return rook_checking_field;
     } else if let Some(bishop_checking_field) =
-        check_and_get_bishop_movement_check_field(board, king_position, opponent_moves)
-    {
-        return possible_fields;
+        check_and_get_bishop_movement_check_field(board, king_position, opponent_moves){
+        return bishop_checking_field;
     }
 
-    possible_fields
+    Vec::new()
+}
+
+fn fields_between_figure_and_king(king_position: usize, attacker_position: usize, step: usize) -> Vec<usize>{
+    // exclude king position in both cases
+    if king_position > attacker_position{
+        return (attacker_position..king_position).step_by(step).collect();
+    }
+    else{
+        return (king_position+step..=attacker_position).step_by(step).collect();
+    }
 }
 
 fn is_rook_movement_figure(figure: &Figure) -> bool {
@@ -50,7 +56,7 @@ fn check_and_get_bishop_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-) -> Option<usize> {
+) -> Option<Vec<usize>> {
     // left forward
     if let Some(thread_position) = check_single_direction_check(
         board,
@@ -61,7 +67,7 @@ fn check_and_get_bishop_movement_check_field(
         7,
         false,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 7));
     }
     // left backward
     if let Some(thread_position) = check_single_direction_check(
@@ -73,7 +79,7 @@ fn check_and_get_bishop_movement_check_field(
         9,
         true,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 9));
     }
     // right forward
     if let Some(thread_position) = check_single_direction_check(
@@ -85,10 +91,10 @@ fn check_and_get_bishop_movement_check_field(
         9,
         false,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 9));
     }
     // right backwards
-    return check_single_direction_check(
+    if let Some(thread_position) = check_single_direction_check(
         board,
         king_position,
         opponent_moves,
@@ -96,14 +102,17 @@ fn check_and_get_bishop_movement_check_field(
         is_bishop_movement_figure,
         7,
         true,
-    );
+    ){
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 7));
+    }
+    return None;
 }
 
 fn check_and_get_rook_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-) -> Option<usize> {
+) -> Option<Vec<usize>> {
     // left
     if let Some(thread_position) = check_single_direction_check(
         board,
@@ -114,7 +123,7 @@ fn check_and_get_rook_movement_check_field(
         1,
         true,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 1));
     }
     // right
     if let Some(thread_position) = check_single_direction_check(
@@ -126,7 +135,7 @@ fn check_and_get_rook_movement_check_field(
         1,
         false,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 1));
     }
     // forward
     if let Some(thread_position) = check_single_direction_check(
@@ -138,10 +147,10 @@ fn check_and_get_rook_movement_check_field(
         8,
         false,
     ) {
-        return Some(thread_position);
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 8));
     }
     // backward
-    return check_single_direction_check(
+    if let Some(thread_position) =  check_single_direction_check(
         board,
         king_position,
         opponent_moves,
@@ -149,7 +158,10 @@ fn check_and_get_rook_movement_check_field(
         is_rook_movement_figure,
         8,
         true,
-    );
+    ){
+        return Some(fields_between_figure_and_king(*king_position, thread_position, 8));
+    }
+    return None;
 }
 
 fn check_single_direction_check(
@@ -170,8 +182,8 @@ fn check_single_direction_check(
     } else {
         field + step
     };
+    // field is not used by any player and opponent does attack it
     if !board.positions.get(field_to_check) && opponent_moves.contains(&field_to_check) {
-        // field is not attacked by opponent - thus rook check from this direction is not possible
         return check_single_direction_check(
             board,
             &field_to_check,
@@ -192,6 +204,7 @@ fn check_single_direction_check(
         // field is used by opponent - but not a figure threadning us
         return None;
     }
+    // field is used by us
     return None;
 }
 
@@ -238,8 +251,8 @@ mod tests {
         opponent_moves.push(18);
         opponent_moves.push(17);
         assert_eq!(
-            Some(16),
-            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves)
+            3,
+            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves).unwrap().len()
         );
     }
 
@@ -275,8 +288,8 @@ mod tests {
         opponent_moves.push(28);
         opponent_moves.push(19);
         assert_eq!(
-            Some(55),
-            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves)
+            4,
+            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves).unwrap().len()
         );
     }
 }
