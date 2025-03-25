@@ -1,6 +1,6 @@
 use crate::{
     board::board::Chessboard,
-    figures::figures::Figure,
+    figures::{color::Color, figures::Figure},
     helper::movement::{
         figure_can_move_backward, figure_can_move_backward_and_left,
         figure_can_move_backward_and_right, figure_can_move_forward,
@@ -24,23 +24,35 @@ pub fn get_fields_to_prevent_check(
         return Vec::new();
     }
     if let Some(rook_checking_field) =
-        check_and_get_rook_movement_check_field(board, king_position, opponent_moves){
+        check_and_get_rook_movement_check_field(board, king_position, opponent_moves)
+    {
         return rook_checking_field;
     } else if let Some(bishop_checking_field) =
-        check_and_get_bishop_movement_check_field(board, king_position, opponent_moves){
+        check_and_get_bishop_movement_check_field(board, king_position, opponent_moves)
+    {
         return bishop_checking_field;
+    } else if let Some(knight_check_field) = check_and_get_knight_check_field(board, king_position)
+    {
+        return vec![knight_check_field];
+    } else if let Some(pawn_check_field) = check_and_get_pawn_check_field(board, king_position) {
+        return vec![pawn_check_field];
     }
 
     Vec::new()
 }
 
-fn fields_between_figure_and_king(king_position: usize, attacker_position: usize, step: usize) -> Vec<usize>{
+fn fields_between_figure_and_king(
+    king_position: usize,
+    attacker_position: usize,
+    step: usize,
+) -> Vec<usize> {
     // exclude king position in both cases
-    if king_position > attacker_position{
+    if king_position > attacker_position {
         return (attacker_position..king_position).step_by(step).collect();
-    }
-    else{
-        return (king_position+step..=attacker_position).step_by(step).collect();
+    } else {
+        return (king_position + step..=attacker_position)
+            .step_by(step)
+            .collect();
     }
 }
 
@@ -67,7 +79,11 @@ fn check_and_get_bishop_movement_check_field(
         7,
         false,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 7));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            7,
+        ));
     }
     // left backward
     if let Some(thread_position) = check_single_direction_check(
@@ -79,7 +95,11 @@ fn check_and_get_bishop_movement_check_field(
         9,
         true,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 9));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            9,
+        ));
     }
     // right forward
     if let Some(thread_position) = check_single_direction_check(
@@ -91,7 +111,11 @@ fn check_and_get_bishop_movement_check_field(
         9,
         false,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 9));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            9,
+        ));
     }
     // right backwards
     if let Some(thread_position) = check_single_direction_check(
@@ -102,8 +126,12 @@ fn check_and_get_bishop_movement_check_field(
         is_bishop_movement_figure,
         7,
         true,
-    ){
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 7));
+    ) {
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            7,
+        ));
     }
     return None;
 }
@@ -123,7 +151,11 @@ fn check_and_get_rook_movement_check_field(
         1,
         true,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 1));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            1,
+        ));
     }
     // right
     if let Some(thread_position) = check_single_direction_check(
@@ -135,7 +167,11 @@ fn check_and_get_rook_movement_check_field(
         1,
         false,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 1));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            1,
+        ));
     }
     // forward
     if let Some(thread_position) = check_single_direction_check(
@@ -147,10 +183,14 @@ fn check_and_get_rook_movement_check_field(
         8,
         false,
     ) {
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 8));
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            8,
+        ));
     }
     // backward
-    if let Some(thread_position) =  check_single_direction_check(
+    if let Some(thread_position) = check_single_direction_check(
         board,
         king_position,
         opponent_moves,
@@ -158,8 +198,12 @@ fn check_and_get_rook_movement_check_field(
         is_rook_movement_figure,
         8,
         true,
-    ){
-        return Some(fields_between_figure_and_king(*king_position, thread_position, 8));
+    ) {
+        return Some(fields_between_figure_and_king(
+            *king_position,
+            thread_position,
+            8,
+        ));
     }
     return None;
 }
@@ -208,6 +252,133 @@ fn check_single_direction_check(
     return None;
 }
 
+fn check_and_get_knight_check_field(board: &Chessboard, king_position: &usize) -> Option<usize> {
+    let can_move_one_left = figure_can_move_left(king_position);
+    let can_move_one_right = figure_can_move_right(king_position);
+    let can_move_one_backward = figure_can_move_backward(king_position);
+    let can_move_one_forward = figure_can_move_forward(king_position);
+
+    let can_move_two_left = can_move_one_left && king_position % 8 != 1;
+    let can_move_two_right = can_move_one_right && king_position % 8 != 6;
+    let can_move_two_backward = can_move_one_backward && king_position >= &16;
+    let can_move_two_forward = can_move_one_forward && king_position <= &47;
+
+    if can_move_two_left {
+        if can_move_one_backward {
+            if field_is_used_by_opponent_knight(board, king_position - 10) {
+                return Some(king_position - 10);
+            }
+        }
+        if can_move_one_forward {
+            if field_is_used_by_opponent_knight(board, king_position + 6) {
+                return Some(king_position + 6);
+            }
+        }
+    }
+    if can_move_two_right {
+        if can_move_one_backward {
+            if field_is_used_by_opponent_knight(board, king_position - 6) {
+                return Some(king_position - 6);
+            }
+        }
+        if can_move_one_forward {
+            if field_is_used_by_opponent_knight(board, king_position + 10) {
+                return Some(king_position + 10);
+            }
+        }
+    }
+    if can_move_two_backward {
+        if can_move_one_left {
+            if field_is_used_by_opponent_knight(board, king_position - 17) {
+                return Some(king_position - 17);
+            }
+        }
+        if can_move_one_right {
+            if field_is_used_by_opponent_knight(board, king_position - 15) {
+                return Some(king_position - 15);
+            }
+        }
+    }
+    if can_move_two_forward {
+        if can_move_one_left {
+            if field_is_used_by_opponent_knight(board, king_position + 15) {
+                return Some(king_position + 15);
+            }
+        }
+        if can_move_one_right {
+            if field_is_used_by_opponent_knight(board, king_position + 17) {
+                return Some(king_position + 17);
+            }
+        }
+    }
+    return None;
+}
+
+fn field_is_used_by_opponent_knight(board: &Chessboard, position: usize) -> bool {
+    if let Some(figure) = board.get_opponents(&board.current_move).get(&position) {
+        return figure.is_knight();
+    }
+    return false;
+}
+
+fn check_and_get_pawn_check_field(board: &Chessboard, position: &usize) -> Option<usize> {
+    match board.current_move {
+        Color::White => check_and_get_pawn_check_field_white(board, position),
+        Color::Black => check_and_get_pawn_check_field_black(board, position),
+    }
+}
+
+fn check_and_get_pawn_check_field_black(board: &Chessboard, position: &usize) -> Option<usize> {
+    // king is - for whatever reason :D - on a1-h1
+    if !figure_can_move_backward(&position) {
+        return None;
+    }
+    // left
+    if let Some(figure) = board
+        .get_opponents(&board.current_move)
+        .get(&(position - 9))
+    {
+        if figure.is_pawn() {
+            return Some(position - 9);
+        };
+    }
+    // right
+    if let Some(figure) = board
+        .get_opponents(&board.current_move)
+        .get(&(position - 7))
+    {
+        if figure.is_pawn() {
+            return Some(position - 7);
+        };
+    }
+    return None;
+}
+
+fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) -> Option<usize> {
+    if !figure_can_move_forward(&position) {
+        return None;
+    }
+    // left
+    if let Some(figure) = board
+        .get_opponents(&board.current_move)
+        .get(&(position + 7))
+    {
+        if figure.is_pawn() {
+            return Some(position + 7);
+        };
+    }
+    // right
+    if let Some(figure) = board
+        .get_opponents(&board.current_move)
+        .get(&(position + 9))
+    {
+        if figure.is_pawn() {
+            return Some(position + 9);
+        };
+    }
+    return None;
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -215,7 +386,9 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::figures::{bishop::Bishop, color::Color, figures::Figure, king::King, rook::Rook};
+    use crate::figures::{
+        bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, rook::Rook
+    };
 
     use super::*;
 
@@ -252,7 +425,9 @@ mod tests {
         opponent_moves.push(17);
         assert_eq!(
             3,
-            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves).unwrap().len()
+            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves)
+                .unwrap()
+                .len()
         );
     }
 
@@ -289,7 +464,75 @@ mod tests {
         opponent_moves.push(19);
         assert_eq!(
             4,
-            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves).unwrap().len()
+            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves)
+                .unwrap()
+                .len()
         );
+    }
+
+    #[test]
+    fn test_pawn_check_white() {
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            ..Default::default()
+        };
+
+        board.positions.set(19, true);
+        board.positions.set(26, true);
+
+        board.white_figures.insert(
+            19,
+            Figure::King(King {
+                ..Default::default()
+            }),
+        );
+        board.black_figures.insert(
+            26,
+            Figure::Pawn(Pawn {
+                color: Color::Black,
+                ..Default::default()
+            }),
+        );
+
+        let opponent_moves: Vec<usize> = Vec::new();
+        let result = get_fields_to_prevent_check(&board, &19, &opponent_moves);
+        assert_eq!(1, result.len());
+        assert_eq!(true, result.contains(&26))
+    }
+
+    #[test]
+    fn test_knigh_check_black() {
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            ..Default::default()
+        };
+
+        board.positions.set(8, true);
+        board.positions.set(18, true);
+
+        board.black_figures.insert(
+            8,
+            Figure::King(King {
+                color: Color::Black,
+                ..Default::default()
+            }),
+        );
+        board.white_figures.insert(
+            18,
+            Figure::Knight(Knight {
+                color: Color::White,
+                ..Default::default()
+            }),
+        );
+
+        let opponent_moves: Vec<usize> = Vec::new();
+        let result = get_fields_to_prevent_check(&board, &8, &opponent_moves);
+        assert_eq!(1, result.len());
+        assert_eq!(true, result.contains(&18))
     }
 }

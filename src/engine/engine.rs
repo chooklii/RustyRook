@@ -89,7 +89,6 @@ fn calculate(
     let mut calculated_positions: u64 = 0;
 
     let (valid_moves, is_in_check) = get_valid_moves_in_position(board); 
-
     if is_in_check && valid_moves.is_empty(){
         // checkmate
     }else if valid_moves.is_empty() && !is_in_check {

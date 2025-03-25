@@ -99,4 +99,11 @@ impl Figure {
             _ => false
         }
     }
+
+    pub fn is_knight(&self) -> bool{
+        match self{
+            Figure::Knight(_) => true,
+            _ => false
+        }
+    }
 }
