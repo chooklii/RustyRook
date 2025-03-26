@@ -4,9 +4,19 @@ use crate::board::board::Chessboard;
 
 #[derive(PartialEq, Eq, PartialOrd, Clone, Debug, Copy)]
 pub struct Evaluation {
-    white_pieces_value: u8,
-    black_pieces_value: u8,
+    pub white_pieces_value: u8,
+    pub black_pieces_value: u8,
     pub net_rating: i16
+}
+
+impl Default for Evaluation{
+    fn default() -> Evaluation {
+        Evaluation{
+            white_pieces_value: 0,
+            black_pieces_value: 0,
+            net_rating: 0
+        }
+    }
 }
 
 impl Ord for Evaluation {

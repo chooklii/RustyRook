@@ -1,8 +1,9 @@
-use std::io::{self};
+use std::{collections::HashMap, io::{self}};
 use board::board::Chessboard;
 use engine::engine::search_for_best_move;
 use simple_file_logger::init_logger;
 use log::info;
+use helper::moves_by_field::{get_moves_for_each_field, MoveInEveryDirection};
 
 mod board;
 mod figures;
@@ -16,14 +17,14 @@ fn main(){
     parse_input();
 }
 
-fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard){
+fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard),
-        "go" => make_move(&chessboard),
+        "go" => make_move(&chessboard, &moves_by_field),
         "quit" => quit(),
         _ => quit()
     }
@@ -39,8 +40,8 @@ fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
     }
 }
 
-fn make_move(board: &Chessboard){
-    search_for_best_move(&board);
+fn make_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+    search_for_best_move(&board, &moves_by_field);
 }
 
 fn quit(){
@@ -64,12 +65,14 @@ fn send_uci_message(){
 // recieve input from UCI
 fn parse_input() -> String{
     let mut chessboard = Chessboard{..Default::default()};
+    // can prob be made static - but in some way is static :D
+    let moves_by_field = get_moves_for_each_field();
     loop{
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard);
+        map_input_to_action(commands, &mut chessboard, &moves_by_field);
     }
 
 }

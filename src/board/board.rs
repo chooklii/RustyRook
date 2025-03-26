@@ -286,7 +286,36 @@ impl Chessboard{
         self.white_figures = HashMap::new();
         self.current_move = Color::White;
 
-         
+        if false {
+
+        self.positions.set(25, true);
+        self.positions.set(32, true);
+        self.positions.set(33, true);
+        self.positions.set(12, true);
+        self.positions.set(14, true);
+
+        self.positions.set(50, true);
+        self.positions.set(43, true);
+        self.positions.set(39, true);
+        self.positions.set(31, true);
+        self.positions.set(29, true);
+        // white
+        self.white_figures.insert(25, Figure::Rook(Rook{..Default::default()}));
+        self.white_figures.insert(32, Figure::King(King{..Default::default()}));
+        self.white_figures.insert(33, Figure::Pawn(Pawn{has_moved: true, ..Default::default()}));
+        self.white_figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
+        self.white_figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
+
+        // black
+        self.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(43, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(29, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(39, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(31, Figure::King(King{color: Color::Black, ..Default::default()}));
+        return
+        
+        }
+
         for n in 0..16{
             self.positions.set(n, true);
         }

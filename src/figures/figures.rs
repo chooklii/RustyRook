@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use crate::board::board::Chessboard;
 use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rook::Rook, bishop::Bishop, king::King};
+use crate::helper::moves_by_field::{self, MoveInEveryDirection};
 
 #[derive(Clone)]
 pub enum Figure {
@@ -31,16 +35,27 @@ impl Figure {
         }   
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>) -> Vec<usize> {
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
-            Figure::Rook(rook) => rook.possible_moves(board, own_position),
+            Figure::Rook(rook) => rook.possible_moves(board, own_position, moves_by_field),
             Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
             Figure::Knight(knight) => knight.possible_moves(board, own_position),
-            Figure::Queen(queen) => queen.possible_moves(board, own_position),
+            Figure::Queen(queen) => queen.possible_moves(board, own_position, &moves_by_field),
             Figure::King(king) => king.possible_moves(board, own_position, &opponent_moves)
         }
     }
+
+    pub fn threadned_fields(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+        match self {
+            Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
+            Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
+            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
+            Figure::Knight(knight) => knight.possible_moves(board, own_position),
+            Figure::Queen(queen) => queen.possible_moves(board, own_position, &moves_by_field),
+            Figure::King(king) => king.possible_moves(board, own_position, &Vec::new())
+        }
+    } 
 
     pub fn get_weight(&self) -> u8{
         match self{
