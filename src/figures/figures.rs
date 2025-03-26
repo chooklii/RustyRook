@@ -38,9 +38,9 @@ impl Figure {
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
-            Figure::Rook(rook) => rook.possible_moves(board, own_position, moves_by_field),
-            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
-            Figure::Knight(knight) => knight.possible_moves(board, own_position),
+            Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
+            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position, &moves_by_field),
+            Figure::Knight(knight) => knight.possible_moves(board, own_position, &moves_by_field),
             Figure::Queen(queen) => queen.possible_moves(board, own_position, &moves_by_field),
             Figure::King(king) => king.possible_moves(board, own_position, &opponent_moves)
         }
@@ -50,8 +50,8 @@ impl Figure {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
             Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
-            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position),
-            Figure::Knight(knight) => knight.possible_moves(board, own_position),
+            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position, &moves_by_field),
+            Figure::Knight(knight) => knight.possible_moves(board, own_position, &moves_by_field),
             Figure::Queen(queen) => queen.possible_moves(board, own_position, &moves_by_field),
             Figure::King(king) => king.possible_moves(board, own_position, &Vec::new())
         }

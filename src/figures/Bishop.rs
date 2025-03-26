@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
-use crate::helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right};
+use crate::helper::moves_by_field::MoveInEveryDirection;
 
 #[derive(Default, Clone)]
 pub struct Bishop {
@@ -8,86 +10,88 @@ pub struct Bishop {
 }
 
 // Queen is a Bishop as well - reuse this
-pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize) -> Vec<usize>{
-    let mut moves = Vec::new();
-    move_back_left(board, color, position, &mut moves);
-    move_forward_left(board,color, position, &mut moves);
-    move_backward_right(board,color, position, &mut moves);
-    move_forward_right(board,color, position, &mut moves);
-    moves
-}
+pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize>{
+    let mut possible_moves = Vec::new();
 
-fn move_back_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if figure_can_move_left(own_position) && figure_can_move_backward(own_position){
-        let next_position = own_position - 9;
-        if board.positions.get(next_position) {
-            if board
-                .get_opponents(color)
-                .contains_key(&next_position)
-            {
-                moves.push(next_position);
-            }
-        } else {
-            moves.push(next_position);
-            move_back_left(board, color, &next_position, moves);
-        }
+    if let Some(movement) = moves_by_field.get(position) {
+        get_moves_one_direction(
+            &board,
+            &color,
+            movement.left_forward,
+            &position,
+            &mut possible_moves,
+            calculate_left_forward_field
+        );
+        get_moves_one_direction(
+            &board,
+            &color,
+            movement.right_forward,
+            &position,
+            &mut possible_moves,
+            calculate_right_forward_field
+        );
+        get_moves_one_direction(
+            &board,
+            &color,
+            movement.left_back,
+            &position,
+            &mut possible_moves,
+            calculate_left_backward_field
+        );
+        get_moves_one_direction(
+            &board,
+            &color,
+            movement.right_back,
+            &position,
+            &mut possible_moves,
+            calculate_right_backward_field
+        );
     }
+    possible_moves
 }
 
-fn move_forward_left(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if figure_can_move_left(own_position) && figure_can_move_forward(own_position){
-        let next_position = own_position +7;
-        if board.positions.get(next_position) {
-            if board
-                .get_opponents(color)
-                .contains_key(&next_position)
-            {
-                moves.push(next_position);
-            }
-        } else {
-            moves.push(next_position);
-            move_forward_left(board, color, &next_position, moves);
-        }
-    }
+fn calculate_left_forward_field(rook_position: &usize, movement: usize) -> usize{
+    return rook_position + (movement*7);
 }
 
-fn move_forward_right(board: &Chessboard, color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if figure_can_move_right(own_position) && figure_can_move_forward(own_position){
-        let next_position = own_position + 9;
-        if board.positions.get(next_position) {
-            if board
-                .get_opponents(color)
-                .contains_key(&next_position)
-            {
-                moves.push(next_position);
-            }
-        } else {
-            moves.push(next_position);
-            move_forward_right(board, color, &next_position, moves);
-        }
-    }
+fn calculate_right_forward_field(rook_position: &usize, movement: usize) -> usize{
+    return rook_position + (movement*9);
 }
 
-fn move_backward_right(board: &Chessboard,color: &Color, own_position: &usize, moves: &mut Vec<usize>) {
-    if figure_can_move_right(own_position) && figure_can_move_backward(own_position){
-        let next_position = own_position -7;
-        if board.positions.get(next_position) {
-            if board
-                .get_opponents(color)
-                .contains_key(&next_position)
-            {
-                moves.push(next_position);
+fn calculate_left_backward_field(rook_position: &usize, movement: usize) -> usize{
+    return rook_position - (movement*9);
+}
+
+fn calculate_right_backward_field(rook_position: &usize, movement: usize) -> usize{
+    return rook_position - (movement*7);
+}
+
+
+fn get_moves_one_direction(
+    board: &Chessboard,
+    color: &Color,
+    direction_moves: usize,
+    rook_position: &usize,
+    positions: &mut Vec<usize>,
+    calculate_position: fn(&usize, usize) -> usize
+) {
+    for movement in 1_usize..=direction_moves {
+        // next field is full
+        let field = calculate_position(rook_position, movement);
+        if board.positions.get(field) {
+            // field is opponent - add it as well!
+            if board.get_opponents(color).contains_key(&field) {
+                positions.push(field)
             }
-        } else {
-            moves.push(next_position);
-            move_backward_right(board, color,&next_position, moves);
+            return;
         }
+        positions.push(field);
     }
 }
 
 impl Bishop {
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
-        get_bishop_moves(board, &self.color, own_position)
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+        get_bishop_moves(board, &self.color, &own_position, &moves_by_field)
     }
 }
 
@@ -95,11 +99,14 @@ impl Bishop {
 mod tests {
     use bitmaps::Bitmap;
 
+    use crate::helper::moves_by_field::get_moves_for_each_field;
+
     use super::*;
 
 
     #[test]
     fn move_empty_board(){
+        let possible_moves = get_moves_for_each_field();
         let figure = Bishop {
             ..Default::default()
         };
@@ -108,15 +115,17 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &27);
+        let moves = figure.possible_moves(&board, &27, &possible_moves);
         assert_eq!(13, moves.len());
 
-        let moves = figure.possible_moves(&board, &0);
+        let moves = figure.possible_moves(&board, &0, &possible_moves);
         assert_eq!(7, moves.len());
     }
 
     #[test]
     fn not_able_to_move(){
+        let possible_moves = get_moves_for_each_field();
+
         let figure = Bishop {
             ..Default::default()
         };
@@ -130,12 +139,13 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &18);
+        let moves = figure.possible_moves(&board, &18, &possible_moves);
         assert_eq!(0, moves.len()); 
     }
 
     #[test]
     fn able_to_move_in_two_directions(){
+        let possible_moves = get_moves_for_each_field();
         let figure = Bishop {
             ..Default::default()
         };
@@ -147,7 +157,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &20);
+        let moves = figure.possible_moves(&board, &20, &possible_moves);
         assert_eq!(6, moves.len()); 
     }
 

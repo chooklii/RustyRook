@@ -15,8 +15,8 @@ impl Queen{
 
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize>{
         // Queen is mix of Rook and Bishop
-        let mut bishop =  get_bishop_moves(board, &self.color, own_position);
-        let mut rook = get_rook_moves(board, &self.color, own_position, &moves_by_field);
+        let mut bishop =  get_bishop_moves(board, &self.color, &own_position, &moves_by_field);
+        let mut rook = get_rook_moves(board, &self.color, &own_position, &moves_by_field);
         bishop.append(&mut rook);
 
         bishop

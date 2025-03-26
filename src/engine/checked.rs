@@ -1,12 +1,14 @@
+use std::collections::HashMap;
+
 use crate::{
     board::board::Chessboard,
     figures::{color::Color, figures::Figure},
-    helper::movement::{
+    helper::{movement::{
         figure_can_move_backward, figure_can_move_backward_and_left,
         figure_can_move_backward_and_right, figure_can_move_forward,
         figure_can_move_forward_and_left, figure_can_move_forward_and_right, figure_can_move_left,
         figure_can_move_right,
-    },
+    }, moves_by_field::MoveInEveryDirection},
 };
 
 // get all the fields we can place a figure (not king) to prevent a active check by the opponent
@@ -14,6 +16,7 @@ pub fn get_fields_to_prevent_check(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>
 ) -> Vec<usize> {
     let count_of_checks = opponent_moves
         .iter()
@@ -31,7 +34,7 @@ pub fn get_fields_to_prevent_check(
         check_and_get_bishop_movement_check_field(board, king_position, opponent_moves)
     {
         return bishop_checking_field;
-    } else if let Some(knight_check_field) = check_and_get_knight_check_field(board, king_position)
+    } else if let Some(knight_check_field) = check_and_get_knight_check_field(board, king_position, &moves_by_field)
     {
         return vec![knight_check_field];
     } else if let Some(pawn_check_field) = check_and_get_pawn_check_field(board, king_position) {
@@ -252,62 +255,11 @@ fn check_single_direction_check(
     return None;
 }
 
-fn check_and_get_knight_check_field(board: &Chessboard, king_position: &usize) -> Option<usize> {
-    let can_move_one_left = figure_can_move_left(king_position);
-    let can_move_one_right = figure_can_move_right(king_position);
-    let can_move_one_backward = figure_can_move_backward(king_position);
-    let can_move_one_forward = figure_can_move_forward(king_position);
-
-    let can_move_two_left = can_move_one_left && king_position % 8 != 1;
-    let can_move_two_right = can_move_one_right && king_position % 8 != 6;
-    let can_move_two_backward = can_move_one_backward && king_position >= &16;
-    let can_move_two_forward = can_move_one_forward && king_position <= &47;
-
-    if can_move_two_left {
-        if can_move_one_backward {
-            if field_is_used_by_opponent_knight(board, king_position - 10) {
-                return Some(king_position - 10);
-            }
-        }
-        if can_move_one_forward {
-            if field_is_used_by_opponent_knight(board, king_position + 6) {
-                return Some(king_position + 6);
-            }
-        }
-    }
-    if can_move_two_right {
-        if can_move_one_backward {
-            if field_is_used_by_opponent_knight(board, king_position - 6) {
-                return Some(king_position - 6);
-            }
-        }
-        if can_move_one_forward {
-            if field_is_used_by_opponent_knight(board, king_position + 10) {
-                return Some(king_position + 10);
-            }
-        }
-    }
-    if can_move_two_backward {
-        if can_move_one_left {
-            if field_is_used_by_opponent_knight(board, king_position - 17) {
-                return Some(king_position - 17);
-            }
-        }
-        if can_move_one_right {
-            if field_is_used_by_opponent_knight(board, king_position - 15) {
-                return Some(king_position - 15);
-            }
-        }
-    }
-    if can_move_two_forward {
-        if can_move_one_left {
-            if field_is_used_by_opponent_knight(board, king_position + 15) {
-                return Some(king_position + 15);
-            }
-        }
-        if can_move_one_right {
-            if field_is_used_by_opponent_knight(board, king_position + 17) {
-                return Some(king_position + 17);
+fn check_and_get_knight_check_field(board: &Chessboard, king_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Option<usize> {
+    if let Some(moves) = moves_by_field.get(king_position){
+        for field in moves.knight_moves.iter(){
+            if field_is_used_by_opponent_knight(board, *field){
+                return Some(*field)
             }
         }
     }
@@ -386,9 +338,9 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::figures::{
+    use crate::{figures::{
         bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, rook::Rook
-    };
+    }, helper::moves_by_field::get_moves_for_each_field};
 
     use super::*;
 
@@ -472,6 +424,7 @@ mod tests {
 
     #[test]
     fn test_pawn_check_white() {
+        let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
             white_figures: HashMap::new(),
@@ -497,13 +450,14 @@ mod tests {
         );
 
         let opponent_moves: Vec<usize> = Vec::new();
-        let result = get_fields_to_prevent_check(&board, &19, &opponent_moves);
+        let result = get_fields_to_prevent_check(&board, &19, &opponent_moves, &moves_by_field);
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&26))
     }
 
     #[test]
     fn test_knigh_check_black() {
+        let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
             white_figures: HashMap::new(),
@@ -531,7 +485,7 @@ mod tests {
         );
 
         let opponent_moves: Vec<usize> = Vec::new();
-        let result = get_fields_to_prevent_check(&board, &8, &opponent_moves);
+        let result = get_fields_to_prevent_check(&board, &8, &opponent_moves, &moves_by_field);
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&18))
     }

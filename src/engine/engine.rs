@@ -27,7 +27,7 @@ pub struct MoveWithRating {
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 4;
+    let max_depth: u8 = 5;
     let now = SystemTime::now();
     let mut checked_positions: HashSet<String> = HashSet::new();
     if let (Some(best_move), calculations) = calculate(board, &mut checked_positions, moves_by_field, max_depth, 1)
@@ -64,7 +64,7 @@ fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usiz
 
     if is_in_check {
         let prevent_check_fields =
-            get_fields_to_prevent_check(board, king_position, &opponent_moves);
+            get_fields_to_prevent_check(board, king_position, &opponent_moves, &moves_by_field);
         // either figure is king (we allow all his moves - or figure can prevent check)
         moves = moves
             .into_iter()
