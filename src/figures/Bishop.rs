@@ -17,75 +17,48 @@ pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize, move
         get_moves_one_direction(
             &board,
             &color,
-            movement.left_forward,
-            &position,
+            &movement.left_forward,
             &mut possible_moves,
-            calculate_left_forward_field
         );
         get_moves_one_direction(
             &board,
             &color,
-            movement.right_forward,
-            &position,
+            &movement.right_forward,
             &mut possible_moves,
-            calculate_right_forward_field
         );
         get_moves_one_direction(
             &board,
             &color,
-            movement.left_back,
-            &position,
+            &movement.left_back,
             &mut possible_moves,
-            calculate_left_backward_field
         );
         get_moves_one_direction(
             &board,
             &color,
-            movement.right_back,
-            &position,
+            &movement.right_back,
             &mut possible_moves,
-            calculate_right_backward_field
         );
     }
     possible_moves
-}
-
-fn calculate_left_forward_field(rook_position: &usize, movement: usize) -> usize{
-    return rook_position + (movement*7);
-}
-
-fn calculate_right_forward_field(rook_position: &usize, movement: usize) -> usize{
-    return rook_position + (movement*9);
-}
-
-fn calculate_left_backward_field(rook_position: &usize, movement: usize) -> usize{
-    return rook_position - (movement*9);
-}
-
-fn calculate_right_backward_field(rook_position: &usize, movement: usize) -> usize{
-    return rook_position - (movement*7);
 }
 
 
 fn get_moves_one_direction(
     board: &Chessboard,
     color: &Color,
-    direction_moves: usize,
-    rook_position: &usize,
+    direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
-    calculate_position: fn(&usize, usize) -> usize
 ) {
-    for movement in 1_usize..=direction_moves {
+    for movement in direction_moves {
         // next field is full
-        let field = calculate_position(rook_position, movement);
-        if board.positions.get(field) {
+        if board.positions.get(*movement) {
             // field is opponent - add it as well!
-            if board.get_opponents(color).contains_key(&field) {
-                positions.push(field)
+            if board.get_opponents(color).contains_key(movement) {
+                positions.push(*movement)
             }
             return;
         }
-        positions.push(field);
+        positions.push(*movement);
     }
 }
 

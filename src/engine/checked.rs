@@ -3,12 +3,15 @@ use std::collections::HashMap;
 use crate::{
     board::board::Chessboard,
     figures::{color::Color, figures::Figure},
-    helper::{movement::{
-        figure_can_move_backward, figure_can_move_backward_and_left,
-        figure_can_move_backward_and_right, figure_can_move_forward,
-        figure_can_move_forward_and_left, figure_can_move_forward_and_right, figure_can_move_left,
-        figure_can_move_right,
-    }, moves_by_field::MoveInEveryDirection},
+    helper::{
+        movement::{
+            self, figure_can_move_backward, figure_can_move_backward_and_left,
+            figure_can_move_backward_and_right, figure_can_move_forward,
+            figure_can_move_forward_and_left, figure_can_move_forward_and_right,
+            figure_can_move_left, figure_can_move_right,
+        },
+        moves_by_field::MoveInEveryDirection,
+    },
 };
 
 // get all the fields we can place a figure (not king) to prevent a active check by the opponent
@@ -16,7 +19,7 @@ pub fn get_fields_to_prevent_check(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> Vec<usize> {
     let count_of_checks = opponent_moves
         .iter()
@@ -26,15 +29,22 @@ pub fn get_fields_to_prevent_check(
     if count_of_checks > 1 {
         return Vec::new();
     }
-    if let Some(rook_checking_field) =
-        check_and_get_rook_movement_check_field(board, king_position, opponent_moves)
-    {
+    if let Some(rook_checking_field) = check_and_get_rook_movement_check_field(
+        board,
+        king_position,
+        opponent_moves,
+        &moves_by_field,
+    ) {
         return rook_checking_field;
-    } else if let Some(bishop_checking_field) =
-        check_and_get_bishop_movement_check_field(board, king_position, opponent_moves)
-    {
+    } else if let Some(bishop_checking_field) = check_and_get_bishop_movement_check_field(
+        board,
+        king_position,
+        opponent_moves,
+        &moves_by_field,
+    ) {
         return bishop_checking_field;
-    } else if let Some(knight_check_field) = check_and_get_knight_check_field(board, king_position, &moves_by_field)
+    } else if let Some(knight_check_field) =
+        check_and_get_knight_check_field(board, king_position, &moves_by_field)
     {
         return vec![knight_check_field];
     } else if let Some(pawn_check_field) = check_and_get_pawn_check_field(board, king_position) {
@@ -42,21 +52,6 @@ pub fn get_fields_to_prevent_check(
     }
 
     Vec::new()
-}
-
-fn fields_between_figure_and_king(
-    king_position: usize,
-    attacker_position: usize,
-    step: usize,
-) -> Vec<usize> {
-    // exclude king position in both cases
-    if king_position > attacker_position {
-        return (attacker_position..king_position).step_by(step).collect();
-    } else {
-        return (king_position + step..=attacker_position)
-            .step_by(step)
-            .collect();
-    }
 }
 
 fn is_rook_movement_figure(figure: &Figure) -> bool {
@@ -71,70 +66,45 @@ fn check_and_get_bishop_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> Option<Vec<usize>> {
-    // left forward
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_forward_and_left,
-        is_bishop_movement_figure,
-        7,
-        false,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            7,
-        ));
-    }
-    // left backward
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_backward_and_left,
-        is_bishop_movement_figure,
-        9,
-        true,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            9,
-        ));
-    }
-    // right forward
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_forward_and_right,
-        is_bishop_movement_figure,
-        9,
-        false,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            9,
-        ));
-    }
-    // right backwards
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_backward_and_right,
-        is_bishop_movement_figure,
-        7,
-        true,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            7,
-        ));
+    if let Some(movement) = moves_by_field.get(king_position) {
+        let left_fw = check_single_direction_check(
+            board,
+            opponent_moves,
+            &movement.left_forward,
+            is_bishop_movement_figure);
+
+        if left_fw.is_some(){
+            return left_fw;
+        }
+        let right_fw = check_single_direction_check(
+            board,
+            opponent_moves,
+            &movement.right_forward,
+            is_bishop_movement_figure,
+        );
+        if right_fw.is_some(){
+            return right_fw;
+        }
+        let left_bw = check_single_direction_check(
+            board,
+            opponent_moves,
+            &movement.left_back,
+            is_bishop_movement_figure
+        );
+        if left_bw.is_some(){
+            return left_bw;
+        }
+        let right_bw = check_single_direction_check(
+            board,
+            opponent_moves,
+            &movement.right_back,
+            is_bishop_movement_figure,
+        );
+        if right_bw.is_some(){
+            return right_bw;
+        }
     }
     return None;
 }
@@ -143,123 +113,90 @@ fn check_and_get_rook_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> Option<Vec<usize>> {
-    // left
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_left,
-        is_rook_movement_figure,
-        1,
-        true,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            1,
-        ));
+    if let Some(moves) = moves_by_field.get(king_position) {
+        let left = check_single_direction_check(
+            board,
+            opponent_moves,
+            &moves.left,
+            is_rook_movement_figure,
+        );
+        if left.is_some(){
+            return left;
+        }
+        // right
+        let right = check_single_direction_check(
+            board,
+            opponent_moves,
+            &moves.right,
+            is_rook_movement_figure,
+        );
+        if right.is_some(){
+            return right;
+        }
+        // forward
+        let forward =  check_single_direction_check(
+            board,
+            opponent_moves,
+            &moves.forward,
+            is_rook_movement_figure,
+        );
+        if forward.is_some(){
+            return forward;
+        }
+        // backward
+        let backward = check_single_direction_check(
+            board,
+            opponent_moves,
+            &moves.back,
+            is_rook_movement_figure,
+        );
+        if backward.is_some(){
+            return backward
+        }
     }
-    // right
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_right,
-        is_rook_movement_figure,
-        1,
-        false,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            1,
-        ));
-    }
-    // forward
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_forward,
-        is_rook_movement_figure,
-        8,
-        false,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            8,
-        ));
-    }
-    // backward
-    if let Some(thread_position) = check_single_direction_check(
-        board,
-        king_position,
-        opponent_moves,
-        figure_can_move_backward,
-        is_rook_movement_figure,
-        8,
-        true,
-    ) {
-        return Some(fields_between_figure_and_king(
-            *king_position,
-            thread_position,
-            8,
-        ));
-    }
+
     return None;
 }
 
 fn check_single_direction_check(
     board: &Chessboard,
-    field: &usize,
     opponent_moves: &Vec<usize>,
-    direction_check: fn(&usize) -> bool,
+    moves: &Vec<usize>,
     figure_check: fn(&Figure) -> bool,
-    step: usize,
-    backwards: bool,
-) -> Option<usize> {
-    // no move in this direction possible
-    if !direction_check(field) {
-        return None;
-    }
-    let field_to_check = if backwards {
-        field - step
-    } else {
-        field + step
-    };
-    // field is not used by any player and opponent does attack it
-    if !board.positions.get(field_to_check) && opponent_moves.contains(&field_to_check) {
-        return check_single_direction_check(
-            board,
-            &field_to_check,
-            opponent_moves,
-            direction_check,
-            figure_check,
-            step,
-            backwards,
-        );
-    }
-    if let Some(opponent) = board
-        .get_opponents(&board.current_move)
-        .get(&field_to_check)
-    {
-        if figure_check(opponent) {
-            return Some(field_to_check);
+) -> Option<Vec<usize>> {
+    let mut fields_to_prevent_check: Vec<usize> = Vec::new();
+    for movement in moves {
+        if board.positions.get(*movement) {
+            if let Some(opponent) = board.get_opponents(&board.current_move).get(movement) {
+                if figure_check(opponent) {
+                    fields_to_prevent_check.push(*movement);
+                    return Some(fields_to_prevent_check);
+                }
+                // field is used by opponent - but not a figure threadning us
+                return None;
+            }
+            // field is used by our own figure
+            return None;
+        } else if !opponent_moves.contains(movement) {
+            // opponent does not attack this field thus there can not be a attacker in this row
+            return None;
         }
-        // field is used by opponent - but not a figure threadning us
-        return None;
+        fields_to_prevent_check.push(*movement);
     }
-    // field is used by us
     return None;
 }
 
-fn check_and_get_knight_check_field(board: &Chessboard, king_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Option<usize> {
-    if let Some(moves) = moves_by_field.get(king_position){
-        for field in moves.knight_moves.iter(){
-            if field_is_used_by_opponent_knight(board, *field){
-                return Some(*field)
+fn check_and_get_knight_check_field(
+    board: &Chessboard,
+    king_position: &usize,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+) -> Option<usize> {
+    if let Some(moves) = moves_by_field.get(king_position) {
+        for field in moves.knight_moves.iter() {
+            if field_is_used_by_opponent_knight(board, *field) {
+                return Some(*field);
             }
         }
     }
@@ -338,14 +275,20 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::{figures::{
-        bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, rook::Rook
-    }, helper::moves_by_field::get_moves_for_each_field};
+    use crate::{
+        figures::{
+            bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn,
+            rook::Rook,
+        },
+        helper::moves_by_field::get_moves_for_each_field,
+    };
 
     use super::*;
 
     #[test]
     fn test_rook_check() {
+        let possible_moves = get_moves_for_each_field();
+        
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
             white_figures: HashMap::new(),
@@ -377,7 +320,7 @@ mod tests {
         opponent_moves.push(17);
         assert_eq!(
             3,
-            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves)
+            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves, &possible_moves)
                 .unwrap()
                 .len()
         );
@@ -385,6 +328,7 @@ mod tests {
 
     #[test]
     fn test_bishop_check() {
+        let possible_moves = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
             white_figures: HashMap::new(),
@@ -416,7 +360,7 @@ mod tests {
         opponent_moves.push(19);
         assert_eq!(
             4,
-            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves)
+            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves, &possible_moves)
                 .unwrap()
                 .len()
         );

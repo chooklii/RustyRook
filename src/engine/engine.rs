@@ -27,10 +27,10 @@ pub struct MoveWithRating {
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 5;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     let mut checked_positions: HashSet<String> = HashSet::new();
-    if let (Some(best_move), calculations) = calculate(board, &mut checked_positions, moves_by_field, max_depth, 1)
+    if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1)
     {
         println!(
             "Calculated Positions {} and took {:?}",
@@ -82,7 +82,6 @@ fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usiz
 
 fn calculate(
     board: &Chessboard,
-    checked_positions: &mut HashSet<String>,
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
     max_depth: u8,
     depth: u8,
@@ -126,7 +125,7 @@ fn calculate(
 
         if depth < max_depth {
             if let (Some(move_evaluation), calculated_moves) =
-                calculate(&new_board, checked_positions,moves_by_field, max_depth, depth + 1)
+                calculate(&new_board,moves_by_field, max_depth, depth + 1)
             {
                 calculated_positions += calculated_moves;
 
@@ -173,18 +172,6 @@ fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
         Color::White => new > prev,
         Color::Black => new < prev,
     }
-}
-
-fn check_if_position_should_be_calculated(
-    board: &Chessboard,
-    calculated_positions: &mut HashSet<String>,
-) -> bool {
-    let position_key = board.position_key();
-    if calculated_positions.contains(&position_key) {
-        return false;
-    }
-    calculated_positions.insert(position_key);
-    return true;
 }
 
 fn get_fields_thread_by_opponent(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
