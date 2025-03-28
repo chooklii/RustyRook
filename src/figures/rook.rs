@@ -60,15 +60,15 @@ fn get_moves_one_direction(
     direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
 ) {
-    for field in direction_moves {
-        if board.positions.get(*field) {
+    for &field in direction_moves {
+        if board.positions.get(field) {
             // field is opponent - add it as well!
             if board.get_opponents().contains_key(&field) {
-                positions.push(*field)
+                positions.push(field)
             }
             return;
         }
-        positions.push(*field);
+        positions.push(field);
     }
 }
 

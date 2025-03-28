@@ -4,12 +4,7 @@ use crate::{
     board::board::Chessboard,
     figures::{color::Color, figures::Figure},
     helper::{
-        movement::{
-            self, figure_can_move_backward, figure_can_move_backward_and_left,
-            figure_can_move_backward_and_right, figure_can_move_forward,
-            figure_can_move_forward_and_left, figure_can_move_forward_and_right,
-            figure_can_move_left, figure_can_move_right,
-        },
+        movement::{figure_can_move_backward,figure_can_move_forward},
         moves_by_field::MoveInEveryDirection,
     },
 };
@@ -73,9 +68,10 @@ fn check_and_get_bishop_movement_check_field(
             board,
             opponent_moves,
             &movement.left_forward,
-            is_bishop_movement_figure);
+            is_bishop_movement_figure,
+        );
 
-        if left_fw.is_some(){
+        if left_fw.is_some() {
             return left_fw;
         }
         let right_fw = check_single_direction_check(
@@ -84,16 +80,16 @@ fn check_and_get_bishop_movement_check_field(
             &movement.right_forward,
             is_bishop_movement_figure,
         );
-        if right_fw.is_some(){
+        if right_fw.is_some() {
             return right_fw;
         }
         let left_bw = check_single_direction_check(
             board,
             opponent_moves,
             &movement.left_back,
-            is_bishop_movement_figure
+            is_bishop_movement_figure,
         );
-        if left_bw.is_some(){
+        if left_bw.is_some() {
             return left_bw;
         }
         let right_bw = check_single_direction_check(
@@ -102,7 +98,7 @@ fn check_and_get_bishop_movement_check_field(
             &movement.right_back,
             is_bishop_movement_figure,
         );
-        if right_bw.is_some(){
+        if right_bw.is_some() {
             return right_bw;
         }
     }
@@ -122,7 +118,7 @@ fn check_and_get_rook_movement_check_field(
             &moves.left,
             is_rook_movement_figure,
         );
-        if left.is_some(){
+        if left.is_some() {
             return left;
         }
         // right
@@ -132,17 +128,17 @@ fn check_and_get_rook_movement_check_field(
             &moves.right,
             is_rook_movement_figure,
         );
-        if right.is_some(){
+        if right.is_some() {
             return right;
         }
         // forward
-        let forward =  check_single_direction_check(
+        let forward = check_single_direction_check(
             board,
             opponent_moves,
             &moves.forward,
             is_rook_movement_figure,
         );
-        if forward.is_some(){
+        if forward.is_some() {
             return forward;
         }
         // backward
@@ -152,8 +148,8 @@ fn check_and_get_rook_movement_check_field(
             &moves.back,
             is_rook_movement_figure,
         );
-        if backward.is_some(){
-            return backward
+        if backward.is_some() {
+            return backward;
         }
     }
 
@@ -167,11 +163,11 @@ fn check_single_direction_check(
     figure_check: fn(&Figure) -> bool,
 ) -> Option<Vec<usize>> {
     let mut fields_to_prevent_check: Vec<usize> = Vec::new();
-    for movement in moves {
-        if board.positions.get(*movement) {
-            if let Some(opponent) = board.get_opponents().get(movement) {
+    for &movement in moves {
+        if board.positions.get(movement) {
+            if let Some(opponent) = board.get_opponents().get(&movement) {
                 if figure_check(opponent) {
-                    fields_to_prevent_check.push(*movement);
+                    fields_to_prevent_check.push(movement);
                     return Some(fields_to_prevent_check);
                 }
                 // field is used by opponent - but not a figure threadning us
@@ -179,11 +175,11 @@ fn check_single_direction_check(
             }
             // field is used by our own figure
             return None;
-        } else if !opponent_moves.contains(movement) {
+        } else if !opponent_moves.contains(&movement) {
             // opponent does not attack this field thus there can not be a attacker in this row
             return None;
         }
-        fields_to_prevent_check.push(*movement);
+        fields_to_prevent_check.push(movement);
     }
     return None;
 }
@@ -194,9 +190,9 @@ fn check_and_get_knight_check_field(
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> Option<usize> {
     if let Some(moves) = moves_by_field.get(king_position) {
-        for field in moves.knight_moves.iter() {
-            if field_is_used_by_opponent_knight(board, *field) {
-                return Some(*field);
+        for &field in moves.knight_moves.iter() {
+            if field_is_used_by_opponent_knight(board, field) {
+                return Some(field);
             }
         }
     }
@@ -223,19 +219,13 @@ fn check_and_get_pawn_check_field_black(board: &Chessboard, position: &usize) ->
         return None;
     }
     // left
-    if let Some(figure) = board
-        .get_opponents()
-        .get(&(position - 9))
-    {
+    if let Some(figure) = board.get_opponents().get(&(position - 9)) {
         if figure.is_pawn() {
             return Some(position - 9);
         };
     }
     // right
-    if let Some(figure) = board
-        .get_opponents()
-        .get(&(position - 7))
-    {
+    if let Some(figure) = board.get_opponents().get(&(position - 7)) {
         if figure.is_pawn() {
             return Some(position - 7);
         };
@@ -248,19 +238,13 @@ fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) ->
         return None;
     }
     // left
-    if let Some(figure) = board
-        .get_opponents()
-        .get(&(position + 7))
-    {
+    if let Some(figure) = board.get_opponents().get(&(position + 7)) {
         if figure.is_pawn() {
             return Some(position + 7);
         };
     }
     // right
-    if let Some(figure) = board
-        .get_opponents()
-        .get(&(position + 9))
-    {
+    if let Some(figure) = board.get_opponents().get(&(position + 9)) {
         if figure.is_pawn() {
             return Some(position + 9);
         };
@@ -288,7 +272,7 @@ mod tests {
     #[test]
     fn test_rook_check() {
         let possible_moves = get_moves_for_each_field();
-        
+
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
             white_figures: HashMap::new(),
@@ -358,9 +342,14 @@ mod tests {
         opponent_moves.push(19);
         assert_eq!(
             4,
-            check_and_get_bishop_movement_check_field(&board, &19, &opponent_moves, &possible_moves)
-                .unwrap()
-                .len()
+            check_and_get_bishop_movement_check_field(
+                &board,
+                &19,
+                &opponent_moves,
+                &possible_moves
+            )
+            .unwrap()
+            .len()
         );
     }
 
