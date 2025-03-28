@@ -46,14 +46,14 @@ impl Figure {
         }
     }
 
-    pub fn threadned_fields(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+    pub fn threatened_fields(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
         match self {
-            Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
-            Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
-            Figure::Bishop(bishop) => bishop.possible_moves(board, own_position, &moves_by_field),
-            Figure::Knight(knight) => knight.possible_moves(board, own_position, &moves_by_field),
-            Figure::Queen(queen) => queen.possible_moves(board, own_position, &moves_by_field),
-            Figure::King(king) => king.possible_moves(board, own_position, &Vec::new())
+            Figure::Pawn(pawn) => pawn.threatened_fields(&own_position),
+            Figure::Rook(rook) => rook.threatened_fields(board, &own_position, &moves_by_field),
+            Figure::Bishop(bishop) => bishop.threatened_fields(board, &own_position, &moves_by_field),
+            Figure::Knight(knight) => knight.threatened_fields(&own_position, &moves_by_field),
+            Figure::Queen(queen) => queen.threatened_fields(board, &own_position, &moves_by_field),
+            Figure::King(king) => king.threatened_fields(&own_position)
         }
     } 
 

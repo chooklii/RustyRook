@@ -1,64 +1,69 @@
 use std::collections::HashMap;
 
 use crate::board::board::Chessboard;
-use crate::figures::color::Color;
 use crate::helper::moves_by_field::MoveInEveryDirection;
 
 #[derive(Default, Clone)]
 pub struct Rook {
-    pub color: Color,
     pub has_moved: bool,
 }
 
-// the Rooooook is also part of the Queen
-pub fn get_rook_moves(
+pub fn get_rook_threatened_fields(
     board: &Chessboard,
-    color: &Color,
     position: &usize,
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> Vec<usize> {
     let mut possible_moves = Vec::new();
 
     if let Some(movement) = moves_by_field.get(position) {
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.left,
-          &mut possible_moves
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.right,
-            &mut possible_moves
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.forward,
-            &mut possible_moves
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.back,
-            &mut possible_moves
-        );
+        get_threatened_one_direction(&board,  &movement.left, &mut possible_moves);
+        get_threatened_one_direction(&board,  &movement.right, &mut possible_moves);
+        get_threatened_one_direction(&board,  &movement.forward, &mut possible_moves);
+        get_threatened_one_direction(&board,  &movement.back, &mut possible_moves);
     }
     possible_moves
 }
 
+fn get_threatened_one_direction(
+    board: &Chessboard,
+    direction_moves: &Vec<usize>,
+    positions: &mut Vec<usize>,
+) {
+    for &field in direction_moves {
+        if board.positions.get(field) {
+            positions.push(field);
+            return;
+        }
+        positions.push(field);
+    }
+}
+
+// the Rooooook is also part of the Queen
+pub fn get_rook_moves(
+    board: &Chessboard,
+    position: &usize,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+) -> Vec<usize> {
+    let mut possible_moves = Vec::new();
+
+    if let Some(movement) = moves_by_field.get(position) {
+        get_moves_one_direction(&board , &movement.left, &mut possible_moves);
+        get_moves_one_direction(&board , &movement.right, &mut possible_moves);
+        get_moves_one_direction(&board , &movement.forward, &mut possible_moves);
+        get_moves_one_direction(&board, &movement.back, &mut possible_moves);
+    }
+    possible_moves
+}
 
 fn get_moves_one_direction(
     board: &Chessboard,
-    color: &Color,
     direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
 ) {
     for field in direction_moves {
         if board.positions.get(*field) {
             // field is opponent - add it as well!
-            if board.get_opponents(color).contains_key(&field) {
+            if board.get_opponents().contains_key(&field) {
                 positions.push(*field)
             }
             return;
@@ -78,7 +83,16 @@ impl Rook {
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
     ) -> Vec<usize> {
-        get_rook_moves(board, &self.color, own_position, moves_by_field)
+        get_rook_moves(board, own_position, moves_by_field)
+    }
+
+    pub fn threatened_fields(    
+        &self,
+        board: &Chessboard,
+        position: &usize,
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>
+    ) -> Vec<usize>{
+        get_rook_threatened_fields(board, position, moves_by_field)
     }
 }
 
@@ -118,7 +132,6 @@ mod tests {
         positions.set(25, true);
         positions.set(27, true);
         let figure = Rook {
-            color: Color::Black,
             ..Default::default()
         };
         let board = Chessboard {
@@ -134,9 +147,7 @@ mod tests {
     fn test_movement_on_empty_board() {
         let possible_moves = get_moves_for_each_field();
 
-
         let figure = Rook {
-            color: Color::Black,
             ..Default::default()
         };
         let board = Chessboard {

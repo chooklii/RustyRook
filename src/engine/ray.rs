@@ -108,7 +108,7 @@ fn possible_opponent_bishop_or_queen(
         } else {
             field_position + next_field
         };
-        if let Some(opponent_figure) = board.get_opponents(&board.current_move).get(&field) {
+        if let Some(opponent_figure) = board.get_opponents().get(&field) {
             if opponent_figure.is_queen() || opponent_figure.is_bishop() {
                 return Some(field);
             }
@@ -200,7 +200,7 @@ fn get_possible_pinned_piece(
         if position != own_position && position != thread_field {
             if board.positions.get(position) {
                 if board
-                    .get_opponents(&board.current_move)
+                    .get_opponents()
                     .contains_key(&position)
                 {
                     return None;
@@ -230,7 +230,7 @@ fn possible_opponent_rook_or_queen(
         } else {
             field_position + next_field
         };
-        if let Some(opponent_figure) = board.get_opponents(&board.current_move).get(&field) {
+        if let Some(opponent_figure) = board.get_opponents().get(&field) {
             if opponent_figure.is_queen() || opponent_figure.is_rook() {
                 return Some(field);
             }

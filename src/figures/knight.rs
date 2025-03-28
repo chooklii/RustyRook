@@ -2,12 +2,9 @@ use std::collections::HashMap;
 
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
-use super::color::Color;
 
 #[derive(Default, Clone)]
-pub struct Knight {
-    pub color: Color
-}
+pub struct Knight {}
 
 impl Knight {
 
@@ -22,6 +19,13 @@ impl Knight {
             }
         }
         possible_moves
+    }
+
+    pub fn threatened_fields(&self, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize>{
+        if let Some(moves) = moves_by_field.get(own_position){
+            return moves.knight_moves.to_owned()
+        }
+        return Vec::new();
     }
 }
 

@@ -21,7 +21,7 @@ impl King {
     ) {
         if board.positions.get(next_position) {
             if board
-                .get_opponents(&self.color)
+                .get_opponents()
                 .contains_key(&next_position)
             {
                 possible_moves.push(next_position);
@@ -78,6 +78,44 @@ impl King {
         }
         // filter out fields opponent can take
         possible_moves.into_iter().filter(|position|!opponent_moves.contains(position)).collect()
+    }
+
+    pub fn threatened_fields(
+        &self,
+        own_position: &usize,
+    ) -> Vec<usize>{
+        let mut possible_moves = Vec::new();
+
+        let can_move_backward = figure_can_move_backward(own_position);
+        let can_move_left = figure_can_move_left(own_position);
+        let can_move_right = figure_can_move_right(own_position);
+        let can_move_forward = figure_can_move_forward(own_position);
+
+        if can_move_backward {
+            possible_moves.push(own_position -8);
+            if can_move_left {
+                possible_moves.push(own_position -9);
+            }
+            if can_move_right {
+                possible_moves.push(own_position -7);
+            }
+        }
+        if can_move_forward {
+            possible_moves.push(own_position +8);
+            if can_move_left {
+                possible_moves.push(own_position +7);
+            }
+            if can_move_right {
+                possible_moves.push(own_position +9);
+            }
+        }
+        if can_move_left {
+            possible_moves.push(own_position -1);
+        }
+        if can_move_right {
+            possible_moves.push(own_position +1);
+        } 
+        possible_moves
     }
 
     fn is_possible_castle(
@@ -148,6 +186,7 @@ mod tests {
             ..Default::default()
         };
         let board = Chessboard {
+            positions: Bitmap::<64>::new(),
             ..Default::default()
         };
 

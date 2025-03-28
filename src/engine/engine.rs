@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     time::SystemTime,
 };
 
@@ -27,9 +27,8 @@ pub struct MoveWithRating {
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 4;
+    let max_depth: u8 = 2;
     let now = SystemTime::now();
-    let mut checked_positions: HashSet<String> = HashSet::new();
     if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1)
     {
         println!(
@@ -53,7 +52,7 @@ fn get_own_king(board: &Chessboard) -> (&usize, &Figure) {
 
 fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> (Vec<PossibleMove>, bool) {
     // get moves from opponent
-    let opponent_moves: Vec<usize> = get_fields_thread_by_opponent(&board, moves_by_field);
+    let opponent_moves: Vec<usize> = get_all_threatened_fields(&board, board.get_opponents(), moves_by_field);
     // todo: move this down below check check and pass opponent_moves (no reference)
     let mut moves: Vec<PossibleMove> =
         get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves, &moves_by_field);
@@ -91,6 +90,7 @@ fn calculate(
     let mut calculated_positions: u64 = 0;
 
     let (valid_moves, is_in_check) = get_valid_moves_in_position(board, moves_by_field);
+    println!("Valid Moves: {:?}", valid_moves);
     if is_in_check && valid_moves.is_empty() {
         // L
         return (
@@ -121,6 +121,7 @@ fn calculate(
 
     for single in valid_moves.iter() {
         let mut new_board = board.clone();
+        println!("From {} - To {}", single.from, single.to);
         new_board.move_figure(single.from, single.to);
 
         if depth < max_depth {
@@ -174,23 +175,11 @@ fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
     }
 }
 
-fn get_fields_thread_by_opponent(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
-    get_all_possible_moves(
-        &board,
-        board.get_opponents(&board.current_move),
-        &Vec::new(),
-        moves_by_field
-    )
-    .iter()
-    .map(|x| x.to)
-    .collect()
-}
-
-// get all fields threadned by opponent (ignore if opponent figure is on field)
-fn get_all_thredned_fields(board: &Chessboard, figures: &HashMap<usize, Figure>) -> Vec<usize> {
-    return figures
+// get all fields threadned (ignore if opponent figure is on field)
+fn get_all_threatened_fields(board: &Chessboard, figures: &HashMap<usize, Figure>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+    return board.get_opponents()
         .iter()
-        .flat_map(|(position, figure)| figure.threadned_fields(board, position, &HashMap::new()))
+        .flat_map(|(own_position, figure)| figure.threatened_fields(board, own_position, moves_by_field))
         .collect();
 }
 

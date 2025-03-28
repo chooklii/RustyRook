@@ -169,7 +169,7 @@ fn check_single_direction_check(
     let mut fields_to_prevent_check: Vec<usize> = Vec::new();
     for movement in moves {
         if board.positions.get(*movement) {
-            if let Some(opponent) = board.get_opponents(&board.current_move).get(movement) {
+            if let Some(opponent) = board.get_opponents().get(movement) {
                 if figure_check(opponent) {
                     fields_to_prevent_check.push(*movement);
                     return Some(fields_to_prevent_check);
@@ -204,7 +204,7 @@ fn check_and_get_knight_check_field(
 }
 
 fn field_is_used_by_opponent_knight(board: &Chessboard, position: usize) -> bool {
-    if let Some(figure) = board.get_opponents(&board.current_move).get(&position) {
+    if let Some(figure) = board.get_opponents().get(&position) {
         return figure.is_knight();
     }
     return false;
@@ -224,7 +224,7 @@ fn check_and_get_pawn_check_field_black(board: &Chessboard, position: &usize) ->
     }
     // left
     if let Some(figure) = board
-        .get_opponents(&board.current_move)
+        .get_opponents()
         .get(&(position - 9))
     {
         if figure.is_pawn() {
@@ -233,7 +233,7 @@ fn check_and_get_pawn_check_field_black(board: &Chessboard, position: &usize) ->
     }
     // right
     if let Some(figure) = board
-        .get_opponents(&board.current_move)
+        .get_opponents()
         .get(&(position - 7))
     {
         if figure.is_pawn() {
@@ -249,7 +249,7 @@ fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) ->
     }
     // left
     if let Some(figure) = board
-        .get_opponents(&board.current_move)
+        .get_opponents()
         .get(&(position + 7))
     {
         if figure.is_pawn() {
@@ -258,7 +258,7 @@ fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) ->
     }
     // right
     if let Some(figure) = board
-        .get_opponents(&board.current_move)
+        .get_opponents()
         .get(&(position + 9))
     {
         if figure.is_pawn() {
@@ -309,7 +309,6 @@ mod tests {
         board.black_figures.insert(
             16,
             Figure::Rook(Rook {
-                color: Color::Black,
                 ..Default::default()
             }),
         );
@@ -348,7 +347,6 @@ mod tests {
         board.black_figures.insert(
             55,
             Figure::Bishop(Bishop {
-                color: Color::Black,
                 ..Default::default()
             }),
         );
@@ -423,7 +421,6 @@ mod tests {
         board.white_figures.insert(
             18,
             Figure::Knight(Knight {
-                color: Color::White,
                 ..Default::default()
             }),
         );

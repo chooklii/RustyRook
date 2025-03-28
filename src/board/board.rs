@@ -56,13 +56,14 @@ impl Chessboard{
         }
     }
 
-    // color from here can prob. be removed and just use by currentMove Color (no need to calculate for other side?)
-    pub fn get_opponents(&self, color: &Color) -> &HashMap<usize, Figure>{
-        match color{
+
+    pub fn get_opponents(&self) -> &HashMap<usize, Figure>{
+        match self.current_move{
             Color::White => &self.black_figures,
             Color::Black => &self.white_figures
         }
     }
+
 
     pub fn get_next_player_figures(&self) -> &HashMap<usize, Figure>{
         match self.current_move{
@@ -286,7 +287,7 @@ impl Chessboard{
         self.white_figures = HashMap::new();
         self.current_move = Color::White;
 
-        if false {
+        if true {
 
         self.positions.set(25, true);
         self.positions.set(32, true);
@@ -310,7 +311,7 @@ impl Chessboard{
         self.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(43, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(29, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(39, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(39, Figure::Rook(Rook{ ..Default::default()}));
         self.black_figures.insert(31, Figure::King(King{color: Color::Black, ..Default::default()}));
         return
         
@@ -352,14 +353,14 @@ impl Chessboard{
         self.black_figures.insert(53, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(54, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(56, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(57, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(58, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(59, Figure::Queen(Queen{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(56, Figure::Rook(Rook{..Default::default()}));
+        self.black_figures.insert(57, Figure::Knight(Knight{..Default::default()}));
+        self.black_figures.insert(58, Figure::Bishop(Bishop{..Default::default()}));
+        self.black_figures.insert(59, Figure::Queen(Queen{..Default::default()}));
         self.black_figures.insert(60, Figure::King(King{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(61, Figure::Bishop(Bishop{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(62, Figure::Knight(Knight{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(63, Figure::Rook(Rook{color: Color::Black, ..Default::default()}));
+        self.black_figures.insert(61, Figure::Bishop(Bishop{..Default::default()}));
+        self.black_figures.insert(62, Figure::Knight(Knight{..Default::default()}));
+        self.black_figures.insert(63, Figure::Rook(Rook{..Default::default()}));
     }
 }
 

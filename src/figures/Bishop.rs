@@ -5,66 +5,91 @@ use crate::figures::color::Color;
 use crate::helper::moves_by_field::MoveInEveryDirection;
 
 #[derive(Default, Clone)]
-pub struct Bishop {
-    pub color: Color,
-}
+pub struct Bishop {}
 
-// Queen is a Bishop as well - reuse this
-pub fn get_bishop_moves(board: &Chessboard,color: &Color, position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize>{
+
+pub fn get_threatened_fields_bishop(
+    board: &Chessboard,
+    position: &usize,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+) -> Vec<usize> {
     let mut possible_moves = Vec::new();
 
     if let Some(movement) = moves_by_field.get(position) {
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.left_forward,
-            &mut possible_moves,
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.right_forward,
-            &mut possible_moves,
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.left_back,
-            &mut possible_moves,
-        );
-        get_moves_one_direction(
-            &board,
-            &color,
-            &movement.right_back,
-            &mut possible_moves,
-        );
+        get_threatened_one_direction(&board, &movement.left_forward, &mut possible_moves);
+        get_threatened_one_direction(&board, &movement.right_forward, &mut possible_moves);
+        get_threatened_one_direction(&board, &movement.left_back, &mut possible_moves);
+        get_threatened_one_direction(&board, &movement.right_back, &mut possible_moves);
     }
     possible_moves
 }
 
-
-fn get_moves_one_direction(
+fn get_threatened_one_direction(
     board: &Chessboard,
-    color: &Color,
     direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
 ) {
-    for movement in direction_moves {
+    for &movement in direction_moves {
+        if board.positions.get(movement) {
+            positions.push(movement);
+            return;
+        }
+        positions.push(movement);
+    }
+}
+
+// Queen is a Bishop as well - reuse this
+pub fn get_bishop_moves(
+    board: &Chessboard,
+    position: &usize,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+) -> Vec<usize> {
+    let mut possible_moves = Vec::new();
+
+    if let Some(movement) = moves_by_field.get(position) {
+        get_moves_one_direction(&board,  &movement.left_forward, &mut possible_moves);
+        get_moves_one_direction(&board,  &movement.right_forward, &mut possible_moves);
+        get_moves_one_direction(&board,  &movement.left_back, &mut possible_moves);
+        get_moves_one_direction(&board,  &movement.right_back, &mut possible_moves);
+    }
+    possible_moves
+}
+
+fn get_moves_one_direction(
+    board: &Chessboard,
+    direction_moves: &Vec<usize>,
+    positions: &mut Vec<usize>,
+) {
+    for &movement in direction_moves {
         // next field is full
-        if board.positions.get(*movement) {
+        if board.positions.get(movement) {
             // field is opponent - add it as well!
-            if board.get_opponents(color).contains_key(movement) {
-                positions.push(*movement)
+            if board.get_opponents().contains_key(&movement) {
+                positions.push(movement)
             }
             return;
         }
-        positions.push(*movement);
+        positions.push(movement);
     }
 }
 
 impl Bishop {
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
-        get_bishop_moves(board, &self.color, &own_position, &moves_by_field)
+    pub fn possible_moves(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    ) -> Vec<usize> {
+        get_bishop_moves(board, &own_position, &moves_by_field)
+    }
+
+    pub fn threatened_fields(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    ) -> Vec<usize> {
+        get_threatened_fields_bishop(&board, &own_position, &moves_by_field)
     }
 }
 
@@ -76,9 +101,8 @@ mod tests {
 
     use super::*;
 
-
     #[test]
-    fn move_empty_board(){
+    fn move_empty_board() {
         let possible_moves = get_moves_for_each_field();
         let figure = Bishop {
             ..Default::default()
@@ -96,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn not_able_to_move(){
+    fn not_able_to_move() {
         let possible_moves = get_moves_for_each_field();
 
         let figure = Bishop {
@@ -113,11 +137,11 @@ mod tests {
         };
 
         let moves = figure.possible_moves(&board, &18, &possible_moves);
-        assert_eq!(0, moves.len()); 
+        assert_eq!(0, moves.len());
     }
 
     #[test]
-    fn able_to_move_in_two_directions(){
+    fn able_to_move_in_two_directions() {
         let possible_moves = get_moves_for_each_field();
         let figure = Bishop {
             ..Default::default()
@@ -131,8 +155,6 @@ mod tests {
         };
 
         let moves = figure.possible_moves(&board, &20, &possible_moves);
-        assert_eq!(6, moves.len()); 
+        assert_eq!(6, moves.len());
     }
-
-
 }
