@@ -287,7 +287,7 @@ impl Chessboard{
         self.white_figures = HashMap::new();
         self.current_move = Color::White;
 
-        if false {
+        if true {
             self.test_position_3();
             return;
         }

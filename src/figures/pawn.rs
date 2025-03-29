@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use crate::board::board::Chessboard;
 use crate::figures::color::Color;
+use crate::helper::moves_by_field::MoveInEveryDirection;
 
 #[derive(Default, Clone)]
 pub struct Pawn {
@@ -77,7 +80,68 @@ impl Pawn {
         None
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize) -> Vec<usize> {
+    // check if en passant would put our king into check (not captures by pinned peaces, as there are two between R/Q and K)
+    fn en_passant_no_check(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        en_passanted: &usize,
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    ) -> bool {
+        if let Some((king_position, _)) = board
+            .get_next_player_figures()
+            .iter()
+            .find(|(_, fig)| fig.is_king())
+        {
+            if let Some(moves) = moves_by_field.get(king_position) {
+                if moves.left.contains(own_position) && moves.left.contains(en_passanted) {
+                    return self.check_if_other_figure_in_between(
+                        &board,
+                        &moves.left,
+                        &en_passanted,
+                        &own_position
+                    );
+                }
+                if moves.right.contains(own_position) && moves.right.contains(en_passanted) {
+                    return self.check_if_other_figure_in_between(
+                        board,
+                        &moves.right,
+                        &en_passanted,
+                        &own_position
+                    );
+                }
+            }
+        }
+        true
+    }
+
+    fn check_if_other_figure_in_between(
+        &self,
+        board: &Chessboard,
+        moves: &Vec<usize>,
+        en_passanted: &usize,
+        own_position: &usize
+    ) -> bool {
+        for single in moves {
+            // ignore both pawns involved in en passant
+            if single != en_passanted && single != own_position {
+                if board.positions.get(*single) {
+                    if let Some(opponent) = board.get_opponents().get(single) {
+                        return !opponent.is_queen() && !opponent.is_rook();
+                    }
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    pub fn possible_moves(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    ) -> Vec<usize> {
         let mut possible_moves = Vec::new();
         // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
         if !self.figure_can_move_forward(&own_position, &self.color) {
@@ -94,8 +158,15 @@ impl Pawn {
             }
             // en passant left
             else if let Some(possible_en_passant) = board.en_passant {
-                if self.en_passant_position_left(own_position) == possible_en_passant {
-                    possible_moves.push(take_left_position)
+                if self.en_passant_no_check(
+                    &board,
+                    &own_position,
+                    &possible_en_passant,
+                    &moves_by_field,
+                ) {
+                    if self.en_passant_position_left(own_position) == possible_en_passant {
+                        possible_moves.push(take_left_position)
+                    }
                 }
             }
         }
@@ -107,8 +178,15 @@ impl Pawn {
             }
             // en passant right
             else if let Some(possible_en_passant) = board.en_passant {
-                if self.en_passant_position_right(own_position) == possible_en_passant {
-                    possible_moves.push(take_right_position)
+                if self.en_passant_no_check(
+                    &board,
+                    &own_position,
+                    &possible_en_passant,
+                    &moves_by_field,
+                ) {
+                    if self.en_passant_position_right(own_position) == possible_en_passant {
+                        possible_moves.push(take_right_position)
+                    }
                 }
             }
         }
@@ -139,7 +217,7 @@ impl Pawn {
         let one_step_forward = self.calculate_forward_position(own_position, 8);
         if self.figure_can_move_left(own_position, &self.color) {
             // take left
-            possible_moves.push(self.take_left_position(&one_step_forward));   
+            possible_moves.push(self.take_left_position(&one_step_forward));
         }
         if self.figure_can_move_right(own_position, &self.color) {
             // regular take right
@@ -155,7 +233,7 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::figures::figures::Figure;
+    use crate::{figures::{figures::Figure, king::King, rook::Rook}, helper::moves_by_field::{self, get_moves_for_each_field}};
 
     use super::*;
 
@@ -173,7 +251,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &12);
+        let moves = figure.possible_moves(&board, &12, &HashMap::new());
 
         assert_eq!(2, moves.len());
     }
@@ -204,7 +282,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &16);
+        let moves = figure.possible_moves(&board, &16, &HashMap::new());
 
         // should not be able to take from Field 16(A3) to 23(H3)
         assert_eq!(0, moves.len());
@@ -224,7 +302,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &55);
+        let moves = figure.possible_moves(&board, &55, &HashMap::new());
 
         assert_eq!(2, moves.len());
     }
@@ -232,6 +310,7 @@ mod tests {
     #[test]
     fn test_en_passant_left() {
         let mut positions = Bitmap::<64>::new();
+        let moves_by_field = get_moves_for_each_field();
 
         positions.set(35, true);
 
@@ -254,14 +333,14 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &35);
+        let moves = figure.possible_moves(&board, &35, &moves_by_field);
         assert_eq!(true, moves.contains(&42));
     }
 
     #[test]
     fn test_en_passant_right() {
         let mut positions = Bitmap::<64>::new();
-
+        let moves_by_field = get_moves_for_each_field();
         positions.set(26, true);
 
         let figure = Pawn {
@@ -285,7 +364,57 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &26);
+        let moves = figure.possible_moves(&board, &26, &moves_by_field);
         assert_eq!(true, moves.contains(&19));
+    }
+
+    #[test]
+    fn test_en_passant_right_not_possible_as_it_would_put_us_in_check() {
+        let mut positions = Bitmap::<64>::new();
+        let moves_by_field = get_moves_for_each_field();
+
+        positions.set(26, true);
+        positions.set(27, true);
+        positions.set(31, true);
+
+        let figure = Pawn {
+            color: Color::Black,
+            ..Default::default()
+        };
+
+        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        opponents.insert(
+            27,
+            Figure::Pawn(Pawn {
+                ..Default::default()
+            }),
+        );
+        opponents.insert(
+            31,
+            Figure::Rook(Rook {
+                ..Default::default()
+            }),
+        );
+
+        let mut own_figures: HashMap<usize, Figure> = HashMap::new();
+        own_figures.insert(
+            24,
+            Figure::King(King {
+                ..Default::default()
+            }),
+        );
+
+        let board = Chessboard {
+            positions,
+            white_figures: opponents,
+            black_figures: own_figures,
+            current_move: Color::Black,
+            en_passant: Some(27),
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &26, &moves_by_field);
+        println!("Moves {:?}", moves);
+        assert_eq!(false, moves.contains(&19));
     }
 }

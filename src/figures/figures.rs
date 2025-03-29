@@ -37,7 +37,7 @@ impl Figure {
 
     pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
         match self {
-            Figure::Pawn(pawn) => pawn.possible_moves(board, own_position),
+            Figure::Pawn(pawn) => pawn.possible_moves(board, own_position, &moves_by_field),
             Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
             Figure::Bishop(bishop) => bishop.possible_moves(board, own_position, &moves_by_field),
             Figure::Knight(knight) => knight.possible_moves(board, own_position, &moves_by_field),

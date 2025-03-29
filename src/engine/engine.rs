@@ -27,7 +27,7 @@ pub struct MoveWithRating {
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 2;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1)
     {
