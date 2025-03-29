@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io::{self}};
 use board::board::Chessboard;
-use engine::engine::search_for_best_move;
+use engine::engine::{count_moves, search_for_best_move};
 use simple_file_logger::init_logger;
 use log::info;
 use helper::moves_by_field::{get_moves_for_each_field, MoveInEveryDirection};
@@ -25,6 +25,7 @@ fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_b
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard),
         "go" => make_move(&chessboard, &moves_by_field),
+        "debug" => count_moves(&chessboard, moves_by_field),
         "quit" => quit(),
         _ => quit()
     }

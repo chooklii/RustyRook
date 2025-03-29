@@ -26,6 +26,46 @@ pub struct MoveWithRating {
     rating: Evaluation,
 }
 
+// used to check if possible moves are still working the way the shoud
+pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+    let max_depth: u8 = 2;
+    let now = SystemTime::now();
+    let moves = make_moves_and_count_moves(board, moves_by_field, max_depth, 1);
+    println!("Moves: {} - Depth: {} - took: {:?}", moves, max_depth, now.elapsed());
+}
+
+fn make_moves_and_count_moves(
+    board: &Chessboard,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    max_depth: u8,
+    depth: u8,
+) -> u64 {
+    let mut calculated_positions: u64 = 0;
+
+    let (valid_moves, _) = get_valid_moves_in_position(board, moves_by_field);
+    if valid_moves.is_empty(){
+        return 0
+    };
+    for single in valid_moves.iter() {
+        let mut new_board = board.clone();
+        new_board.move_figure(single.from, single.to);
+
+        if depth < max_depth {
+            let moves = make_moves_and_count_moves(&new_board,moves_by_field, max_depth, depth + 1);
+
+            if depth == 1{
+                println!("Move {} - {}- Possible Moves after it {}", single.from, single.to, moves);
+            }
+            calculated_positions += moves;
+        } else {
+            calculated_positions += 1;
+        }
+    }
+
+
+    return calculated_positions;
+}
+
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
     let max_depth: u8 = 2;
     let now = SystemTime::now();
