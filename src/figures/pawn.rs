@@ -7,12 +7,15 @@ use crate::helper::moves_by_field::MoveInEveryDirection;
 #[derive(Default, Clone)]
 pub struct Pawn {
     pub color: Color,
-    pub has_moved: bool,
 }
 
 impl Pawn {
-    pub fn set_moved(&mut self) {
-        self.has_moved = true;
+
+    fn can_move_two_fields(&self, own_position: usize) -> bool{
+        match self.color{
+            Color::White => own_position >= 7 && own_position <= 15,
+            Color::Black => own_position >= 48 && own_position <= 55
+        }
     }
 
     fn take_left_position(&self, one_step_forward: &usize) -> usize {
@@ -195,7 +198,7 @@ impl Pawn {
             possible_moves.push(one_step_forward);
 
             // two fields forward
-            if !self.has_moved {
+            if self.can_move_two_fields(*own_position) {
                 let two_steps_forward = self.calculate_forward_position(own_position, 16);
 
                 if !board.positions.get(one_step_forward) && !board.positions.get(two_steps_forward)
@@ -265,7 +268,6 @@ mod tests {
             23,
             Figure::Pawn(Pawn {
                 color: Color::Black,
-                has_moved: false,
             }),
         );
 

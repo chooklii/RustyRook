@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::hash::Hash;
 
 use crate::board::board::Chessboard;
 use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rook::Rook, bishop::Bishop, king::King};
-use crate::helper::moves_by_field::{self, MoveInEveryDirection};
+use crate::helper::moves_by_field::MoveInEveryDirection;
 
 #[derive(Clone)]
 pub enum Figure {
@@ -18,10 +17,9 @@ pub enum Figure {
 impl Figure {
     pub fn set_moved(&mut self) {
         match self {
-            Figure::Pawn(pawn) => pawn.set_moved(),
             Figure::Rook(rook) => rook.set_moved(),
             Figure::King(king) => king.set_moved(),
-            // bishop, queen and knight dont care
+            // bishop, pawn (cannot move back to starting field), queen and knight dont care
             _ => (),
         }
     }
@@ -30,7 +28,6 @@ impl Figure {
         match self {
             Figure::Rook(rook) => rook.has_moved,
             Figure::King(king) => king.has_moved,
-            Figure::Pawn(pawn) => pawn.has_moved,
             _ => false
         }   
     }

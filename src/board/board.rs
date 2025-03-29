@@ -287,82 +287,81 @@ impl Chessboard{
         self.white_figures = HashMap::new();
         self.current_move = Color::White;
 
-        if true {
-            self.test_position_3();
+        // https://www.chessprogramming.org/Perft_Results
+
+        if true{
+            let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
+            self.create_position_from_input_string(position_2);
             return;
         }
 
-        for n in 0..16{
-            self.positions.set(n, true);
+        if false{
+            let position_3 = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8");
+            self.create_position_from_input_string(position_3);
+            return;
         }
-        
-        for n in 48..63{
-            self.positions.set(n, true);
-        }
-        
-        
-        // white
-        self.white_figures.insert(0, Figure::Rook(Rook{..Default::default()}));
-        self.white_figures.insert(1, Figure::Knight(Knight{..Default::default()}));
-        self.white_figures.insert(2, Figure::Bishop(Bishop{..Default::default()}));
-        self.white_figures.insert(3, Figure::Queen(Queen{..Default::default()}));
-        self.white_figures.insert(4, Figure::King(King{..Default::default()}));
-        self.white_figures.insert(5, Figure::Bishop(Bishop{..Default::default()}));
-        self.white_figures.insert(6, Figure::Knight(Knight{..Default::default()}));
-        self.white_figures.insert(7, Figure::Rook(Rook{..Default::default()}));
-        self.white_figures.insert(8, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(9, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(10, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(11, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(13, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(15, Figure::Pawn(Pawn{..Default::default()}));
 
-        // black
-        self.black_figures.insert(48, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(49, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(51, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(52, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(53, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(54, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(55, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(56, Figure::Rook(Rook{..Default::default()}));
-        self.black_figures.insert(57, Figure::Knight(Knight{..Default::default()}));
-        self.black_figures.insert(58, Figure::Bishop(Bishop{..Default::default()}));
-        self.black_figures.insert(59, Figure::Queen(Queen{..Default::default()}));
-        self.black_figures.insert(60, Figure::King(King{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(61, Figure::Bishop(Bishop{..Default::default()}));
-        self.black_figures.insert(62, Figure::Knight(Knight{..Default::default()}));
-        self.black_figures.insert(63, Figure::Rook(Rook{..Default::default()}));
+
+
+        let default_position = String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        self.create_position_from_input_string(default_position);
+
     }
 
-    fn test_position_3(&mut self){  
-        self.positions.set(25, true);
-        self.positions.set(32, true);
-        self.positions.set(33, true);
-        self.positions.set(12, true);
-        self.positions.set(14, true);
 
-        self.positions.set(50, true);
-        self.positions.set(43, true);
-        self.positions.set(39, true);
-        self.positions.set(31, true);
-        self.positions.set(29, true);
-        // white
-        self.white_figures.insert(25, Figure::Rook(Rook{..Default::default()}));
-        self.white_figures.insert(32, Figure::King(King{..Default::default()}));
-        self.white_figures.insert(33, Figure::Pawn(Pawn{has_moved: true, ..Default::default()}));
-        self.white_figures.insert(12, Figure::Pawn(Pawn{..Default::default()}));
-        self.white_figures.insert(14, Figure::Pawn(Pawn{..Default::default()}));
+    // e.g. "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8"
+    fn create_position_from_input_string(&mut self, position: String){
+        let mut current_position: usize = 56;
 
-        // black
-        self.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(43, Figure::Pawn(Pawn{has_moved: true, color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(29, Figure::Pawn(Pawn{has_moved: true, color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(31, Figure::King(King{color: Color::Black, ..Default::default()}));
-        self.black_figures.insert(39, Figure::Rook(Rook{ ..Default::default()}));
+        for c in position.chars() { 
+            if c == '/'{
+                current_position=current_position - 16;
+            }
+            if c.is_digit(10){
+                // can u feel the magic? :D
+                let as_digit = usize::from(c as u8 - 0x30);
+                current_position=current_position + as_digit;
+            }
+            if c.is_alphabetic(){
+                self.positions.set(current_position, true);
+                if c.is_lowercase(){
+                    self.black_figures.insert(current_position, self.get_figure_from_char(c, true));
+                }
+                else{
+                    self.white_figures.insert(current_position, self.get_figure_from_char(c, false));
+                }
+                current_position = current_position +1;
+            }
+
+        }
+    }
+
+    fn get_figure_from_char(&self, figure: char, is_black: bool) -> Figure{
+        let fig = figure.to_uppercase().to_string();
+        
+        if fig.eq("K"){
+            if is_black{
+                return Figure::King(King{color: Color::Black, ..Default::default()});
+            }
+            return Figure::King(King{..Default::default()});
+        }
+        if fig.eq("P"){
+            if is_black{
+                return Figure::Pawn(Pawn{color: Color::Black,..Default::default()});
+            }
+            return Figure::Pawn(Pawn{..Default::default()});
+        }
+        if fig.eq("Q"){
+            return Figure::Queen(Queen{..Default::default()});
+        }
+        if fig.eq("B"){
+            return Figure::Bishop(Bishop{..Default::default()});
+        }
+        if fig.eq("R"){
+            return Figure::Rook(Rook{..Default::default()});
+        }
+        return Figure::Knight(Knight{..Default::default()})
+
     }
 }
 
@@ -534,5 +533,20 @@ mod tests {
 
         assert_eq!(0, board.black_figures.len());
         assert_eq!(false, board.positions.get(36))
+    }
+
+    #[test]
+    fn test_position_creation(){
+        let position = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8");
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(position);
+
+        assert_eq!(true, board.black_figures.contains_key(&31));
+        assert_eq!(true, board.black_figures.contains_key(&39));
+        assert_eq!(false, board.black_figures.contains_key(&38));
+
+        assert_eq!(true, board.white_figures.contains_key(&14));
+        assert_eq!(true, board.white_figures.contains_key(&33));
+        assert_eq!(false, board.white_figures.contains_key(&34));
     }
 }
