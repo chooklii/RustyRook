@@ -165,7 +165,7 @@ impl King {
             possible_moves.push(62);
         }
         // long
-        if self.is_possible_castle(board, opponent_moves, &55, 58, 59){
+        if self.is_possible_castle(board, opponent_moves, &56, 58, 59){
             possible_moves.push(58);
         }
     }
