@@ -289,7 +289,7 @@ impl Chessboard{
 
         // https://www.chessprogramming.org/Perft_Results
 
-        if true{
+        if false{
             let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
             self.create_position_from_input_string(position_2);
             return;

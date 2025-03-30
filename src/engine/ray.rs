@@ -1,258 +1,81 @@
+use std::collections::HashMap;
+
 use crate::{
-    board::board::Chessboard,
-    helper::movement::{
-        figure_can_move_backward, figure_can_move_backward_and_left,
-        figure_can_move_backward_and_right, figure_can_move_forward,
-        figure_can_move_forward_and_left, figure_can_move_forward_and_right, figure_can_move_left,
-        figure_can_move_right,
-    },
+    board::board::Chessboard, figures::figures::Figure,
+    helper::moves_by_field::MoveInEveryDirection,
 };
 
 // File Contains Logic to check for possible pinned Figures
 
 // Opposite Ray-Directions
-pub fn get_pinned_pieces(board: &Chessboard, king_position: &usize) -> Vec<usize> {
-    let mut pinned_pieces: Vec<usize> = Vec::new();
+pub fn get_pinned_pieces_and_possible_moves(
+    board: &Chessboard,
+    king_position: &usize,
+    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+) -> HashMap<usize, Vec<usize>> {
+    let mut pinned_pieces: HashMap<usize, Vec<usize>> = HashMap::new();
 
-    let mut figures_pinned_by_rooks = rook_pins(board, king_position);
-    pinned_pieces.append(&mut figures_pinned_by_rooks);
-
-    let mut figures_pinned_by_bishop = bishop_pins(board, king_position);
-    pinned_pieces.append(&mut figures_pinned_by_bishop);
-
+    if let Some(moves) = moves_by_field.get(&king_position) {
+        // Rook
+        check_and_add_pin_one_direction(&board, &moves.left, &mut pinned_pieces, has_rook_movement);
+        check_and_add_pin_one_direction(&board, &moves.right, &mut pinned_pieces, has_rook_movement);
+        check_and_add_pin_one_direction(&board, &moves.forward, &mut pinned_pieces, has_rook_movement);
+        check_and_add_pin_one_direction(&board, &moves.back, &mut pinned_pieces, has_rook_movement);
+        // Bishop
+        check_and_add_pin_one_direction(&board, &moves.left_back, &mut pinned_pieces, has_bishop_movement);
+        check_and_add_pin_one_direction(&board, &moves.left_forward, &mut pinned_pieces, has_bishop_movement);
+        check_and_add_pin_one_direction(&board, &moves.right_back, &mut pinned_pieces, has_bishop_movement);
+        check_and_add_pin_one_direction(&board, &moves.right_forward, &mut pinned_pieces, has_bishop_movement);
+    }
     pinned_pieces
 }
 
-fn bishop_pins(board: &Chessboard, king_position: &usize) -> Vec<usize> {
-    let mut pieces_pined_by_bishop: Vec<usize> = Vec::new();
-
-    // left back
-    if let Some(pinned_piece) = get_pinned_piece_by_bishop(
-        board,
-        king_position,
-        figure_can_move_backward_and_left,
-        9,
-        true,
-    ) {
-        pieces_pined_by_bishop.push(pinned_piece);
-    }
-    // left forward
-    if let Some(pinned_piece) = get_pinned_piece_by_bishop(
-        board,
-        king_position,
-        figure_can_move_forward_and_left,
-        7,
-        false,
-    ) {
-        pieces_pined_by_bishop.push(pinned_piece);
-    }
-    // right forward
-    if let Some(pinned_piece) = get_pinned_piece_by_bishop(
-        board,
-        king_position,
-        figure_can_move_forward_and_right,
-        9,
-        false,
-    ) {
-        pieces_pined_by_bishop.push(pinned_piece);
-    }
-    // backward
-    if let Some(pinned_piece) = get_pinned_piece_by_bishop(
-        board,
-        king_position,
-        figure_can_move_backward_and_right,
-        7,
-        true,
-    ) {
-        pieces_pined_by_bishop.push(pinned_piece);
-    }
-
-    pieces_pined_by_bishop
+fn has_rook_movement(figure: &Figure) -> bool {
+    figure.is_rook() || figure.is_queen()
 }
 
-fn get_pinned_piece_by_bishop(
+fn has_bishop_movement(figure: &Figure) -> bool {
+    figure.is_bishop() || figure.is_queen()
+}
+
+fn check_and_add_pin_one_direction(
     board: &Chessboard,
-    king_position: &usize,
-    movement_check: fn(&usize) -> bool,
-    next_field: usize,
-    backwards: bool,
-) -> Option<usize> {
-    if let Some(opponent_figure_in_line) = possible_opponent_bishop_or_queen(
-        board,
-        king_position,
-        movement_check,
-        next_field,
-        backwards,
-    ) {
-        return get_possible_pinned_piece(
-            board,
-            opponent_figure_in_line,
-            *king_position,
-            next_field,
-            backwards,
-        );
-    }
-    return None;
-}
-
-fn possible_opponent_bishop_or_queen(
-    board: &Chessboard,
-    field_position: &usize,
-    movement_check: fn(&usize) -> bool,
-    next_field: usize,
-    negative: bool,
-) -> Option<usize> {
-    if movement_check(field_position) {
-        let field = if negative {
-            field_position - next_field
-        } else {
-            field_position + next_field
-        };
-        if let Some(opponent_figure) = board.get_opponents().get(&field) {
-            if opponent_figure.is_queen() || opponent_figure.is_bishop() {
-                return Some(field);
-            }
-            return None;
-        }
-        return possible_opponent_bishop_or_queen(
-            board,
-            &field,
-            movement_check,
-            next_field,
-            negative
-        );
-    }
-    return None;
-}
-
-fn rook_pins(board: &Chessboard, king_position: &usize) -> Vec<usize> {
-    let mut pieces_pined_by_rook: Vec<usize> = Vec::new();
-
-    // left
-    if let Some(pinned_piece) =
-        get_pinned_piece_by_rook(board, king_position, figure_can_move_left, 1, true)
-    {
-        pieces_pined_by_rook.push(pinned_piece);
-    }
-    // right
-    if let Some(pinned_piece) =
-        get_pinned_piece_by_rook(board, king_position, figure_can_move_right, 1, false)
-    {
-        pieces_pined_by_rook.push(pinned_piece);
-    }
-    // forward
-    if let Some(pinned_piece) =
-        get_pinned_piece_by_rook(board, king_position, figure_can_move_forward, 8, false)
-    {
-        pieces_pined_by_rook.push(pinned_piece);
-    }
-    // backward
-    if let Some(pinned_piece) =
-        get_pinned_piece_by_rook(board, king_position, figure_can_move_backward, 8, true)
-    {
-        pieces_pined_by_rook.push(pinned_piece);
-    }
-    pieces_pined_by_rook
-}
-
-fn get_pinned_piece_by_rook(
-    board: &Chessboard,
-    king_position: &usize,
-    movement_check: fn(&usize) -> bool,
-    next_field: usize,
-    backwards: bool,
-) -> Option<usize> {
-    if let Some(opponent_figure_in_line) =
-        possible_opponent_rook_or_queen(board, king_position, movement_check, next_field, backwards)
-    {
-        return get_possible_pinned_piece(
-            board,
-            opponent_figure_in_line,
-            *king_position,
-            next_field,
-            backwards,
-        );
-    }
-    return None;
-}
-
-// check for pins between opponent rook and own king
-// one opponent piece === no pin
-// more than one own piece == no pin
-// one own piece = pin
-fn get_possible_pinned_piece(
-    board: &Chessboard,
-    thread_field: usize,
-    own_position: usize,
-    step: usize,
-    backwards: bool,
-) -> Option<usize> {
-    // get all positions to check
-    let positions_to_check: Vec<usize> = if backwards {
-        (thread_field..=own_position).step_by(step).collect()
-    } else {
-        (own_position..=thread_field).step_by(step).collect()
-    };
+    moves: &Vec<usize>,
+    pinned_pices: &mut HashMap<usize, Vec<usize>>,
+    figure_has_correct_movement: fn(&Figure) -> bool,
+) {
     let mut possible_pinned_piece: Option<usize> = None;
-
-    for position in positions_to_check {
-        // need to ignore own field and thread field
-        if position != own_position && position != thread_field {
-            if board.positions.get(position) {
-                if board
-                    .get_opponents()
-                    .contains_key(&position)
-                {
-                    return None;
+    for &single in moves {
+        if let Some(opponent) = board.get_opponents().get(&single) {
+            if figure_has_correct_movement(&opponent) {
+                if let Some(pinned_piece) = possible_pinned_piece {
+                    pinned_pices.insert(pinned_piece, moves.clone());
                 }
-                // field is used - but it is no opponent so it has to be us!
-                // if there is already a possible pinned piece = no peace is pinned, as there are two between
-                if possible_pinned_piece.is_some() {
-                    return None;
-                }
-                possible_pinned_piece = Some(position);
+                return
             }
+            // field is opponent but not one that can pin
+            return
+        }
+        if board.get_next_player_figures().contains_key(&single) {
+            // two pieces from player -> no pin for a single one
+            if possible_pinned_piece.is_some() {
+                return
+            }
+            possible_pinned_piece = Some(single);
         }
     }
-    return possible_pinned_piece;
-}
-
-fn possible_opponent_rook_or_queen(
-    board: &Chessboard,
-    field_position: &usize,
-    movement_check: fn(&usize) -> bool,
-    next_field: usize,
-    negative: bool,
-) -> Option<usize> {
-    if movement_check(field_position) {
-        let field = if negative {
-            field_position - next_field
-        } else {
-            field_position + next_field
-        };
-        if let Some(opponent_figure) = board.get_opponents().get(&field) {
-            if opponent_figure.is_queen() || opponent_figure.is_rook() {
-                return Some(field);
-            }
-        }
-        return possible_opponent_rook_or_queen(
-            board,
-            &field,
-            movement_check,
-            next_field,
-            negative,
-        );
-    }
-    return None;
 }
 
 #[cfg(test)]
 mod tests {
 
+    use crate::helper::moves_by_field::get_moves_for_each_field;
+
     use super::*;
 
     #[test]
     fn check_pinned_piece() {
+        let moves = get_moves_for_each_field();
         let mut board = Chessboard {
             ..Default::default()
         };
@@ -267,8 +90,30 @@ mod tests {
         // white dummy move to give the move to black
         board.move_figure(8, 16);
 
-        let pinned = get_pinned_pieces(&board, &60);
+        let pinned = get_pinned_pieces_and_possible_moves(&board, &60, &moves);
         // e pawn and knight on 42
         assert_eq!(2, pinned.len());
+    }
+
+    #[test]
+    fn no_pinned_piece() {
+        let moves = get_moves_for_each_field();
+        let board = Chessboard {
+            ..Default::default()
+        };
+
+        let pinned = get_pinned_pieces_and_possible_moves(&board, &4, &moves);
+        assert_eq!(0, pinned.len());
+    }
+
+    #[test]
+    fn not_pinned_as_there_in_a_pawn_in_between() {
+        let moves = get_moves_for_each_field();
+        let mut board = Chessboard {
+            ..Default::default()
+        };
+        board.move_figure(4, 19);
+        let pinned = get_pinned_pieces_and_possible_moves(&board, &19, &moves);
+        assert_eq!(0, pinned.len());
     }
 }

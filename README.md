@@ -9,6 +9,6 @@ check np
 position startpos moves d2d4 e7e6 d4d5 f8b4 c2c3 a7a6 c3b4 d8e7 c1g5 e7g5 g1f3 g5f4 g2g3 f4b4 b1c3 b4b2 f1g2 b2c3 d1d2
 
 Position 2: 
-e1f1 b4c3 -> Bishop on e2 is pinned, but can should be able to move on pinned row!
+Depth 4: Wrong -> I guess Promotion?
 
 Depth 4 -> NP (Cleanup .unwraps())

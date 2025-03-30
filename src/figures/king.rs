@@ -125,12 +125,23 @@ impl King {
         rook_field: &usize,
         new_king_position: usize,
         field_between: usize,
+        // opt. field we need to empty check for long rochade
+        long_rochade_free_field: Option<usize>
     ) -> bool {
         // rook is in the corner, has not moved && all fields between them are not in danger
         if let Some(figure) = board.get_next_player_figures().get(rook_field) {
-            return figure.is_rook()
-                && !figure.has_moved()
-                && !(opponent_moves.contains(&field_between)
+
+            if !figure.is_rook() || figure.has_moved(){
+                return false;
+            }
+            
+            if let Some(extra_field) = long_rochade_free_field{
+                if board.positions.get(extra_field){
+                    return false;
+                }
+            }
+
+            return !(opponent_moves.contains(&field_between)
                     || opponent_moves.contains(&new_king_position)
                     || board.positions.get(field_between)
                     || board.positions.get(new_king_position));
@@ -145,11 +156,11 @@ impl King {
         possible_moves: &mut Vec<usize>,
     ) {
         // short
-        if self.is_possible_castle(board, opponent_moves, &7, 6, 5) {
+        if self.is_possible_castle(board, opponent_moves, &7, 6, 5, None) {
             possible_moves.push(6);
         }
         // long
-        if self.is_possible_castle(board, opponent_moves, &0, 2, 3) {
+        if self.is_possible_castle(board, opponent_moves, &0, 2, 3, Some(1)) {
             possible_moves.push(2);
         }
     }
@@ -161,11 +172,11 @@ impl King {
         possible_moves: &mut Vec<usize>,
     ) {
         // short
-        if self.is_possible_castle(board, opponent_moves, &63, 62, 61){
+        if self.is_possible_castle(board, opponent_moves, &63, 62, 61, None){
             possible_moves.push(62);
         }
         // long
-        if self.is_possible_castle(board, opponent_moves, &56, 58, 59){
+        if self.is_possible_castle(board, opponent_moves, &56, 58, 59, Some(57)){
             possible_moves.push(58);
         }
     }
@@ -279,6 +290,46 @@ mod tests {
         opponent_moves.push(2);
 
         let own_moves = figure.possible_moves(&board, &4, &opponent_moves);
+
+        assert_eq!(6, own_moves.len());
+        assert_eq!(true, own_moves.contains(&6));
+        assert_eq!(false, own_moves.contains(&2));
+    }
+
+    #[test]
+    fn not_able_to_castle_long_as_extra_field_is_used() {
+        let figure = King {
+            color: Color::White,
+            ..Default::default()
+        };
+
+        let mut positions = Bitmap::<64>::new();
+        positions.set(0, true);
+        positions.set(4, true);
+        positions.set(7, true);
+        positions.set(1, true);
+
+        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        white_figures.insert(
+            0,
+            Figure::Rook(Rook {
+                ..Default::default()
+            }),
+        );
+        white_figures.insert(
+            7,
+            Figure::Rook(Rook {
+                ..Default::default()
+            }),
+        );
+
+        let board = Chessboard {
+            positions,
+            white_figures,
+            ..Default::default()
+        };
+
+        let own_moves = figure.possible_moves(&board, &4, &Vec::new());
 
         assert_eq!(6, own_moves.len());
         assert_eq!(true, own_moves.contains(&6));

@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     board::board::Chessboard,
-    engine::ray::get_pinned_pieces,
+    engine::ray::get_pinned_pieces_and_possible_moves,
     evaluation::{evaluate, Evaluation},
     figures::{color::Color, figures::Figure},
     helper::moves_by_field::MoveInEveryDirection,
@@ -28,7 +28,7 @@ pub struct MoveWithRating {
 
 // used to check if possible moves are still working the way the shoud
 pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
-    let max_depth: u8 = 1;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     let moves = make_moves_and_count_moves(board, moves_by_field, max_depth, 1);
     println!("Moves: {} - Depth: {} - took: {:?}", moves, max_depth, now.elapsed());
@@ -43,7 +43,6 @@ fn make_moves_and_count_moves(
     let mut calculated_positions: u64 = 0;
 
     let (valid_moves, _) = get_valid_moves_in_position(board, moves_by_field);
-    println!("{:?}", valid_moves);
     if valid_moves.is_empty(){
         return 0
     };
@@ -68,7 +67,7 @@ fn make_moves_and_count_moves(
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 2;
+    let max_depth: u8 = 1;
     let now = SystemTime::now();
     if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1)
     {
@@ -112,13 +111,21 @@ fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usiz
             .collect()
     }
 
-    let own_pinned_pieces = get_pinned_pieces(board, king_position);
-    println!("Pinned Pieces {:?}", own_pinned_pieces);
-    let not_pinned_moves: Vec<PossibleMove> = moves
-        .into_iter()
-        .filter(|x| !own_pinned_pieces.contains(&x.from))
-        .collect();
+    let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(&board, &king_position, moves, &moves_by_field);
     return (not_pinned_moves, is_in_check);
+}
+
+fn get_not_pinned_pieces(board: &Chessboard, king_position: &usize, moves: Vec<PossibleMove>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<PossibleMove>{
+    let pinned_pieces = get_pinned_pieces_and_possible_moves(&board, &king_position, &moves_by_field); 
+
+    if pinned_pieces.is_empty(){
+        return moves;
+    } 
+    // filter out all moves from pinned pieces - but keep the moves on the same "line" as pinner (e.g. Pinned Rook can capture pinning Rook) 
+    moves.into_iter()
+    // we have estabilshed, that key is defined (unwrap)
+    .filter(|mov| !pinned_pieces.contains_key(&mov.from) || pinned_pieces.get(&mov.from).unwrap().contains(&mov.to))
+    .collect()
 }
 
 fn calculate(
