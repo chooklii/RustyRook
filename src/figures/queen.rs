@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
 use super::bishop::get_threatened_fields_bishop;
+use super::figures::SingleMove;
 use super::rook::get_rook_threatened_fields;
 use super::{bishop::get_bishop_moves,rook::get_rook_moves};
 
@@ -15,7 +16,7 @@ impl Queen {
         board: &Chessboard,
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
-    ) -> Vec<usize> {
+    ) -> Vec<SingleMove> {
         // Queen is mix of Rook and Bishop
         let mut bishop = get_bishop_moves(board, &own_position, &moves_by_field);
         let mut rook = get_rook_moves(board, &own_position, &moves_by_field);

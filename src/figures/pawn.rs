@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use crate::board::board::Chessboard;
+use crate::board::promotion::Promotion;
 use crate::figures::color::Color;
 use crate::helper::moves_by_field::MoveInEveryDirection;
+
+use super::figures::SingleMove;
 
 #[derive(Default, Clone)]
 pub struct Pawn {
@@ -10,11 +13,10 @@ pub struct Pawn {
 }
 
 impl Pawn {
-
-    fn can_move_two_fields(&self, own_position: usize) -> bool{
-        match self.color{
+    fn can_move_two_fields(&self, own_position: usize) -> bool {
+        match self.color {
             Color::White => own_position >= 7 && own_position <= 15,
-            Color::Black => own_position >= 48 && own_position <= 55
+            Color::Black => own_position >= 48 && own_position <= 55,
         }
     }
 
@@ -67,6 +69,13 @@ impl Pawn {
         }
     }
 
+    fn figure_will_promote(&self, field: &usize, color: &Color) -> bool{
+        match color {
+            Color::White => field > &55,
+            Color::Black => field < &8
+        }
+    }
+
     fn calculate_forward_position(&self, own_position: &usize, movement: usize) -> usize {
         match self.color {
             Color::Black => return own_position - movement,
@@ -102,7 +111,7 @@ impl Pawn {
                         &board,
                         &moves.left,
                         &en_passanted,
-                        &own_position
+                        &own_position,
                     );
                 }
                 if moves.right.contains(own_position) && moves.right.contains(en_passanted) {
@@ -110,7 +119,7 @@ impl Pawn {
                         board,
                         &moves.right,
                         &en_passanted,
-                        &own_position
+                        &own_position,
                     );
                 }
             }
@@ -123,7 +132,7 @@ impl Pawn {
         board: &Chessboard,
         moves: &Vec<usize>,
         en_passanted: &usize,
-        own_position: &usize
+        own_position: &usize,
     ) -> bool {
         for single in moves {
             // ignore both pawns involved in en passant
@@ -144,7 +153,7 @@ impl Pawn {
         board: &Chessboard,
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
-    ) -> Vec<usize> {
+    ) -> Vec<SingleMove> {
         let mut possible_moves = Vec::new();
         // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
         if !self.figure_can_move_forward(&own_position, &self.color) {
@@ -157,7 +166,7 @@ impl Pawn {
             let take_left_position = self.take_left_position(&one_step_forward);
             // regular take left
             if let Some(id) = self.check_taking(board, take_left_position) {
-                possible_moves.push(id);
+                self.move_one_field_forward(id, &mut possible_moves);
             }
             // en passant left
             else if let Some(possible_en_passant) = board.en_passant {
@@ -168,7 +177,10 @@ impl Pawn {
                     &moves_by_field,
                 ) {
                     if self.en_passant_position_left(own_position) == possible_en_passant {
-                        possible_moves.push(take_left_position)
+                        possible_moves.push(SingleMove {
+                            to: take_left_position,
+                            promotion: None,
+                        });
                     }
                 }
             }
@@ -177,7 +189,7 @@ impl Pawn {
             let take_right_position = self.take_right_position(&one_step_forward);
             // regular take right
             if let Some(id) = self.check_taking(board, take_right_position) {
-                possible_moves.push(id);
+                self.move_one_field_forward(id, &mut possible_moves);
             }
             // en passant right
             else if let Some(possible_en_passant) = board.en_passant {
@@ -188,14 +200,17 @@ impl Pawn {
                     &moves_by_field,
                 ) {
                     if self.en_passant_position_right(own_position) == possible_en_passant {
-                        possible_moves.push(take_right_position)
+                        possible_moves.push(SingleMove {
+                            to: take_right_position,
+                            promotion: None,
+                        });
                     }
                 }
             }
         }
         // one field forward
         if !board.positions.get(one_step_forward) {
-            possible_moves.push(one_step_forward);
+            self.move_one_field_forward(one_step_forward, &mut possible_moves);
 
             // two fields forward
             if self.can_move_two_fields(*own_position) {
@@ -203,11 +218,26 @@ impl Pawn {
 
                 if !board.positions.get(one_step_forward) && !board.positions.get(two_steps_forward)
                 {
-                    possible_moves.push(two_steps_forward);
+                    possible_moves.push(SingleMove {
+                        to: two_steps_forward,
+                        promotion: None,
+                    });
                 }
             }
         }
         possible_moves
+    }
+
+    // check for possible promotion_if so add all 4 promotions as possible move
+    fn move_one_field_forward(&self, one_field_forward: usize, possible_moves: &mut Vec<SingleMove>){
+        if self.figure_will_promote(&one_field_forward, &self.color){
+            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Queen) });
+            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Knight) });
+            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Bishop) });
+            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Rook) });
+        }else{
+            possible_moves.push(SingleMove { to: one_field_forward, promotion: None });
+        }
     }
 
     pub fn threatened_fields(&self, own_position: &usize) -> Vec<usize> {
@@ -236,7 +266,10 @@ mod tests {
 
     use bitmaps::Bitmap;
 
-    use crate::{figures::{figures::Figure, king::King, rook::Rook}, helper::moves_by_field::{self, get_moves_for_each_field}};
+    use crate::{
+        figures::{figures::Figure, king::King, knight::Knight, rook::Rook},
+        helper::moves_by_field::get_moves_for_each_field,
+    };
 
     use super::*;
 
@@ -336,7 +369,8 @@ mod tests {
         };
 
         let moves = figure.possible_moves(&board, &35, &moves_by_field);
-        assert_eq!(true, moves.contains(&42));
+        let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
+        assert_eq!(true, move_fields.contains(&42));
     }
 
     #[test]
@@ -367,7 +401,8 @@ mod tests {
         };
 
         let moves = figure.possible_moves(&board, &26, &moves_by_field);
-        assert_eq!(true, moves.contains(&19));
+        let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
+        assert_eq!(true, move_fields.contains(&19));
     }
 
     #[test]
@@ -416,7 +451,64 @@ mod tests {
         };
 
         let moves = figure.possible_moves(&board, &26, &moves_by_field);
-        println!("Moves {:?}", moves);
-        assert_eq!(false, moves.contains(&19));
+        let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
+        assert_eq!(false, move_fields.contains(&19));
+    }
+
+    #[test]
+    fn test_promotion_white() {
+        let moves_by_field = get_moves_for_each_field();
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            ..Default::default()
+        };
+        board.white_figures.insert(
+            52,
+            Figure::Pawn(Pawn {
+                color: Color::White,
+                ..Default::default()
+            }),
+        );
+
+        let figure = Pawn {
+            color: Color::White,
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &52, &moves_by_field);
+        assert_eq!(4, moves.len())
+    }
+
+    #[test]
+    fn test_promotion_black_with_capture() {
+        let moves_by_field = get_moves_for_each_field();
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            ..Default::default()
+        };
+        board.positions.set(15, true);
+        board.positions.set(6, true);
+        board.white_figures.insert(6, Figure::Knight(Knight{}));
+        board.black_figures.insert(
+            15,
+            Figure::Pawn(Pawn {
+                color: Color::White,
+                ..Default::default()
+            }),
+        );
+
+        let figure = Pawn {
+            color: Color::Black,
+            ..Default::default()
+        };
+
+        let moves = figure.possible_moves(&board, &15, &moves_by_field);
+        assert_eq!(8, moves.len())
     }
 }

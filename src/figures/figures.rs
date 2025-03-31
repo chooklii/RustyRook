@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::board::board::Chessboard;
+use crate::board::promotion::Promotion;
 use crate::figures::{knight::Knight, pawn::Pawn, queen::Queen, rook::Rook, bishop::Bishop, king::King};
 use crate::helper::moves_by_field::MoveInEveryDirection;
 
@@ -12,6 +13,11 @@ pub enum Figure {
     Knight(Knight),
     Queen(Queen),
     King(King)
+}
+
+pub struct SingleMove{
+    pub to: usize,
+    pub promotion: Option<Promotion>
 }
 
 impl Figure {
@@ -32,7 +38,7 @@ impl Figure {
         }   
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position, &moves_by_field),
             Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),

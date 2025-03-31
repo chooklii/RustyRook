@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use crate::board::board::Chessboard;
-use crate::figures::color::Color;
 use crate::helper::moves_by_field::MoveInEveryDirection;
+
+use super::figures::SingleMove;
 
 #[derive(Default, Clone)]
 pub struct Bishop {}
@@ -43,7 +44,7 @@ pub fn get_bishop_moves(
     board: &Chessboard,
     position: &usize,
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
-) -> Vec<usize> {
+) -> Vec<SingleMove> {
     let mut possible_moves = Vec::new();
 
     if let Some(movement) = moves_by_field.get(position) {
@@ -58,18 +59,18 @@ pub fn get_bishop_moves(
 fn get_moves_one_direction(
     board: &Chessboard,
     direction_moves: &Vec<usize>,
-    positions: &mut Vec<usize>,
+    positions: &mut Vec<SingleMove>,
 ) {
     for &movement in direction_moves {
         // next field is full
         if board.positions.get(movement) {
             // field is opponent - add it as well!
             if board.get_opponents().contains_key(&movement) {
-                positions.push(movement)
+                positions.push(SingleMove{to: movement, promotion: None})
             }
             return;
         }
-        positions.push(movement);
+        positions.push(SingleMove{to: movement, promotion: None})
     }
 }
 
@@ -79,7 +80,7 @@ impl Bishop {
         board: &Chessboard,
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
-    ) -> Vec<usize> {
+    ) -> Vec<SingleMove> {
         get_bishop_moves(board, &own_position, &moves_by_field)
     }
 

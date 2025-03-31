@@ -80,15 +80,15 @@ mod tests {
             ..Default::default()
         };
         // move white queen up on diagonal
-        board.move_figure(3, 33);
+        board.move_figure(3, 33, None);
         // move black pawn forward
-        board.move_figure(51, 35);
+        board.move_figure(51, 35, None);
         // white rook to pin center
-        board.move_figure(0, 20);
+        board.move_figure(0, 20, None);
         // black knight into pin of queen
-        board.move_figure(57, 42);
+        board.move_figure(57, 42, None);
         // white dummy move to give the move to black
-        board.move_figure(8, 16);
+        board.move_figure(8, 16, None);
 
         let pinned = get_pinned_pieces_and_possible_moves(&board, &60, &moves);
         // e pawn and knight on 42
@@ -112,7 +112,7 @@ mod tests {
         let mut board = Chessboard {
             ..Default::default()
         };
-        board.move_figure(4, 19);
+        board.move_figure(4, 19, None);
         let pinned = get_pinned_pieces_and_possible_moves(&board, &19, &moves);
         assert_eq!(0, pinned.len());
     }

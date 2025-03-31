@@ -2,19 +2,21 @@ use std::collections::HashMap;
 
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
+use super::figures::SingleMove;
+
 
 #[derive(Default, Clone)]
 pub struct Knight {}
 
 impl Knight {
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove> {
         let mut possible_moves = Vec::new();
 
         if let Some(moves) = moves_by_field.get(own_position){
             for field in moves.knight_moves.iter(){
                 if !board.get_next_player_figures().contains_key(&field) {
-                    possible_moves.push(*field);
+                    possible_moves.push(SingleMove{to: *field, promotion: None});
                 }  
             }
         }

@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    board::board::Chessboard,
+    board::{board::Chessboard, promotion::Promotion},
     engine::ray::get_pinned_pieces_and_possible_moves,
     evaluation::{evaluate, Evaluation},
     figures::{color::Color, figures::Figure},
@@ -17,6 +17,7 @@ use super::{checked::get_fields_to_prevent_check, sender::send_move};
 pub struct PossibleMove {
     pub from: usize,
     pub to: usize,
+    pub promoted_to: Option<Promotion>
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +29,7 @@ pub struct MoveWithRating {
 
 // used to check if possible moves are still working the way the shoud
 pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
-    let max_depth: u8 = 3;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     let moves = make_moves_and_count_moves(board, moves_by_field, max_depth, 1);
     println!("Moves: {} - Depth: {} - took: {:?}", moves, max_depth, now.elapsed());
@@ -46,9 +47,9 @@ fn make_moves_and_count_moves(
     if valid_moves.is_empty(){
         return 0
     };
-    for single in valid_moves.iter() {
+    for single in valid_moves.into_iter() {
         let mut new_board = board.clone();
-        new_board.move_figure(single.from, single.to);
+        new_board.move_figure(single.from, single.to, single.promoted_to);
 
         if depth < max_depth {
             let moves = make_moves_and_count_moves(&new_board,moves_by_field, max_depth, depth + 1);
@@ -67,7 +68,7 @@ fn make_moves_and_count_moves(
 }
 
 pub fn search_for_best_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 1;
+    let max_depth: u8 = 4;
     let now = SystemTime::now();
     if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1)
     {
@@ -92,7 +93,7 @@ fn get_own_king(board: &Chessboard) -> (&usize, &Figure) {
 
 fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> (Vec<PossibleMove>, bool) {
     // get moves from opponent
-    let opponent_moves: Vec<usize> = get_all_threatened_fields(&board, board.get_opponents(), moves_by_field);
+    let opponent_moves: Vec<usize> = get_all_threatened_fields(&board, moves_by_field);
     // todo: move this down below check check and pass opponent_moves (no reference)
     let mut moves: Vec<PossibleMove> =
         get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves, &moves_by_field);
@@ -167,9 +168,9 @@ fn calculate(
         );
     }
 
-    for single in valid_moves.iter() {
+    for single in valid_moves.into_iter() {
         let mut new_board = board.clone();
-        new_board.move_figure(single.from, single.to);
+        new_board.move_figure(single.from, single.to, single.promoted_to);
 
         if depth < max_depth {
             if let (Some(move_evaluation), calculated_moves) =
@@ -223,7 +224,7 @@ fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
 }
 
 // get all fields threadned (ignore if opponent figure is on field)
-fn get_all_threatened_fields(board: &Chessboard, figures: &HashMap<usize, Figure>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+fn get_all_threatened_fields(board: &Chessboard,  moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
     return board.get_opponents()
         .iter()
         .flat_map(|(own_position, figure)| figure.threatened_fields(board, own_position, moves_by_field))
@@ -244,7 +245,8 @@ fn get_all_possible_moves(
             .for_each(|single_move| {
                 moves.push(PossibleMove {
                     from: key.clone(),
-                    to: single_move,
+                    to: single_move.to,
+                    promoted_to: single_move.promotion
                 })
             });
     }

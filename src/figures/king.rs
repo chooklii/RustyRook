@@ -1,6 +1,6 @@
 use crate::{board::board::Chessboard, helper::movement::{figure_can_move_backward, figure_can_move_forward, figure_can_move_left, figure_can_move_right}};
 
-use super::color::Color;
+use super::{color::Color, figures::SingleMove};
 
 #[derive(Default, Clone)]
 pub struct King {
@@ -17,17 +17,17 @@ impl King {
         &self,
         board: &Chessboard,
         next_position: usize,
-        possible_moves: &mut Vec<usize>,
+        possible_moves: &mut Vec<SingleMove>,
     ) {
         if board.positions.get(next_position) {
             if board
                 .get_opponents()
                 .contains_key(&next_position)
             {
-                possible_moves.push(next_position);
+                possible_moves.push(SingleMove { to: next_position, promotion: None });
             }
         } else {
-            possible_moves.push(next_position);
+            possible_moves.push(SingleMove { to: next_position, promotion: None });
         }
     }
 
@@ -36,7 +36,7 @@ impl King {
         board: &Chessboard,
         own_position: &usize,
         opponent_moves: &Vec<usize>,
-    ) -> Vec<usize> {
+    ) -> Vec<SingleMove> {
         let mut possible_moves = Vec::new();
 
         let can_move_backward = figure_can_move_backward(own_position);
@@ -77,7 +77,7 @@ impl King {
             }
         }
         // filter out fields opponent can take
-        possible_moves.into_iter().filter(|position|!opponent_moves.contains(position)).collect()
+        possible_moves.into_iter().filter(|position|!opponent_moves.contains(&position.to)).collect()
     }
 
     pub fn threatened_fields(
@@ -153,15 +153,15 @@ impl King {
         &self,
         board: &Chessboard,
         opponent_moves: &Vec<usize>,
-        possible_moves: &mut Vec<usize>,
+        possible_moves: &mut Vec<SingleMove>,
     ) {
         // short
         if self.is_possible_castle(board, opponent_moves, &7, 6, 5, None) {
-            possible_moves.push(6);
+            possible_moves.push(SingleMove { to: 6, promotion: None });
         }
         // long
         if self.is_possible_castle(board, opponent_moves, &0, 2, 3, Some(1)) {
-            possible_moves.push(2);
+            possible_moves.push(SingleMove { to: 2, promotion: None });
         }
     }
 
@@ -169,15 +169,15 @@ impl King {
         &self,
         board: &Chessboard,
         opponent_moves: &Vec<usize>,
-        possible_moves: &mut Vec<usize>,
+        possible_moves: &mut Vec<SingleMove>,
     ) {
         // short
         if self.is_possible_castle(board, opponent_moves, &63, 62, 61, None){
-            possible_moves.push(62);
+            possible_moves.push(SingleMove { to: 62, promotion: None });
         }
         // long
         if self.is_possible_castle(board, opponent_moves, &56, 58, 59, Some(57)){
-            possible_moves.push(58);
+            possible_moves.push(SingleMove { to: 58, promotion: None });
         }
     }
 }
@@ -247,11 +247,12 @@ mod tests {
 
         let own_moves = figure.possible_moves(&board, &4, &Vec::new());
 
+        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
         // can castle left and right
-        assert_eq!(7, own_moves.len());
+        assert_eq!(7, own_move_positions.len());
 
-        assert_eq!(true, own_moves.contains(&6));
-        assert_eq!(true, own_moves.contains(&2));
+        assert_eq!(true, own_move_positions.contains(&6));
+        assert_eq!(true, own_move_positions.contains(&2));
     }
 
     #[test]
@@ -290,10 +291,10 @@ mod tests {
         opponent_moves.push(2);
 
         let own_moves = figure.possible_moves(&board, &4, &opponent_moves);
-
-        assert_eq!(6, own_moves.len());
-        assert_eq!(true, own_moves.contains(&6));
-        assert_eq!(false, own_moves.contains(&2));
+        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        assert_eq!(6, own_move_positions.len());
+        assert_eq!(true, own_move_positions.contains(&6));
+        assert_eq!(false, own_move_positions.contains(&2));
     }
 
     #[test]
@@ -330,10 +331,10 @@ mod tests {
         };
 
         let own_moves = figure.possible_moves(&board, &4, &Vec::new());
-
-        assert_eq!(6, own_moves.len());
-        assert_eq!(true, own_moves.contains(&6));
-        assert_eq!(false, own_moves.contains(&2));
+        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        assert_eq!(6, own_move_positions.len());
+        assert_eq!(true, own_move_positions.contains(&6));
+        assert_eq!(false, own_move_positions.contains(&2));
     }
 
     #[test]
@@ -371,10 +372,11 @@ mod tests {
         };
 
         let own_moves = figure.possible_moves(&board, &4, &Vec::new());
+        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
 
         // castle is not possible as there are figures in the way
-        assert_eq!(5, own_moves.len());
-        assert_eq!(false, own_moves.contains(&6));
-        assert_eq!(false, own_moves.contains(&2));
+        assert_eq!(5, own_move_positions.len());
+        assert_eq!(false, own_move_positions.contains(&6));
+        assert_eq!(false, own_move_positions.contains(&2));
     }
 }

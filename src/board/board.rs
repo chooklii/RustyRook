@@ -5,6 +5,8 @@ use regex::Regex;
 
 use crate::{figures::{bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rook::Rook}, helper::movement::{figure_can_move_left, figure_can_move_right}};
 
+use super::promotion::{convert_input_string_to_promotion, convert_promotion_to_figure, Promotion};
+
 
 #[derive(Clone)]
 pub struct Chessboard {
@@ -77,34 +79,18 @@ impl Chessboard{
             let old_field  = self.get_position_id(from_row, from_column);
             let new_field  = self.get_position_id(to_row, to_column);
             
-            // todo refactor this
-
-            if promoted_to_piece.is_some(){
-                let figure = self.promote_figure(promoted_to_piece.unwrap());
-                match self.current_move{
-                    Color::White => self.white_figures.insert(old_field, figure),
-                    Color::Black => self.black_figures.insert(old_field, figure)
-                };
-            }
-
-            self.move_figure(old_field, new_field);            
+            let promoted_figure = convert_input_string_to_promotion(promoted_to_piece);
+            self.move_figure(old_field, new_field, promoted_figure);            
         }
     }
 
     // exchange old field with promoted to figure
-    fn promote_figure(&self, promoted_to: &str) -> Figure{
-        let new_piece = self.convert_promoted_string_to_piece(promoted_to);
-
-        return new_piece;
-    }
-
-    fn convert_promoted_string_to_piece(&self, promoted_to: &str) -> Figure{
-        match promoted_to{
-            "q" | "Q" => Figure::Queen(Queen {}),
-            "k" | "K" => Figure::Knight(Knight {}),
-            "b" | "B" => Figure::Bishop(Bishop {}),
-            _ => Figure::Rook(Rook { has_moved: true })
-        }
+    fn update_figure_to_promoted_one(&mut self, old_field: usize, promoted_figure: Promotion){
+        let new_piece = convert_promotion_to_figure(promoted_figure);
+        match self.current_move{
+            Color::White => self.white_figures.insert(old_field, new_piece),
+            Color::Black => self.black_figures.insert(old_field, new_piece)
+        };
     }
 
     fn possible_future_en_passant(&mut self, old_field: usize, new_field: usize){
@@ -240,13 +226,17 @@ impl Chessboard{
         }
     }
 
-    pub fn move_figure(&mut self, from: usize, to: usize){
+    pub fn move_figure(&mut self, from: usize, to: usize, promoted_to: Option<Promotion>){
         // if move is caste move rook as well
         self.castle(from, to);
         // if move is en passant remove opponent (from field we did not move to!)
         self.check_and_execute_en_passant(from, to);
         // check for possible future en_passant options
         self.possible_future_en_passant(from, to);
+
+        if let Some(promoted_figure) = promoted_to{
+            self.update_figure_to_promoted_one(from, promoted_figure);
+        };
         self.positions.set(from, false);
         self.positions.set(to, true);
 
@@ -323,10 +313,9 @@ impl Chessboard{
 
         // https://www.chessprogramming.org/Perft_Results
 
-        if false{
-            let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R");
+        if true{
+            let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
             self.create_position_from_input_string(position_2);
-            self.current_move = Color::Black;
             return;
         }
 
@@ -549,7 +538,7 @@ mod tests {
 
         board.black_figures.insert(52, Figure::Pawn(Pawn{..Default::default()}));
         board.positions.set(52, true);
-        board.move_figure(52, 36);
+        board.move_figure(52, 36, None);
 
         assert_eq!(board.en_passant, Some(36));
     }
@@ -566,7 +555,7 @@ mod tests {
 
         board.black_figures.insert(52, Figure::Pawn(Pawn{..Default::default()}));
         board.positions.set(52, true);
-        board.move_figure(52, 44);
+        board.move_figure(52, 44, None);
 
         assert_eq!(board.en_passant, None);
     }
@@ -583,7 +572,7 @@ mod tests {
         board.white_figures.insert(26, Figure::Pawn(Pawn{..Default::default()}));
         board.black_figures.insert(25, Figure::Pawn(Pawn { color: Color::Black, ..Default::default()}));
 
-        board.move_figure(25, 18);
+        board.move_figure(25, 18, None);
 
         assert_eq!(0, board.white_figures.len());
         assert_eq!(false, board.positions.get(26))
@@ -600,7 +589,7 @@ mod tests {
         }; 
         board.black_figures.insert(36, Figure::Pawn(Pawn{color: Color::Black, ..Default::default()}));
         board.white_figures.insert(35, Figure::Pawn(Pawn { ..Default::default()}));
-        board.move_figure(35, 44);
+        board.move_figure(35, 44, None);
 
         assert_eq!(0, board.black_figures.len());
         assert_eq!(false, board.positions.get(36))
