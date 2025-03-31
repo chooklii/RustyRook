@@ -73,11 +73,37 @@ impl Chessboard{
     }
 
     pub fn update_position_from_uci_input(&mut self, mov: &str){
-        if let Some((from_row, from_column, to_row, to_column)) = self.validate_string_position(mov){
+        if let Some((from_row, from_column, to_row, to_column, promoted_to_piece)) = self.validate_string_position(mov){
             let old_field  = self.get_position_id(from_row, from_column);
             let new_field  = self.get_position_id(to_row, to_column);
             
+            // todo refactor this
+
+            if promoted_to_piece.is_some(){
+                let figure = self.promote_figure(promoted_to_piece.unwrap());
+                match self.current_move{
+                    Color::White => self.white_figures.insert(old_field, figure),
+                    Color::Black => self.black_figures.insert(old_field, figure)
+                };
+            }
+
             self.move_figure(old_field, new_field);            
+        }
+    }
+
+    // exchange old field with promoted to figure
+    fn promote_figure(&self, promoted_to: &str) -> Figure{
+        let new_piece = self.convert_promoted_string_to_piece(promoted_to);
+
+        return new_piece;
+    }
+
+    fn convert_promoted_string_to_piece(&self, promoted_to: &str) -> Figure{
+        match promoted_to{
+            "q" | "Q" => Figure::Queen(Queen {}),
+            "k" | "K" => Figure::Knight(Knight {}),
+            "b" | "B" => Figure::Bishop(Bishop {}),
+            _ => Figure::Rook(Rook { has_moved: true })
         }
     }
 
@@ -245,21 +271,29 @@ impl Chessboard{
         self.white_figures.insert(to, moved_figure);
     }
 
-    fn validate_string_position<'a>(&'a self, mov: &'a str) -> Option<(&'a str, u8, &'a str, u8)>{
+    fn validate_string_position<'a>(&'a self, mov: &'a str) -> Option<(&'a str, u8, &'a str, u8, Option<&'a str>)>{
         // first validate that input is in valid format - then split it into x/y for both positions (new and old)
-        let valid_move_regex = Regex::new(r"\A[abcdefgh][1-8][abcdefgh][1-8]").unwrap();
+        let valid_move_regex = Regex::new(r"\A[abcdefgh][1-8][abcdefgh][1-8]([qrbkQrbK]?)").unwrap();
         let valid_move = valid_move_regex.captures(mov);
 
         if valid_move.is_none(){
             return None;
         }
+
+        //todo refactor
+        let valid_move_unpacked = valid_move.unwrap().get(1);
+        let promoted_to_piece = if !valid_move_unpacked.unwrap().is_empty(){
+            Some(valid_move_unpacked.unwrap().as_str())
+        } else{None};
+
         let split_move_regex = Regex::new(r"((\S)(\S)(\S)(\S))").unwrap();
         let split_moves = split_move_regex.captures(mov).unwrap();
         return Some((
                 split_moves.get(2).unwrap().as_str(),
                 split_moves.get(3).unwrap().as_str().parse::<u8>().unwrap(),
                 split_moves.get(4).unwrap().as_str(),
-                split_moves.get(5).unwrap().as_str().parse::<u8>().unwrap()
+                split_moves.get(5).unwrap().as_str().parse::<u8>().unwrap(),
+                promoted_to_piece
             ))
     }
 
@@ -290,8 +324,9 @@ impl Chessboard{
         // https://www.chessprogramming.org/Perft_Results
 
         if false{
-            let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
+            let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R");
             self.create_position_from_input_string(position_2);
+            self.current_move = Color::Black;
             return;
         }
 
@@ -464,6 +499,42 @@ mod tests {
         assert_eq!(board.positions.get(62), true);
         assert_eq!(board.positions.get(60), false);
         assert_eq!(board.positions.get(63), false);
+    }
+
+    #[test]
+    fn promotion_black(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            en_passant: None
+        };
+
+        board.black_figures.insert(14, Figure::Pawn(Pawn { color: Color::Black }));
+        board.positions.set(14, true);
+
+        board.update_position_from_uci_input("g2g1q");
+        assert_eq!(board.positions.get(6), true);
+        assert_eq!(true, board.black_figures.get(&6).unwrap().is_queen());
+    }
+
+    #[test]
+    fn promotion_white(){
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None
+        };
+
+        board.white_figures.insert(52, Figure::Pawn(Pawn { color: Color::White }));
+        board.positions.set(52, true);
+
+        board.update_position_from_uci_input("e7e8K");
+        assert_eq!(board.positions.get(60), true);
+        assert_eq!(true, board.white_figures.get(&60).unwrap().is_knight());
     }
 
     #[test]
