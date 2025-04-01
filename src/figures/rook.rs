@@ -14,14 +14,15 @@ pub fn get_rook_threatened_fields(
     board: &Chessboard,
     position: &usize,
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    king_position: &usize
 ) -> Vec<usize> {
     let mut possible_moves = Vec::new();
 
     if let Some(movement) = moves_by_field.get(position) {
-        get_threatened_one_direction(&board,  &movement.left, &mut possible_moves);
-        get_threatened_one_direction(&board,  &movement.right, &mut possible_moves);
-        get_threatened_one_direction(&board,  &movement.forward, &mut possible_moves);
-        get_threatened_one_direction(&board,  &movement.back, &mut possible_moves);
+        get_threatened_one_direction(&board,  &movement.left, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board,  &movement.right, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board,  &movement.forward, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board,  &movement.back, &mut possible_moves, &king_position);
     }
     possible_moves
 }
@@ -30,9 +31,10 @@ fn get_threatened_one_direction(
     board: &Chessboard,
     direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
+    king_position: &usize
 ) {
     for &field in direction_moves {
-        if board.positions.get(field) {
+        if board.positions.get(field) && field != *king_position{
             positions.push(field);
             return;
         }
@@ -85,16 +87,17 @@ impl Rook {
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
     ) -> Vec<SingleMove> {
-        get_rook_moves(board, own_position, moves_by_field)
+        get_rook_moves(&board, &own_position, &moves_by_field)
     }
 
     pub fn threatened_fields(    
         &self,
         board: &Chessboard,
         position: &usize,
-        moves_by_field: &HashMap<usize, MoveInEveryDirection>
+        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        king_position: &usize
     ) -> Vec<usize>{
-        get_rook_threatened_fields(board, position, moves_by_field)
+        get_rook_threatened_fields(&board, &position, &moves_by_field, &king_position)
     }
 }
 

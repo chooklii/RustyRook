@@ -7,7 +7,7 @@ use crate::{
     board::{board::Chessboard, promotion::Promotion},
     engine::ray::get_pinned_pieces_and_possible_moves,
     evaluation::{evaluate, Evaluation},
-    figures::{color::Color, figures::Figure},
+    figures::{color::Color, figures::Figure, king},
     helper::moves_by_field::MoveInEveryDirection,
 };
 
@@ -92,14 +92,13 @@ fn get_own_king(board: &Chessboard) -> (&usize, &Figure) {
 }
 
 fn get_valid_moves_in_position(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> (Vec<PossibleMove>, bool) {
-    // get moves from opponent
-    let opponent_moves: Vec<usize> = get_all_threatened_fields(&board, moves_by_field);
+    let (king_position, _) = get_own_king(board);
+    // get moves from opponent - we ignore our own king position for rook/bishop/queen to standing on d8, and going to c8 to prevent check from h8
+    let opponent_moves: Vec<usize> = get_all_threatened_fields(&board, moves_by_field, &king_position);
     // todo: move this down below check check and pass opponent_moves (no reference)
     let mut moves: Vec<PossibleMove> =
         get_all_possible_moves(&board, board.get_next_player_figures(), &opponent_moves, &moves_by_field);
     // if opponent moves include own king -> we are in check
-    let (king_position, _) = get_own_king(board);
-
     let is_in_check = opponent_moves.contains(king_position);
 
     if is_in_check {
@@ -224,10 +223,10 @@ fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
 }
 
 // get all fields threadned (ignore if opponent figure is on field)
-fn get_all_threatened_fields(board: &Chessboard,  moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<usize> {
+fn get_all_threatened_fields(board: &Chessboard,  moves_by_field: &HashMap<usize, MoveInEveryDirection>, king_position: &usize) -> Vec<usize> {
     return board.get_opponents()
         .iter()
-        .flat_map(|(own_position, figure)| figure.threatened_fields(board, own_position, moves_by_field))
+        .flat_map(|(own_position, figure)| figure.threatened_fields(board, own_position, moves_by_field, &king_position))
         .collect();
 }
 

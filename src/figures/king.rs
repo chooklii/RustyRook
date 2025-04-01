@@ -184,7 +184,7 @@ impl King {
 
 #[cfg(test)]
 mod tests {
-    use crate::figures::{figures::Figure, rook::Rook};
+    use crate::figures::{figures::Figure, pawn::Pawn, queen::Queen, rook::Rook};
     use bitmaps::Bitmap;
     use std::collections::HashMap;
 
@@ -378,5 +378,44 @@ mod tests {
         assert_eq!(5, own_move_positions.len());
         assert_eq!(false, own_move_positions.contains(&6));
         assert_eq!(false, own_move_positions.contains(&2));
+    }
+
+    #[test]
+    fn not_beeing_able_to_move_as_all_fields_are_check(){
+
+        let mut board = Chessboard {
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::Black,
+            ..Default::default()
+        };
+        // king is on d8 and checked by queen on h8 - king cannot move as c7-e7 are full with pawns 
+        board.positions.set(50, true);
+        board.positions.set(51, true);
+        board.positions.set(52, true);
+        board.positions.set(59, true);
+        board.positions.set(63, true);
+        // it should also not be able to move to c8 
+        board.white_figures.insert(63, Figure::Queen(Queen{}));
+        board.black_figures.insert(50, Figure::Pawn(Pawn{color: Color::Black}));
+        board.black_figures.insert(51, Figure::Pawn(Pawn{color: Color::Black}));
+        board.black_figures.insert(52, Figure::Pawn(Pawn{color: Color::Black}));
+
+        let figure = King {
+            color: Color::Black,
+            ..Default::default()
+        };
+
+        let mut opponent_moves =  Vec::new();
+        opponent_moves.push(62);
+        opponent_moves.push(61);
+        opponent_moves.push(60);
+        opponent_moves.push(59);
+        opponent_moves.push(58);
+        opponent_moves.push(57);
+
+        let own_moves = figure.possible_moves(&board, &59, &opponent_moves);
+        assert_eq!(0, own_moves.len());
     }
 }

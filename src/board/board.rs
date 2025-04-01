@@ -312,17 +312,25 @@ impl Chessboard{
         self.current_move = Color::White;
 
         // https://www.chessprogramming.org/Perft_Results
-
-        if true{
+        if false{
             let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
             self.create_position_from_input_string(position_2);
             return;
         }
-
         if false{
             let position_3 = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8");
             self.create_position_from_input_string(position_3);
             return;
+        }
+        if false{
+            let position_4 = String::from("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1");
+            self.create_position_from_input_string(position_4);
+            return
+        }
+        if false{
+            let position_5 = String::from("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R");
+            self.create_position_from_input_string(position_5);
+            return
         }
 
 

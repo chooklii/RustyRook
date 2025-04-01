@@ -14,18 +14,47 @@ pub fn get_pinned_pieces_and_possible_moves(
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
 ) -> HashMap<usize, Vec<usize>> {
     let mut pinned_pieces: HashMap<usize, Vec<usize>> = HashMap::new();
-
     if let Some(moves) = moves_by_field.get(&king_position) {
         // Rook
         check_and_add_pin_one_direction(&board, &moves.left, &mut pinned_pieces, has_rook_movement);
-        check_and_add_pin_one_direction(&board, &moves.right, &mut pinned_pieces, has_rook_movement);
-        check_and_add_pin_one_direction(&board, &moves.forward, &mut pinned_pieces, has_rook_movement);
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.right,
+            &mut pinned_pieces,
+            has_rook_movement,
+        );
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.forward,
+            &mut pinned_pieces,
+            has_rook_movement,
+        );
         check_and_add_pin_one_direction(&board, &moves.back, &mut pinned_pieces, has_rook_movement);
         // Bishop
-        check_and_add_pin_one_direction(&board, &moves.left_back, &mut pinned_pieces, has_bishop_movement);
-        check_and_add_pin_one_direction(&board, &moves.left_forward, &mut pinned_pieces, has_bishop_movement);
-        check_and_add_pin_one_direction(&board, &moves.right_back, &mut pinned_pieces, has_bishop_movement);
-        check_and_add_pin_one_direction(&board, &moves.right_forward, &mut pinned_pieces, has_bishop_movement);
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.left_back,
+            &mut pinned_pieces,
+            has_bishop_movement,
+        );
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.left_forward,
+            &mut pinned_pieces,
+            has_bishop_movement,
+        );
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.right_back,
+            &mut pinned_pieces,
+            has_bishop_movement,
+        );
+        check_and_add_pin_one_direction(
+            &board,
+            &moves.right_forward,
+            &mut pinned_pieces,
+            has_bishop_movement,
+        );
     }
     pinned_pieces
 }
@@ -46,20 +75,21 @@ fn check_and_add_pin_one_direction(
 ) {
     let mut possible_pinned_piece: Option<usize> = None;
     for &single in moves {
-        if let Some(opponent) = board.get_opponents().get(&single) {
-            if figure_has_correct_movement(&opponent) {
-                if let Some(pinned_piece) = possible_pinned_piece {
-                    pinned_pices.insert(pinned_piece, moves.clone());
+        if board.positions.get(single) {
+            if let Some(opponent) = board.get_opponents().get(&single) {
+                if figure_has_correct_movement(&opponent) {
+                    if let Some(pinned_piece) = possible_pinned_piece {
+                        pinned_pices.insert(pinned_piece, moves.clone());
+                    }
+                    return;
                 }
-                return
+                // field is opponent but not one that can pin
+                return;
             }
-            // field is opponent but not one that can pin
-            return
-        }
-        if board.get_next_player_figures().contains_key(&single) {
+            // we do not need to check if there is our figure on the field - is confirmed by the two ifs prior
             // two pieces from player -> no pin for a single one
             if possible_pinned_piece.is_some() {
-                return
+                return;
             }
             possible_pinned_piece = Some(single);
         }

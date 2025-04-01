@@ -30,10 +30,11 @@ impl Queen {
         board: &Chessboard,
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        king_position: &usize
     ) -> Vec<usize> {
         // Queen is mix of Rook and Bishop
-        let mut bishop = get_threatened_fields_bishop(board, &own_position, &moves_by_field);
-        let mut rook = get_rook_threatened_fields(board, &own_position, &moves_by_field);
+        let mut bishop = get_threatened_fields_bishop(board, &own_position, &moves_by_field, &king_position);
+        let mut rook = get_rook_threatened_fields(board, &own_position, &moves_by_field, &king_position);
         bishop.append(&mut rook);
 
         bishop

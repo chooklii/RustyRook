@@ -13,14 +13,15 @@ pub fn get_threatened_fields_bishop(
     board: &Chessboard,
     position: &usize,
     moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    king_position: &usize
 ) -> Vec<usize> {
     let mut possible_moves = Vec::new();
 
     if let Some(movement) = moves_by_field.get(position) {
-        get_threatened_one_direction(&board, &movement.left_forward, &mut possible_moves);
-        get_threatened_one_direction(&board, &movement.right_forward, &mut possible_moves);
-        get_threatened_one_direction(&board, &movement.left_back, &mut possible_moves);
-        get_threatened_one_direction(&board, &movement.right_back, &mut possible_moves);
+        get_threatened_one_direction(&board, &movement.left_forward, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board, &movement.right_forward, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board, &movement.left_back, &mut possible_moves, &king_position);
+        get_threatened_one_direction(&board, &movement.right_back, &mut possible_moves, &king_position);
     }
     possible_moves
 }
@@ -29,9 +30,10 @@ fn get_threatened_one_direction(
     board: &Chessboard,
     direction_moves: &Vec<usize>,
     positions: &mut Vec<usize>,
+    king_position: &usize
 ) {
     for &movement in direction_moves {
-        if board.positions.get(movement) {
+        if board.positions.get(movement) && movement != *king_position {
             positions.push(movement);
             return;
         }
@@ -89,8 +91,9 @@ impl Bishop {
         board: &Chessboard,
         own_position: &usize,
         moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        king_position: &usize
     ) -> Vec<usize> {
-        get_threatened_fields_bishop(&board, &own_position, &moves_by_field)
+        get_threatened_fields_bishop(&board, &own_position, &moves_by_field, &king_position)
     }
 }
 
