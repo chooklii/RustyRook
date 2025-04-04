@@ -15,6 +15,7 @@ pub enum Figure {
     King(King)
 }
 
+#[derive(Debug)]
 pub struct SingleMove{
     pub to: usize,
     pub promotion: Option<Promotion>

@@ -141,7 +141,7 @@ impl Pawn {
                     if let Some(opponent) = board.get_opponents().get(single) {
                         return !opponent.is_queen() && !opponent.is_rook();
                     }
-                    return false;
+                    return true;
                 }
             }
         }
