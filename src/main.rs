@@ -33,7 +33,7 @@ fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_b
 
 fn debug_moves(chessboard: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
     let now = SystemTime::now();
-    let max_depth: u8 = 5;
+    let max_depth: u8 = 4;
     let moves = count_moves(&chessboard, moves_by_field, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",

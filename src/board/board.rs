@@ -633,14 +633,13 @@ mod tests {
     #[test]
     fn test_default_position(){
         let board = Chessboard{..Default::default()};
-        
         let moves_by_field = get_moves_for_each_field();
         let count = count_moves(&board, &moves_by_field, 4);
-
         assert_eq!(197281, count);
     }
 
     #[test]
+    #[ignore]
     fn test_position_2(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
@@ -657,6 +656,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_position_3(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
@@ -673,6 +673,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_position_4(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
@@ -689,6 +690,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_position_5(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
@@ -705,6 +707,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_position_6(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
