@@ -2,6 +2,7 @@
 Chess Engine written in Rust
 
 
-todo: 
 
-Position 4 depth 5
+Known Issues:
+
+- Input String Castle Rights are not read

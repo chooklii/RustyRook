@@ -25,16 +25,8 @@ pub struct MoveWithRating {
 }
 
 // used to check if possible moves are still working the way the shoud
-pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 5;
-    let now = SystemTime::now();
-    let moves = make_moves_and_count_moves(board, moves_by_field, max_depth, 1);
-    println!(
-        "Moves: {} - Depth: {} - took: {:?}",
-        moves,
-        max_depth,
-        now.elapsed()
-    );
+pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>, max_depth: u8) -> u64{
+    make_moves_and_count_moves(board, moves_by_field, max_depth, 1)
 }
 
 fn make_moves_and_count_moves(

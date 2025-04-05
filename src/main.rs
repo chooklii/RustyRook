@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{self}};
+use std::{collections::HashMap, io::{self}, time::SystemTime};
 use board::board::Chessboard;
 use engine::engine::{count_moves, search_for_best_move};
 use simple_file_logger::init_logger;
@@ -25,10 +25,22 @@ fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_b
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard),
         "go" => make_move(&chessboard, &moves_by_field),
-        "debug" => count_moves(&chessboard, moves_by_field),
+        "debug" => debug_moves(&chessboard, moves_by_field,),
         "quit" => quit(),
         _ => quit()
     }
+}
+
+fn debug_moves(chessboard: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+    let now = SystemTime::now();
+    let max_depth: u8 = 5;
+    let moves = count_moves(&chessboard, moves_by_field, max_depth);
+    println!(
+        "Moves: {} - Depth: {} - took: {:?}",
+        moves,
+        max_depth,
+        now.elapsed()
+    );
 }
 
 fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){

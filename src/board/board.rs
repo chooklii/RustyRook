@@ -329,9 +329,13 @@ impl Chessboard{
             self.create_position_from_input_string(position_3);
             return;
         }
-        if true{
+        if false{
             let position_4 = String::from("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1");
             self.create_position_from_input_string(position_4);
+            // todo: include castle rights from position fen
+            let mut white_king = self.white_figures.remove(&6).unwrap();
+            white_king.set_moved();
+            self.white_figures.insert(6, white_king);
             return
         }
         if false{
@@ -339,8 +343,6 @@ impl Chessboard{
             self.create_position_from_input_string(position_5);
             return
         }
-
-
 
         let default_position = String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
         self.create_position_from_input_string(default_position);
@@ -407,6 +409,8 @@ impl Chessboard{
 
 #[cfg(test)]
 mod tests {
+    use crate::{engine::engine::count_moves, helper::moves_by_field::{self, get_moves_for_each_field}, make_move};
+
     use super::*;
 
     #[test]
@@ -623,5 +627,105 @@ mod tests {
         assert_eq!(true, board.white_figures.contains_key(&14));
         assert_eq!(true, board.white_figures.contains_key(&33));
         assert_eq!(false, board.white_figures.contains_key(&34));
+    }
+
+    
+    #[test]
+    fn test_default_position(){
+        let board = Chessboard{..Default::default()};
+        
+        let moves_by_field = get_moves_for_each_field();
+        let count = count_moves(&board, &moves_by_field, 4);
+
+        assert_eq!(197281, count);
+    }
+
+    #[test]
+    fn test_position_2(){
+        let mut board = Chessboard{            
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None};
+        let moves_by_field = get_moves_for_each_field();
+
+        let position_2 = String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R");
+        board.create_position_from_input_string(position_2);
+        let count = count_moves(&board, &moves_by_field, 4);
+        assert_eq!(4085603, count);
+    }
+
+    #[test]
+    fn test_position_3(){
+        let mut board = Chessboard{            
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None};
+        let moves_by_field = get_moves_for_each_field();
+
+        let position_3 = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8");
+        board.create_position_from_input_string(position_3);
+        let count = count_moves(&board, &moves_by_field, 5);
+        assert_eq!(674624, count);
+    }
+
+    #[test]
+    fn test_position_4(){
+        let mut board = Chessboard{            
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None};
+        let moves_by_field = get_moves_for_each_field();
+
+        let position_4 = String::from("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1");
+        board.create_position_from_input_string(position_4);
+        let count = count_moves(&board, &moves_by_field, 4);
+        assert_eq!(422333, count);
+    }
+
+    #[test]
+    fn test_position_5(){
+        let mut board = Chessboard{            
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None};
+        let moves_by_field = get_moves_for_each_field();
+
+        let position_5 = String::from("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R");
+        board.create_position_from_input_string(position_5);
+        let count = count_moves(&board, &moves_by_field, 4);
+        assert_eq!(2103487, count);
+    }
+
+    #[test]
+    fn test_position_6(){
+        let mut board = Chessboard{            
+            positions: Bitmap::<64>::new(),
+            white_figures: HashMap::new(),
+            black_figures: HashMap::new(),
+            current_move: Color::White,
+            en_passant: None};
+        let moves_by_field = get_moves_for_each_field();
+
+        let position_6 = String::from("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1");
+        board.create_position_from_input_string(position_6);
+
+        let mut white_king = board.white_figures.remove(&6).unwrap();
+        white_king.set_moved();
+        board.white_figures.insert(6, white_king);
+
+        let mut black_king = board.black_figures.remove(&62).unwrap();
+        black_king.set_moved();
+        board.black_figures.insert(62, black_king);
+
+        let count = count_moves(&board, &moves_by_field, 4);
+        assert_eq!(3894594, count);
     }
 }
