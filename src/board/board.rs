@@ -129,6 +129,12 @@ impl Chessboard{
         if self.en_passant.is_none(){
             return;
         }
+        if let Some(figure) = self.get_next_player_figures().get(&old_field){
+            // check if figure moving is actually a pawn
+            if !figure.is_pawn(){
+                return
+            }
+
         let is_en_passant = match self.current_move{
             Color::White => self.is_en_passant_white(old_field, new_field),
             Color::Black => self.is_en_passant_black(old_field, new_field)
@@ -143,6 +149,7 @@ impl Chessboard{
             Color::Black => self.white_figures.remove(&en_passanted_figure),
             Color::White => self.black_figures.remove(&en_passanted_figure)
         };
+        }
     }
 
     fn is_en_passant_black(&mut self, old_field: usize, new_field: usize) -> bool{
@@ -317,12 +324,12 @@ impl Chessboard{
             self.create_position_from_input_string(position_2);
             return;
         }
-        if true{
+        if false{
             let position_3 = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8");
             self.create_position_from_input_string(position_3);
             return;
         }
-        if false{
+        if true{
             let position_4 = String::from("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1");
             self.create_position_from_input_string(position_4);
             return

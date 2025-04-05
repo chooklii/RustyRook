@@ -26,7 +26,7 @@ pub struct MoveWithRating {
 
 // used to check if possible moves are still working the way the shoud
 pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>) {
-    let max_depth: u8 = 6;
+    let max_depth: u8 = 5;
     let now = SystemTime::now();
     let moves = make_moves_and_count_moves(board, moves_by_field, max_depth, 1);
     println!(
@@ -130,7 +130,6 @@ fn get_valid_moves_in_position(
     }
     let not_pinned_moves: Vec<PossibleMove> =
         get_not_pinned_pieces(&board, &king_position, moves, &moves_by_field);
-
     return (not_pinned_moves, is_in_check);
 }
 
