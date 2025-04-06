@@ -1,6 +1,7 @@
 use std::{collections::HashMap, io::{self}, time::SystemTime};
 use board::board::Chessboard;
 use engine::engine::{count_moves, search_for_best_move};
+use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use log::info;
 use helper::moves_by_field::{get_moves_for_each_field, MoveInEveryDirection};
@@ -17,7 +18,7 @@ fn main(){
     parse_input();
 }
 
-fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
@@ -31,7 +32,7 @@ fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_b
     }
 }
 
-fn debug_moves(chessboard: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+fn debug_moves(chessboard: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
     let now = SystemTime::now();
     let max_depth: u8 = 4;
     let moves = count_moves(&chessboard, moves_by_field, max_depth);
@@ -53,7 +54,7 @@ fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
     }
 }
 
-fn make_move(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>){
+fn make_move(board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
     search_for_best_move(&board, &moves_by_field);
 }
 

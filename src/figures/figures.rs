@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::board::board::Chessboard;
 use crate::board::promotion::Promotion;
@@ -39,7 +39,7 @@ impl Figure {
         }   
     }
 
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &HashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove> {
+    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, opponent_moves: &Vec<usize>, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove> {
         match self {
             Figure::Pawn(pawn) => pawn.possible_moves(board, own_position, &moves_by_field),
             Figure::Rook(rook) => rook.possible_moves(board, own_position, &moves_by_field),
@@ -50,7 +50,7 @@ impl Figure {
         }
     }
 
-    pub fn threatened_fields(&self, board: &Chessboard, own_position: &usize, moves_by_field: &HashMap<usize, MoveInEveryDirection>, king_position: &usize) -> Vec<usize> {
+    pub fn threatened_fields(&self, board: &Chessboard, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>, king_position: &usize) -> Vec<usize> {
         match self {
             Figure::Pawn(pawn) => pawn.threatened_fields(&own_position),
             Figure::Rook(rook) => rook.threatened_fields(board, &own_position, &moves_by_field, &king_position),

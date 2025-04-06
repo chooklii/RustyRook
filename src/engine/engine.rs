@@ -1,5 +1,7 @@
 use std::{collections::HashMap, time::SystemTime};
 
+use rustc_hash::FxHashMap;
+
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
     engine::ray::get_pinned_pieces_and_possible_moves,
@@ -25,13 +27,13 @@ pub struct MoveWithRating {
 }
 
 // used to check if possible moves are still working the way the shoud
-pub fn count_moves(board: &Chessboard, moves_by_field: &HashMap<usize, MoveInEveryDirection>, max_depth: u8) -> u64{
+pub fn count_moves(board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>, max_depth: u8) -> u64{
     make_moves_and_count_moves(board, moves_by_field, max_depth, 1)
 }
 
 fn make_moves_and_count_moves(
     board: &Chessboard,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     max_depth: u8,
     depth: u8,
 ) -> u64 {
@@ -66,7 +68,7 @@ fn make_moves_and_count_moves(
 
 pub fn search_for_best_move(
     board: &Chessboard,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) {
     let max_depth: u8 = 4;
     let now = SystemTime::now();
@@ -92,7 +94,7 @@ fn get_own_king(board: &Chessboard) -> (&usize, &Figure) {
 
 fn get_valid_moves_in_position(
     board: &Chessboard,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> (Vec<PossibleMove>, bool) {
     let (king_position, _) = get_own_king(board);
     // get moves from opponent - we ignore our own king position for rook/bishop/queen to standing on d8, and going to c8 to prevent check from h8
@@ -157,7 +159,7 @@ fn get_not_pinned_pieces(
     board: &Chessboard,
     king_position: &usize,
     moves: Vec<PossibleMove>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Vec<PossibleMove> {
     let pinned_pieces =
         get_pinned_pieces_and_possible_moves(&board, &king_position, &moves_by_field);
@@ -178,7 +180,7 @@ fn get_not_pinned_pieces(
 
 fn calculate(
     board: &Chessboard,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     max_depth: u8,
     depth: u8,
 ) -> (Option<MoveWithRating>, u64) {
@@ -273,7 +275,7 @@ fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
 // get all fields threadned (ignore if opponent figure is on field)
 fn get_all_threatened_fields(
     board: &Chessboard,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     king_position: &usize,
 ) -> Vec<usize> {
     return board
@@ -288,9 +290,9 @@ fn get_all_threatened_fields(
 // default logic get all pseudo legal moves
 fn get_all_possible_moves(
     board: &Chessboard,
-    figures: &HashMap<usize, Figure>,
+    figures: &FxHashMap<usize, Figure>,
     opponent_moves: &Vec<usize>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Vec<PossibleMove> {
     let mut moves = Vec::new();
     for (key, val) in figures.iter() {

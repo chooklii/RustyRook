@@ -1,4 +1,6 @@
-use std::{cmp::min, collections::HashMap};
+use std::{cmp::min};
+
+use rustc_hash::FxHashMap;
 
 /*
  calculate all maximum possible moves in every direction once and then just use them when calculating the moves
@@ -32,8 +34,8 @@ impl Default for MoveInEveryDirection {
     }
 }
 
-pub fn get_moves_for_each_field() -> HashMap<usize, MoveInEveryDirection> {
-    let mut values: HashMap<usize, MoveInEveryDirection> = HashMap::new();
+pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
+    let mut values: FxHashMap<usize, MoveInEveryDirection> = FxHashMap::default();
 
     for column in 0..8 {
         for row in 0..8 {

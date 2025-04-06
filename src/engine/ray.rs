@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{
     board::board::Chessboard, figures::figures::Figure,
@@ -11,9 +11,9 @@ use crate::{
 pub fn get_pinned_pieces_and_possible_moves(
     board: &Chessboard,
     king_position: &usize,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
-) -> HashMap<usize, Vec<usize>> {
-    let mut pinned_pieces: HashMap<usize, Vec<usize>> = HashMap::new();
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
+) -> FxHashMap<usize, Vec<usize>> {
+    let mut pinned_pieces: FxHashMap<usize, Vec<usize>> = FxHashMap::default();
     if let Some(moves) = moves_by_field.get(&king_position) {
         // Rook
         check_and_add_pin_one_direction(&board, &moves.left, &mut pinned_pieces, has_rook_movement);
@@ -70,7 +70,7 @@ fn has_bishop_movement(figure: &Figure) -> bool {
 fn check_and_add_pin_one_direction(
     board: &Chessboard,
     moves: &Vec<usize>,
-    pinned_pices: &mut HashMap<usize, Vec<usize>>,
+    pinned_pices: &mut FxHashMap<usize, Vec<usize>>,
     figure_has_correct_movement: fn(&Figure) -> bool,
 ) {
     let mut possible_pinned_piece: Option<usize> = None;

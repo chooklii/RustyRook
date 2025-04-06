@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use rustc_hash::FxHashMap;
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
 use super::bishop::get_threatened_fields_bishop;
@@ -15,7 +14,7 @@ impl Queen {
         &self,
         board: &Chessboard,
         own_position: &usize,
-        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     ) -> Vec<SingleMove> {
         // Queen is mix of Rook and Bishop
         let mut bishop = get_bishop_moves(board, &own_position, &moves_by_field);
@@ -29,7 +28,7 @@ impl Queen {
         &self,
         board: &Chessboard,
         own_position: &usize,
-        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
         king_position: &usize
     ) -> Vec<usize> {
         // Queen is mix of Rook and Bishop

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{
     board::board::Chessboard,
@@ -14,7 +14,7 @@ pub fn get_fields_to_prevent_check(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Vec<usize> {
     let count_of_checks = opponent_moves
         .iter()
@@ -61,7 +61,7 @@ fn check_and_get_bishop_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Option<Vec<usize>> {
     if let Some(movement) = moves_by_field.get(king_position) {
         let left_fw = check_single_direction_check(
@@ -109,7 +109,7 @@ fn check_and_get_rook_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
     opponent_moves: &Vec<usize>,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Option<Vec<usize>> {
     if let Some(moves) = moves_by_field.get(king_position) {
         let left = check_single_direction_check(
@@ -187,7 +187,7 @@ fn check_single_direction_check(
 fn check_and_get_knight_check_field(
     board: &Chessboard,
     king_position: &usize,
-    moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Option<usize> {
     if let Some(moves) = moves_by_field.get(king_position) {
         for &field in moves.knight_moves.iter() {
@@ -275,8 +275,8 @@ mod tests {
 
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
@@ -314,8 +314,8 @@ mod tests {
         let possible_moves = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
@@ -358,8 +358,8 @@ mod tests {
         let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
@@ -391,8 +391,8 @@ mod tests {
         let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             ..Default::default()
         };

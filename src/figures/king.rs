@@ -186,8 +186,7 @@ impl King {
 mod tests {
     use crate::figures::{figures::Figure, pawn::Pawn, queen::Queen, rook::Rook};
     use bitmaps::Bitmap;
-    use std::collections::HashMap;
-
+    use rustc_hash::FxHashMap;
     use super::*;
 
     #[test]
@@ -224,7 +223,7 @@ mod tests {
         positions.set(4, true);
         positions.set(7, true);
 
-        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: FxHashMap<usize, Figure> = FxHashMap::default();
 
         white_figures.insert(
             0,
@@ -267,7 +266,7 @@ mod tests {
         positions.set(4, true);
         positions.set(7, true);
 
-        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: FxHashMap<usize, Figure> = FxHashMap::default();
         white_figures.insert(
             0,
             Figure::Rook(Rook {
@@ -310,7 +309,7 @@ mod tests {
         positions.set(7, true);
         positions.set(1, true);
 
-        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: FxHashMap<usize, Figure> = FxHashMap::default();
         white_figures.insert(
             0,
             Figure::Rook(Rook {
@@ -351,7 +350,7 @@ mod tests {
         positions.set(6, true);
         positions.set(7, true);
 
-        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: FxHashMap<usize, Figure> = FxHashMap::default();
         white_figures.insert(
             0,
             Figure::Rook(Rook {
@@ -385,8 +384,8 @@ mod tests {
 
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             ..Default::default()
         };

@@ -2,6 +2,7 @@ use std::{collections::HashMap, usize};
 
 use bitmaps::Bitmap;
 use regex::Regex;
+use rustc_hash::FxHashMap;
 
 use crate::{figures::{bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn, queen::Queen, rook::Rook}, helper::movement::{figure_can_move_left, figure_can_move_right}};
 
@@ -11,8 +12,8 @@ use super::promotion::{convert_input_string_to_promotion, convert_promotion_to_f
 #[derive(Clone)]
 pub struct Chessboard {
     pub positions: Bitmap<64>,
-    pub white_figures: HashMap<usize, Figure>,
-    pub black_figures: HashMap<usize, Figure>,
+    pub white_figures: FxHashMap<usize, Figure>,
+    pub black_figures: FxHashMap<usize, Figure>,
     pub current_move: Color,
     // possible field with figure that can be taken en passant
     pub en_passant: Option<usize>
@@ -22,8 +23,8 @@ impl Default for Chessboard{
     fn default() -> Chessboard {
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None
         };
@@ -59,7 +60,7 @@ impl Chessboard{
     }
 
 
-    pub fn get_opponents(&self) -> &HashMap<usize, Figure>{
+    pub fn get_opponents(&self) -> &FxHashMap<usize, Figure>{
         match self.current_move{
             Color::White => &self.black_figures,
             Color::Black => &self.white_figures
@@ -67,7 +68,7 @@ impl Chessboard{
     }
 
 
-    pub fn get_next_player_figures(&self) -> &HashMap<usize, Figure>{
+    pub fn get_next_player_figures(&self) -> &FxHashMap<usize, Figure>{
         match self.current_move{
             Color::White => &self.white_figures,
             Color::Black => &self.black_figures
@@ -314,8 +315,8 @@ impl Chessboard{
 
     pub fn set_to_default(&mut self){
         self.positions = Bitmap::<64>::new();
-        self.black_figures = HashMap::new();
-        self.white_figures = HashMap::new();
+        self.black_figures = FxHashMap::default();
+        self.white_figures = FxHashMap::default();
         self.current_move = Color::White;
 
         // https://www.chessprogramming.org/Perft_Results
@@ -417,8 +418,8 @@ mod tests {
     fn short_castle_white(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None
         };
@@ -441,8 +442,8 @@ mod tests {
     fn long_castle_white(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None
         };
@@ -465,8 +466,8 @@ mod tests {
     fn short_castle_black(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: None
         };
@@ -489,8 +490,8 @@ mod tests {
     fn long_castle_black(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: None
         };
@@ -513,8 +514,8 @@ mod tests {
     fn promotion_black(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: None
         };
@@ -531,8 +532,8 @@ mod tests {
     fn promotion_white(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None
         };
@@ -549,8 +550,8 @@ mod tests {
     fn test_en_passant(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: None
         };
@@ -566,8 +567,8 @@ mod tests {
     fn test_no_en_passant(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: None
         };
@@ -583,8 +584,8 @@ mod tests {
     fn test_if_en_passanted_figure_is_removed_black(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             en_passant: Some(26)
         }; 
@@ -601,8 +602,8 @@ mod tests {
     fn test_if_en_passanted_figure_is_removed_white(){
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: Some(36)
         }; 
@@ -643,8 +644,8 @@ mod tests {
     fn test_position_2(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None};
         let moves_by_field = get_moves_for_each_field();
@@ -660,8 +661,8 @@ mod tests {
     fn test_position_3(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None};
         let moves_by_field = get_moves_for_each_field();
@@ -677,8 +678,8 @@ mod tests {
     fn test_position_4(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None};
         let moves_by_field = get_moves_for_each_field();
@@ -694,8 +695,8 @@ mod tests {
     fn test_position_5(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None};
         let moves_by_field = get_moves_for_each_field();
@@ -711,8 +712,8 @@ mod tests {
     fn test_position_6(){
         let mut board = Chessboard{            
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             en_passant: None};
         let moves_by_field = get_moves_for_each_field();

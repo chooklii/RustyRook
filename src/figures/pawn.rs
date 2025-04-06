@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use rustc_hash::FxHashMap;
+
 use crate::board::board::Chessboard;
 use crate::board::promotion::Promotion;
 use crate::figures::color::Color;
@@ -69,10 +71,10 @@ impl Pawn {
         }
     }
 
-    fn figure_will_promote(&self, field: &usize, color: &Color) -> bool{
+    fn figure_will_promote(&self, field: &usize, color: &Color) -> bool {
         match color {
             Color::White => field > &55,
-            Color::Black => field < &8
+            Color::Black => field < &8,
         }
     }
 
@@ -98,7 +100,7 @@ impl Pawn {
         board: &Chessboard,
         own_position: &usize,
         en_passanted: &usize,
-        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     ) -> bool {
         if let Some((king_position, _)) = board
             .get_next_player_figures()
@@ -152,7 +154,7 @@ impl Pawn {
         &self,
         board: &Chessboard,
         own_position: &usize,
-        moves_by_field: &HashMap<usize, MoveInEveryDirection>,
+        moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     ) -> Vec<SingleMove> {
         let mut possible_moves = Vec::new();
         // if pawn is not able to move one field it cant move anywhere (it is on last row) - can be removed with promotion?
@@ -229,14 +231,33 @@ impl Pawn {
     }
 
     // check for possible promotion_if so add all 4 promotions as possible move
-    fn move_one_field_forward(&self, one_field_forward: usize, possible_moves: &mut Vec<SingleMove>){
-        if self.figure_will_promote(&one_field_forward, &self.color){
-            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Queen) });
-            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Knight) });
-            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Bishop) });
-            possible_moves.push(SingleMove { to: one_field_forward, promotion: Some(Promotion::Rook) });
-        }else{
-            possible_moves.push(SingleMove { to: one_field_forward, promotion: None });
+    fn move_one_field_forward(
+        &self,
+        one_field_forward: usize,
+        possible_moves: &mut Vec<SingleMove>,
+    ) {
+        if self.figure_will_promote(&one_field_forward, &self.color) {
+            possible_moves.push(SingleMove {
+                to: one_field_forward,
+                promotion: Some(Promotion::Queen),
+            });
+            possible_moves.push(SingleMove {
+                to: one_field_forward,
+                promotion: Some(Promotion::Knight),
+            });
+            possible_moves.push(SingleMove {
+                to: one_field_forward,
+                promotion: Some(Promotion::Bishop),
+            });
+            possible_moves.push(SingleMove {
+                to: one_field_forward,
+                promotion: Some(Promotion::Rook),
+            });
+        } else {
+            possible_moves.push(SingleMove {
+                to: one_field_forward,
+                promotion: None,
+            });
         }
     }
 
@@ -265,6 +286,7 @@ mod tests {
     use std::collections::HashMap;
 
     use bitmaps::Bitmap;
+    use rustc_hash::FxHashMap;
 
     use crate::{
         figures::{figures::Figure, king::King, knight::Knight, rook::Rook},
@@ -287,7 +309,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &12, &HashMap::new());
+        let moves = figure.possible_moves(&board, &12, &FxHashMap::default());
 
         assert_eq!(2, moves.len());
     }
@@ -295,7 +317,7 @@ mod tests {
     #[test]
     fn test_take_from_a_to_h() {
         let mut positions = Bitmap::<64>::new();
-        let mut white_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut white_figures: FxHashMap<usize, Figure> = FxHashMap::default();
 
         white_figures.insert(
             23,
@@ -317,7 +339,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &16, &HashMap::new());
+        let moves = figure.possible_moves(&board, &16, &FxHashMap::default());
 
         // should not be able to take from Field 16(A3) to 23(H3)
         assert_eq!(0, moves.len());
@@ -337,7 +359,7 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = figure.possible_moves(&board, &55, &HashMap::new());
+        let moves = figure.possible_moves(&board, &55, &FxHashMap::default());
 
         assert_eq!(2, moves.len());
     }
@@ -353,7 +375,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        let mut opponents: FxHashMap<usize, Figure> = FxHashMap::default();
         opponents.insert(
             34,
             Figure::Pawn(Pawn {
@@ -384,7 +406,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        let mut opponents: FxHashMap<usize, Figure> = FxHashMap::default();
         opponents.insert(
             27,
             Figure::Pawn(Pawn {
@@ -419,7 +441,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut opponents: HashMap<usize, Figure> = HashMap::new();
+        let mut opponents: FxHashMap<usize, Figure> = FxHashMap::default();
         opponents.insert(
             27,
             Figure::Pawn(Pawn {
@@ -433,7 +455,7 @@ mod tests {
             }),
         );
 
-        let mut own_figures: HashMap<usize, Figure> = HashMap::new();
+        let mut own_figures: FxHashMap<usize, Figure> = FxHashMap::default();
         own_figures.insert(
             24,
             Figure::King(King {
@@ -460,8 +482,8 @@ mod tests {
         let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::White,
             ..Default::default()
         };
@@ -487,14 +509,14 @@ mod tests {
         let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
             positions: Bitmap::<64>::new(),
-            white_figures: HashMap::new(),
-            black_figures: HashMap::new(),
+            white_figures: FxHashMap::default(),
+            black_figures: FxHashMap::default(),
             current_move: Color::Black,
             ..Default::default()
         };
         board.positions.set(15, true);
         board.positions.set(6, true);
-        board.white_figures.insert(6, Figure::Knight(Knight{}));
+        board.white_figures.insert(6, Figure::Knight(Knight {}));
         board.black_figures.insert(
             15,
             Figure::Pawn(Pawn {
