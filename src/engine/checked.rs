@@ -255,8 +255,6 @@ fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) ->
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashMap;
-
     use bitmaps::Bitmap;
 
     use crate::{

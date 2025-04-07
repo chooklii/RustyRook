@@ -1,4 +1,4 @@
-use std::{cmp::min};
+use std::cmp::min;
 
 use rustc_hash::FxHashMap;
 

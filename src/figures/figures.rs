@@ -61,6 +61,17 @@ impl Figure {
         }
     } 
 
+    pub fn possible_takes(&self, board: &Chessboard, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove>{
+        match self {
+            Figure::Pawn(pawn) => pawn.possible_takes_and_promotion(board, own_position),
+            Figure::Rook(rook) => rook.possible_takes(board, own_position, &moves_by_field),
+            Figure::Bishop(bishop) => bishop.possible_takes(board, own_position, &moves_by_field),
+            Figure::Knight(knight) => knight.possible_takes(board, own_position, &moves_by_field),
+            Figure::Queen(queen) => queen.possible_takes(board, own_position, &moves_by_field),
+            Figure::King(_) => Vec::new()
+        }
+    }
+
     pub fn get_weight(&self) -> u8{
         match self{
             Figure::Bishop(_) => 3,
@@ -69,17 +80,6 @@ impl Figure {
             Figure::Knight(_) => 3,
             Figure::Pawn(_) => 1,
             Figure::Rook(_) => 5
-        }
-    }
-
-    pub fn get_name(&self) -> String{
-        match self{
-            Figure::Bishop(_) => String::from("B"),
-            Figure::King(_) => String::from("K"),
-            Figure::Queen(_) => String::from("Q"),
-            Figure::Knight(_) => String::from("H"), // Horse
-            Figure::Pawn(_) => String::from("P"),
-            Figure::Rook(_) => String::from("R")
         }
     }
 

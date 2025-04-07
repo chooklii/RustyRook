@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{self}, time::SystemTime};
+use std::{io::{self}, time::SystemTime};
 use board::board::Chessboard;
 use engine::engine::{count_moves, search_for_best_move};
 use rustc_hash::FxHashMap;

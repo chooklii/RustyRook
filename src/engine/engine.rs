@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::SystemTime};
+use std::time::SystemTime;
 
 use rustc_hash::FxHashMap;
 
@@ -51,6 +51,7 @@ fn make_moves_and_count_moves(
             let moves =
                 make_moves_and_count_moves(&new_board, moves_by_field, max_depth, depth + 1);
 
+            // Logging for Debug
             if depth == 1 {
                 println!(
                     "Move {} - {}- Possible Moves after it {}",
@@ -72,7 +73,7 @@ pub fn search_for_best_move(
 ) {
     let max_depth: u8 = 4;
     let now = SystemTime::now();
-    if let (Some(best_move), calculations) = calculate(board, moves_by_field, max_depth, 1) {
+    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field, max_depth, 1) {
         println!(
             "Calculated Positions {} and took {:?}",
             calculations,
@@ -96,10 +97,10 @@ fn get_valid_moves_in_position(
     board: &Chessboard,
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> (Vec<PossibleMove>, bool) {
-    let (king_position, _) = get_own_king(board);
+    let (king_position, _) = get_own_king(&board);
     // get moves from opponent - we ignore our own king position for rook/bishop/queen to standing on d8, and going to c8 to prevent check from h8
     let opponent_moves: Vec<usize> =
-        get_all_threatened_fields(&board, moves_by_field, &king_position);
+        get_all_threatened_fields(&board, &moves_by_field, &king_position);
     // todo: move this down below check check and pass opponent_moves (no reference)
     let mut moves: Vec<PossibleMove> = get_all_possible_moves(
         &board,
@@ -111,7 +112,7 @@ fn get_valid_moves_in_position(
     let is_in_check = opponent_moves.contains(king_position);
     if is_in_check {
         let prevent_check_fields =
-            get_fields_to_prevent_check(board, king_position, &opponent_moves, &moves_by_field);
+            get_fields_to_prevent_check(&board, king_position, &opponent_moves, &moves_by_field);
         // either figure is king (we allow all his moves - or figure can prevent check)
         moves = moves
             .into_iter()
@@ -188,7 +189,7 @@ fn calculate(
     let mut best_move: Option<MoveWithRating> = None;
     let mut calculated_positions: u64 = 0;
 
-    let (valid_moves, is_in_check) = get_valid_moves_in_position(board, moves_by_field);
+    let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, &moves_by_field);
     if is_in_check && valid_moves.is_empty() {
         // L
         return (
@@ -223,7 +224,7 @@ fn calculate(
 
         if depth < max_depth {
             if let (Some(move_evaluation), calculated_moves) =
-                calculate(&new_board, moves_by_field, max_depth, depth + 1)
+                calculate(&new_board, &moves_by_field, max_depth, depth + 1)
             {
                 calculated_positions += calculated_moves;
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, usize};
+use std::usize;
 
 use bitmaps::Bitmap;
 use regex::Regex;
@@ -34,23 +34,6 @@ impl Default for Chessboard{
 }
 
 impl Chessboard{
-
-    // convert board to unique position key 
-    pub fn position_key(&self) -> String{
-        let mut key = String::new();
-        for n in 0..63{
-            if !self.positions.get(n){
-                key.push_str("0");
-            }else if self.white_figures.contains_key(&n) {
-                key.push_str("W");  
-                key.push_str(&self.white_figures.get(&n).unwrap().get_name());
-            }else if self.black_figures.contains_key(&n) {
-                key.push_str("B");
-                key.push_str(&self.black_figures.get(&n).unwrap().get_name());  
-            }
-        }
-        key
-    }
 
     fn set_current_move(&mut self){
         match self.current_move{
@@ -410,7 +393,7 @@ impl Chessboard{
 
 #[cfg(test)]
 mod tests {
-    use crate::{engine::engine::count_moves, helper::moves_by_field::{self, get_moves_for_each_field}, make_move};
+    use crate::{engine::engine::count_moves, helper::moves_by_field::get_moves_for_each_field};
 
     use super::*;
 

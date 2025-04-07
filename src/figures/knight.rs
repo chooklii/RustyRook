@@ -30,6 +30,18 @@ impl Knight {
         }
         return Vec::new();
     }
+
+    pub fn possible_takes(&self, board: &Chessboard, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove>{
+        let mut possible_takes = Vec::new();
+        if let Some(moves) = moves_by_field.get(own_position){
+            for single_move in moves.knight_moves.iter(){
+                if board.get_opponents().contains_key(single_move){
+                    possible_takes.push(SingleMove { to: *single_move, promotion: None });
+                }
+            }
+        }
+        possible_takes
+    }
 }
 
 
@@ -62,6 +74,23 @@ mod tests{
 
         let moves = figure.possible_moves(&board, &54, &possible_moves);
         assert_eq!(4, moves.len());
+    }
 
+    #[test]
+    fn test_takes_default_board(){
+        let possible_moves = get_moves_for_each_field();
+        let figure = Knight {
+            ..Default::default()
+        };
+        let board = Chessboard {
+            ..Default::default()
+        };
+
+        let moves = figure.possible_takes(&board, &1, &possible_moves);
+        assert_eq!(0, moves.len());
+
+        let moves = figure.possible_takes(&board, &33, &possible_moves);
+        // 48, 50
+        assert_eq!(2, moves.len());
     }
 }

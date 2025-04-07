@@ -44,7 +44,6 @@ fn get_threatened_one_direction(
     }
 }
 
-// the Rooooook is also part of the Queen
 pub fn get_rook_moves(
     board: &Chessboard,
     position: &usize,
@@ -78,6 +77,38 @@ fn get_moves_one_direction(
     }
 }
 
+pub fn get_possible_takes_rook(
+    board: &Chessboard,
+    position: &usize,
+    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
+) -> Vec<SingleMove> {
+    let mut possible_moves = Vec::new();
+
+    if let Some(movement) = moves_by_field.get(position) {
+        get_takes_one_direction(&board , &movement.left, &mut possible_moves);
+        get_takes_one_direction(&board , &movement.right, &mut possible_moves);
+        get_takes_one_direction(&board , &movement.forward, &mut possible_moves);
+        get_takes_one_direction(&board, &movement.back, &mut possible_moves);
+    }
+    possible_moves
+}
+
+fn get_takes_one_direction(
+    board: &Chessboard,
+    direction_moves: &Vec<usize>,
+    positions: &mut Vec<SingleMove>,
+) {
+    for &field in direction_moves {
+        if board.positions.get(field) {
+            // field is opponent - add it as well!
+            if board.get_opponents().contains_key(&field) {
+                positions.push(SingleMove{to: field, promotion: None})
+            }
+            return;
+        }
+    }
+}
+
 impl Rook {
     pub fn set_moved(&mut self) {
         self.has_moved = true;
@@ -100,6 +131,15 @@ impl Rook {
         king_position: &usize
     ) -> Vec<usize>{
         get_rook_threatened_fields(&board, &position, &moves_by_field, &king_position)
+    }
+
+    pub fn possible_takes(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+        moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
+    ) -> Vec<SingleMove> {
+        get_possible_takes_rook(&board, &own_position, &moves_by_field)
     }
 }
 

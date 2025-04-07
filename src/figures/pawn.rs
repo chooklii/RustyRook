@@ -279,12 +279,35 @@ impl Pawn {
         }
         possible_moves
     }
+
+    pub fn possible_takes_and_promotion(&self, board: &Chessboard, own_position: &usize) -> Vec<SingleMove>{
+        let mut possible_moves: Vec<SingleMove> = Vec::new();
+        if !self.figure_can_move_forward(&own_position, &self.color) {
+            return possible_moves;
+        }
+        let one_step_forward = self.calculate_forward_position(own_position, 8);
+        if self.figure_will_promote(&one_step_forward, &self.color){
+            self.move_one_field_forward(one_step_forward, &mut possible_moves);
+        }
+
+        if self.figure_can_move_right(own_position, &self.color) {
+            let take_right_position = self.take_right_position(&one_step_forward);
+            if let Some(id) = self.check_taking(board, take_right_position) {
+                self.move_one_field_forward(id, &mut possible_moves);
+            }
+        }
+        if self.figure_can_move_right(own_position, &self.color) {
+            let take_right_position = self.take_right_position(&one_step_forward);
+            if let Some(id) = self.check_taking(board, take_right_position) {
+                self.move_one_field_forward(id, &mut possible_moves);
+            }
+        }
+        possible_moves
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use bitmaps::Bitmap;
     use rustc_hash::FxHashMap;
 
