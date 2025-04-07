@@ -1,112 +1,14 @@
-use std::collections::HashMap;
-
 use rustc_hash::FxHashMap;
 
 use crate::board::board::Chessboard;
 use crate::helper::moves_by_field::MoveInEveryDirection;
 
 use super::figures::SingleMove;
+use super::BishopAndRookMoves::{get_fields_threatened_by_rook, get_rook_moves, get_takes_rook};
 
 #[derive(Default, Clone)]
 pub struct Rook {
     pub has_moved: bool,
-}
-
-pub fn get_rook_threatened_fields(
-    board: &Chessboard,
-    position: &usize,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-    king_position: &usize
-) -> Vec<usize> {
-    let mut possible_moves = Vec::new();
-
-    if let Some(movement) = moves_by_field.get(position) {
-        get_threatened_one_direction(&board,  &movement.left, &mut possible_moves, &king_position);
-        get_threatened_one_direction(&board,  &movement.right, &mut possible_moves, &king_position);
-        get_threatened_one_direction(&board,  &movement.forward, &mut possible_moves, &king_position);
-        get_threatened_one_direction(&board,  &movement.back, &mut possible_moves, &king_position);
-    }
-    possible_moves
-}
-
-fn get_threatened_one_direction(
-    board: &Chessboard,
-    direction_moves: &Vec<usize>,
-    positions: &mut Vec<usize>,
-    king_position: &usize
-) {
-    for &field in direction_moves {
-        if board.positions.get(field) && field != *king_position{
-            positions.push(field);
-            return;
-        }
-        positions.push(field);
-    }
-}
-
-pub fn get_rook_moves(
-    board: &Chessboard,
-    position: &usize,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-) -> Vec<SingleMove> {
-    let mut possible_moves = Vec::new();
-
-    if let Some(movement) = moves_by_field.get(position) {
-        get_moves_one_direction(&board , &movement.left, &mut possible_moves);
-        get_moves_one_direction(&board , &movement.right, &mut possible_moves);
-        get_moves_one_direction(&board , &movement.forward, &mut possible_moves);
-        get_moves_one_direction(&board, &movement.back, &mut possible_moves);
-    }
-    possible_moves
-}
-
-fn get_moves_one_direction(
-    board: &Chessboard,
-    direction_moves: &Vec<usize>,
-    positions: &mut Vec<SingleMove>,
-) {
-    for &field in direction_moves {
-        if board.positions.get(field) {
-            // field is opponent - add it as well!
-            if board.get_opponents().contains_key(&field) {
-                positions.push(SingleMove{to: field, promotion: None})
-            }
-            return;
-        }
-        positions.push(SingleMove{to: field, promotion: None})
-    }
-}
-
-pub fn get_possible_takes_rook(
-    board: &Chessboard,
-    position: &usize,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-) -> Vec<SingleMove> {
-    let mut possible_moves = Vec::new();
-
-    if let Some(movement) = moves_by_field.get(position) {
-        get_takes_one_direction(&board , &movement.left, &mut possible_moves);
-        get_takes_one_direction(&board , &movement.right, &mut possible_moves);
-        get_takes_one_direction(&board , &movement.forward, &mut possible_moves);
-        get_takes_one_direction(&board, &movement.back, &mut possible_moves);
-    }
-    possible_moves
-}
-
-fn get_takes_one_direction(
-    board: &Chessboard,
-    direction_moves: &Vec<usize>,
-    positions: &mut Vec<SingleMove>,
-) {
-    for &field in direction_moves {
-        if board.positions.get(field) {
-            // field is opponent - add it as well!
-            if board.get_opponents().contains_key(&field) {
-                positions.push(SingleMove{to: field, promotion: None})
-            }
-            return;
-        }
-    }
 }
 
 impl Rook {
@@ -130,7 +32,7 @@ impl Rook {
         moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
         king_position: &usize
     ) -> Vec<usize>{
-        get_rook_threatened_fields(&board, &position, &moves_by_field, &king_position)
+        get_fields_threatened_by_rook(&board, &position, &moves_by_field, &king_position)
     }
 
     pub fn possible_takes(
@@ -139,7 +41,7 @@ impl Rook {
         own_position: &usize,
         moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     ) -> Vec<SingleMove> {
-        get_possible_takes_rook(&board, &own_position, &moves_by_field)
+        get_takes_rook(&board, &own_position, &moves_by_field)
     }
 }
 

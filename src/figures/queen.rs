@@ -1,10 +1,8 @@
 use rustc_hash::FxHashMap;
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
-use super::bishop::{get_possible_takes_bishop, get_threatened_fields_bishop};
 use super::figures::SingleMove;
-use super::rook::{get_possible_takes_rook, get_rook_threatened_fields};
-use super::{bishop::get_bishop_moves,rook::get_rook_moves};
+use super::BishopAndRookMoves::{get_bishop_moves, get_fields_threatened_by_bishop, get_fields_threatened_by_rook, get_rook_moves, get_takes_bishop, get_takes_rook};
 
 #[derive(Default, Clone)]
 pub struct Queen {}
@@ -32,8 +30,8 @@ impl Queen {
         king_position: &usize
     ) -> Vec<usize> {
         // Queen is mix of Rook and Bishop
-        let mut bishop = get_threatened_fields_bishop(board, &own_position, &moves_by_field, &king_position);
-        let mut rook = get_rook_threatened_fields(board, &own_position, &moves_by_field, &king_position);
+        let mut bishop = get_fields_threatened_by_bishop(board, &own_position, &moves_by_field, &king_position);
+        let mut rook = get_fields_threatened_by_rook(board, &own_position, &moves_by_field, &king_position);
         bishop.append(&mut rook);
 
         bishop
@@ -46,8 +44,8 @@ impl Queen {
         moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
     ) -> Vec<SingleMove> {
         // Queen is mix of Rook and Bishop
-        let mut bishop = get_possible_takes_bishop(board, &own_position, &moves_by_field);
-        let mut rook = get_possible_takes_rook(board, &own_position, &moves_by_field);
+        let mut bishop = get_takes_bishop(board, &own_position, &moves_by_field);
+        let mut rook = get_takes_rook(board, &own_position, &moves_by_field);
         bishop.append(&mut rook);
 
         bishop
