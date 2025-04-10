@@ -6,6 +6,7 @@ pre go live todos:
 - minimax
 - alpha beta prunning
 - dont calculate douplicate positions?
+- Order of Moves when Calculating!
 
 v2:
 
@@ -19,7 +20,7 @@ v2:
 Known Issues:
 
 - Input String Castle Rights are not read
-
+- position startpos moves e2e4 d7d5 e4d5 c8g4 d1g4 resulting in capture of own king
 
 todos:
 - Refactor Queen, Rook and Bishop and make them use same Function
