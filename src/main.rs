@@ -1,6 +1,6 @@
 use std::{io::{self}, time::SystemTime};
 use board::board::Chessboard;
-use engine::engine::{count_moves, search_for_best_move};
+use engine::{count::count_moves, engine::search_for_best_move};
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use log::info;
@@ -88,5 +88,4 @@ fn parse_input() -> String{
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
         map_input_to_action(commands, &mut chessboard, &moves_by_field);
     }
-
 }

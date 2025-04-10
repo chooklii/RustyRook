@@ -393,7 +393,7 @@ impl Chessboard{
 
 #[cfg(test)]
 mod tests {
-    use crate::{engine::engine::count_moves, helper::moves_by_field::get_moves_for_each_field};
+    use crate::{engine::count::count_moves, helper::moves_by_field::get_moves_for_each_field};
 
     use super::*;
 
