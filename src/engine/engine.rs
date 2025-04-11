@@ -1,6 +1,5 @@
-use std::time::SystemTime;
-use std::cmp;
 use rustc_hash::FxHashMap;
+use std::{char::MAX, time::SystemTime};
 
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
@@ -28,6 +27,17 @@ pub struct MoveWithRating {
     rating: Evaluation,
 }
 
+impl Default for MoveWithRating{
+    fn default() -> MoveWithRating {
+        MoveWithRating {
+            from: 0,
+            to: 0,
+            rating: Evaluation { white_pieces_value: 0.0, black_pieces_value: 0.0, net_rating: 0.0 }
+        }
+    }
+}
+
+
 const MAX_DEPTH: u8 = 4;
 const MAX_TAKES_DEPTH: u8 = 4;
 
@@ -36,7 +46,7 @@ pub fn search_for_best_move(
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) {
     let now = SystemTime::now();
-    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field,  -1000,  1000, 1) {
+    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field, -3000.0, 3000.0, 0) {
         println!(
             "Calculated Positions {} and took {:?}",
             calculations,
@@ -47,7 +57,7 @@ pub fn search_for_best_move(
     }
 }
 
-fn lost_game(best_move_rating: i16) -> Option<MoveWithRating> {
+fn lost_game(best_move_rating: f32) -> Option<MoveWithRating> {
     return Some(MoveWithRating {
         from: 0,
         to: 0,
@@ -63,7 +73,7 @@ fn draw() -> Option<MoveWithRating> {
         from: 0,
         to: 0,
         rating: Evaluation {
-            net_rating: 0,
+            net_rating: 0.0,
             ..Default::default()
         },
     });
@@ -72,11 +82,15 @@ fn draw() -> Option<MoveWithRating> {
 fn calculate(
     board: &Chessboard,
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-    mut alpha: i16,
-    mut beta: i16,
+    mut alpha: f32,
+    mut beta: f32,
     depth: u8,
 ) -> (Option<MoveWithRating>, u64) {
-    let mut best_move_rating: i16 = init_best_move(&board.current_move);
+    if depth == MAX_DEPTH{
+        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
+    }
+
+    let mut best_move_rating = init_best_move(&board.current_move);
     let mut best_move: Option<MoveWithRating> = None;
     let mut calculated_positions: u64 = 0;
 
@@ -88,77 +102,53 @@ fn calculate(
         return (draw(), 1);
     }
 
+    let white_to_play = board.current_move.eq(&Color::White);
     for single in valid_moves.into_iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
 
-        if depth < MAX_DEPTH {
-            if let (Some(move_evaluation), calculated_moves) =
-                calculate(&new_board, &moves_by_field, alpha, beta, depth + 1)
-            {
+        if white_to_play{
+            // max
+            if let (Some(evaluation), calculated_moves) = calculate(&new_board, &moves_by_field, alpha, beta, depth +1){
                 calculated_positions += calculated_moves;
 
-                match board.current_move{
-                    Color::Black => {
-                        if beta > move_evaluation.rating.net_rating{
-                            beta = move_evaluation.rating.net_rating;
-                        }
-                        beta = cmp::min(beta, move_evaluation.rating.net_rating);
-                    },
-                    Color::White => {
-                        alpha = cmp::max(alpha, move_evaluation.rating.net_rating);
-                    }
+                if best_move_rating < evaluation.rating.net_rating{
+                    best_move_rating = evaluation.rating.net_rating;
+                    best_move = Some(MoveWithRating { from: single.from, to: single.to, rating: evaluation.rating })
                 }
-
-                let breaking = match board.current_move{
-                    Color::White => move_evaluation.rating.net_rating > beta,
-                    Color::Black => move_evaluation.rating.net_rating < alpha
-                };
-
-                if breaking{
+                alpha = alpha.max(evaluation.rating.net_rating);
+                
+                if beta <= alpha{
                     break;
                 }
-
-                if check_if_is_better_move(
-                    &board.current_move,
-                    best_move_rating,
-                    move_evaluation.rating.net_rating,
-                ) {
-                    best_move_rating = move_evaluation.rating.net_rating;
-                    best_move = Some(MoveWithRating {
-                        from: single.from,
-                        to: single.to,
-                        rating: move_evaluation.rating,
-                    });
-                }
             }
-        } else {
-            let deeper_evaluation = calculate_takes_only(&board, &moves_by_field, alpha, beta, 1);
-            let evaluation = deeper_evaluation.unwrap_or_else(|| evaluate(&new_board));
-            calculated_positions += 1;
-            if check_if_is_better_move(&board.current_move, best_move_rating, evaluation.net_rating)
-            {
-                best_move_rating = evaluation.net_rating;
-                best_move = Some(MoveWithRating {
-                    from: single.from,
-                    to: single.to,
-                    rating: evaluation,
-                });
+        }else{
+            // mini
+            if let (Some(evaluation), calculated_moves) = calculate(&new_board, &moves_by_field, alpha, beta, depth +1){
+                calculated_positions += calculated_moves;
+
+                if best_move_rating > evaluation.rating.net_rating{
+                    best_move_rating = evaluation.rating.net_rating;
+                    best_move = Some(MoveWithRating { from: single.from, to: single.to, rating: evaluation.rating })
+                }
+                beta = beta.min(evaluation.rating.net_rating);
+                if beta <= alpha{
+                    break;
+                }
             }
         }
     }
-
     return (best_move, calculated_positions);
 }
 
 fn calculate_takes_only(
     board: &Chessboard,
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-    mut alpha: i16,
-    mut beta: i16,
+    mut alpha: f32,
+    mut beta: f32,
     depth: u8,
 ) -> Option<Evaluation> {
-    let mut best_move_rating: i16 = init_best_move(&board.current_move);
+    let mut best_move_rating: f32 = init_best_move(&board.current_move);
     let mut best_move: Option<Evaluation> = None;
     let (valid_moves, is_in_check) = get_takes_in_position(&board, &moves_by_field);
 
@@ -169,7 +159,7 @@ fn calculate_takes_only(
         });
     } else if valid_moves.is_empty() && !is_in_check {
         return Some(Evaluation {
-            net_rating: 0,
+            net_rating: 0.0,
             ..Default::default()
         });
     }
@@ -180,27 +170,26 @@ fn calculate_takes_only(
 
         if depth < MAX_TAKES_DEPTH {
             if let Some(move_evaluation) =
-                calculate_takes_only(&new_board, &moves_by_field, alpha, beta,depth + 1)
+                calculate_takes_only(&new_board, &moves_by_field, alpha, beta, depth + 1)
             {
-
-                match board.current_move{
+                match board.current_move {
                     Color::Black => {
-                        if beta > move_evaluation.net_rating{
+                        if beta > move_evaluation.net_rating {
                             beta = move_evaluation.net_rating;
                         }
-                        beta = cmp::min(beta, move_evaluation.net_rating);
+                        beta = f32::min(beta, move_evaluation.net_rating);
                     },
                     Color::White => {
-                        alpha = cmp::max(alpha, move_evaluation.net_rating);
+                        alpha = f32::max(alpha, move_evaluation.net_rating);
                     }
                 }
 
-                let breaking = match board.current_move{
+                let breaking = match board.current_move {
                     Color::White => move_evaluation.net_rating > beta,
-                    Color::Black => move_evaluation.net_rating < alpha
+                    Color::Black => move_evaluation.net_rating < alpha,
                 };
 
-                if breaking{
+                if breaking {
                     break;
                 }
 
@@ -224,14 +213,14 @@ fn calculate_takes_only(
     return best_move;
 }
 
-fn init_best_move(turn: &Color) -> i16 {
+fn init_best_move(turn: &Color) -> f32 {
     match turn {
-        Color::White => -30000,
-        Color::Black => 30000,
+        Color::White => -300.0,
+        Color::Black => 300.0,
     }
 }
 
-fn check_if_is_better_move(turn: &Color, prev: i16, new: i16) -> bool {
+fn check_if_is_better_move(turn: &Color, prev: f32, new: f32) -> bool {
     match turn {
         Color::White => new > prev,
         Color::Black => new < prev,

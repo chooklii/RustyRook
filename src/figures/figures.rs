@@ -72,17 +72,6 @@ impl Figure {
         }
     }
 
-    pub fn get_weight(&self) -> u8{
-        match self{
-            Figure::Bishop(_) => 3,
-            Figure::King(_) => 100,
-            Figure::Queen(_) => 9,
-            Figure::Knight(_) => 3,
-            Figure::Pawn(_) => 1,
-            Figure::Rook(_) => 5
-        }
-    }
-
     // check for checks and castle
     pub fn is_king(&self) -> bool{
         match self{
