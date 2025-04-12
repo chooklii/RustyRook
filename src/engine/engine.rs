@@ -169,7 +169,7 @@ fn calculate_takes_only(
     }
 
     let mut best_move_rating = init_best_move(&board.current_move);
-    let mut best_move: Option<MoveWithRating> = Some(MoveWithRating { rating: evaluate(&board), ..Default::default()});
+    let mut best_move: Option<MoveWithRating> = None;
     let mut calculated_positions: u64 = 0;
 
     let (takes_moves, is_in_check) = get_takes_in_position(&board, &moves_by_field);
@@ -178,7 +178,7 @@ fn calculate_takes_only(
         return (lost_game(best_move_rating), 1);
     } else if takes_moves.is_empty() && !is_in_check {
         // in this case no draw just no takes left to be played
-        return (best_move,1)
+        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
     }
 
     let white_to_play = board.current_move.eq(&Color::White);
