@@ -44,7 +44,8 @@ pub fn get_takes_in_position(
     } else {
         get_all_possible_takes(&board, board.get_next_player_figures(), &moves_by_field)
     };
-    let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(&board, &king_position, moves, &moves_by_field);
+    let not_pinned_moves: Vec<PossibleMove> =
+        get_not_pinned_pieces(&board, &king_position, moves, &moves_by_field);
     return (not_pinned_moves, is_in_check);
 }
 

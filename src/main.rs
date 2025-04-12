@@ -65,7 +65,6 @@ fn quit(){
 fn init_new_game(){
     println!("isready");
 }
-
 fn send_is_ready(){
     println!("readyok");
 }

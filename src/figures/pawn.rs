@@ -280,13 +280,19 @@ impl Pawn {
         possible_moves
     }
 
-    pub fn possible_takes_and_promotion(&self, board: &Chessboard, own_position: &usize) -> Vec<SingleMove>{
+    pub fn possible_takes_and_promotion(
+        &self,
+        board: &Chessboard,
+        own_position: &usize,
+    ) -> Vec<SingleMove> {
         let mut possible_moves: Vec<SingleMove> = Vec::new();
         if !self.figure_can_move_forward(&own_position, &self.color) {
             return possible_moves;
         }
         let one_step_forward = self.calculate_forward_position(own_position, 8);
-        if self.figure_will_promote(&one_step_forward, &self.color){
+        if self.figure_will_promote(&one_step_forward, &self.color)
+            && !board.positions.get(one_step_forward)
+        {
             self.move_one_field_forward(one_step_forward, &mut possible_moves);
         }
 

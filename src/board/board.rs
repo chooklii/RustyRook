@@ -238,7 +238,7 @@ impl Chessboard{
         self.set_current_move();
     }
 
-    fn move_black_figure(&mut self, from: usize, to: usize){
+    fn move_black_figure(&mut self, from: usize, to: usize){       
         self.white_figures.remove(&to);
         let mut moved_figure = self.black_figures.remove(&from).unwrap();
         moved_figure.set_moved();

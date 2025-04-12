@@ -27,16 +27,19 @@ pub struct MoveWithRating {
     rating: Evaluation,
 }
 
-impl Default for MoveWithRating{
+impl Default for MoveWithRating {
     fn default() -> MoveWithRating {
         MoveWithRating {
             from: 0,
             to: 0,
-            rating: Evaluation { white_pieces_value: 0.0, black_pieces_value: 0.0, net_rating: 0.0 }
+            rating: Evaluation {
+                white_pieces_value: 0.0,
+                black_pieces_value: 0.0,
+                net_rating: 0.0,
+            },
         }
     }
 }
-
 
 const MAX_DEPTH: u8 = 4;
 const MAX_TAKES_DEPTH: u8 = 4;
@@ -46,7 +49,8 @@ pub fn search_for_best_move(
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) {
     let now = SystemTime::now();
-    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field, -3000.0, 3000.0, 0) {
+    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field, -3000.0, 3000.0, 0)
+    {
         println!(
             "Calculated Positions {} and took {:?}",
             calculations,
@@ -87,7 +91,7 @@ fn calculate(
     depth: u8,
 ) -> (Option<MoveWithRating>, u64) {
     if depth == MAX_DEPTH{
-        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
+        return calculate_takes_only(&board, &moves_by_field, alpha, beta, 0);
     }
 
     let mut best_move_rating = init_best_move(&board.current_move);
@@ -107,32 +111,44 @@ fn calculate(
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
 
-        if white_to_play{
+        if white_to_play {
             // max
-            if let (Some(evaluation), calculated_moves) = calculate(&new_board, &moves_by_field, alpha, beta, depth +1){
+            if let (Some(evaluation), calculated_moves) =
+                calculate(&new_board, &moves_by_field, alpha, beta, depth + 1)
+            {
                 calculated_positions += calculated_moves;
 
-                if best_move_rating < evaluation.rating.net_rating{
+                if best_move_rating < evaluation.rating.net_rating {
                     best_move_rating = evaluation.rating.net_rating;
-                    best_move = Some(MoveWithRating { from: single.from, to: single.to, rating: evaluation.rating })
+                    best_move = Some(MoveWithRating {
+                        from: single.from,
+                        to: single.to,
+                        rating: evaluation.rating,
+                    })
                 }
                 alpha = alpha.max(evaluation.rating.net_rating);
-                
-                if beta <= alpha{
+
+                if beta <= alpha {
                     break;
                 }
             }
-        }else{
+        } else {
             // mini
-            if let (Some(evaluation), calculated_moves) = calculate(&new_board, &moves_by_field, alpha, beta, depth +1){
+            if let (Some(evaluation), calculated_moves) =
+                calculate(&new_board, &moves_by_field, alpha, beta, depth + 1)
+            {
                 calculated_positions += calculated_moves;
 
-                if best_move_rating > evaluation.rating.net_rating{
+                if best_move_rating > evaluation.rating.net_rating {
                     best_move_rating = evaluation.rating.net_rating;
-                    best_move = Some(MoveWithRating { from: single.from, to: single.to, rating: evaluation.rating })
+                    best_move = Some(MoveWithRating {
+                        from: single.from,
+                        to: single.to,
+                        rating: evaluation.rating,
+                    })
                 }
                 beta = beta.min(evaluation.rating.net_rating);
-                if beta <= alpha{
+                if beta <= alpha {
                     break;
                 }
             }
@@ -147,70 +163,73 @@ fn calculate_takes_only(
     mut alpha: f32,
     mut beta: f32,
     depth: u8,
-) -> Option<Evaluation> {
-    let mut best_move_rating: f32 = init_best_move(&board.current_move);
-    let mut best_move: Option<Evaluation> = None;
-    let (valid_moves, is_in_check) = get_takes_in_position(&board, &moves_by_field);
-
-    if is_in_check && valid_moves.is_empty() {
-        return Some(Evaluation {
-            net_rating: best_move_rating,
-            ..Default::default()
-        });
-    } else if valid_moves.is_empty() && !is_in_check {
-        return Some(Evaluation {
-            net_rating: 0.0,
-            ..Default::default()
-        });
+) -> (Option<MoveWithRating>, u64) {
+    if depth == MAX_TAKES_DEPTH{
+        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
     }
 
-    for single in valid_moves.into_iter() {
+    let mut best_move_rating = init_best_move(&board.current_move);
+    let mut best_move: Option<MoveWithRating> = Some(MoveWithRating { rating: evaluate(&board), ..Default::default()});
+    let mut calculated_positions: u64 = 0;
+
+    let (takes_moves, is_in_check) = get_takes_in_position(&board, &moves_by_field);
+    
+    if is_in_check && takes_moves.is_empty() {
+        return (lost_game(best_move_rating), 1);
+    } else if takes_moves.is_empty() && !is_in_check {
+        // in this case no draw just no takes left to be played
+        return (best_move,1)
+    }
+
+    let white_to_play = board.current_move.eq(&Color::White);
+    for single in takes_moves.into_iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
 
-        if depth < MAX_TAKES_DEPTH {
-            if let Some(move_evaluation) =
+        if white_to_play {
+            // max
+            if let (Some(evaluation), calculated_moves) =
                 calculate_takes_only(&new_board, &moves_by_field, alpha, beta, depth + 1)
             {
-                match board.current_move {
-                    Color::Black => {
-                        if beta > move_evaluation.net_rating {
-                            beta = move_evaluation.net_rating;
-                        }
-                        beta = f32::min(beta, move_evaluation.net_rating);
-                    },
-                    Color::White => {
-                        alpha = f32::max(alpha, move_evaluation.net_rating);
-                    }
+                calculated_positions += calculated_moves;
+
+                if best_move_rating < evaluation.rating.net_rating {
+                    best_move_rating = evaluation.rating.net_rating;
+                    best_move = Some(MoveWithRating {
+                        from: single.from,
+                        to: single.to,
+                        rating: evaluation.rating,
+                    })
                 }
+                alpha = alpha.max(evaluation.rating.net_rating);
 
-                let breaking = match board.current_move {
-                    Color::White => move_evaluation.net_rating > beta,
-                    Color::Black => move_evaluation.net_rating < alpha,
-                };
-
-                if breaking {
+                if beta <= alpha {
                     break;
                 }
+            }
+        } else {
+            // mini
+            if let (Some(evaluation), calculated_moves) =
+                calculate_takes_only(&new_board, &moves_by_field, alpha, beta, depth + 1)
+            {
+                calculated_positions += calculated_moves;
 
-                if check_if_is_better_move(
-                    &board.current_move,
-                    best_move_rating,
-                    move_evaluation.net_rating,
-                ) {
-                    best_move_rating = move_evaluation.net_rating;
-                    best_move = Some(move_evaluation);
+                if best_move_rating > evaluation.rating.net_rating {
+                    best_move_rating = evaluation.rating.net_rating;
+                    best_move = Some(MoveWithRating {
+                        from: single.from,
+                        to: single.to,
+                        rating: evaluation.rating,
+                    })
+                }
+                beta = beta.min(evaluation.rating.net_rating);
+                if beta <= alpha {
+                    break;
                 }
             }
         }
-        // if maximum has completed return
-        let evaluation = evaluate(&new_board);
-        if check_if_is_better_move(&board.current_move, best_move_rating, evaluation.net_rating) {
-            best_move_rating = evaluation.net_rating;
-            best_move = Some(evaluation);
-        }
     }
-    return best_move;
+    return (best_move, calculated_positions);
 }
 
 fn init_best_move(turn: &Color) -> f32 {
@@ -220,9 +239,3 @@ fn init_best_move(turn: &Color) -> f32 {
     }
 }
 
-fn check_if_is_better_move(turn: &Color, prev: f32, new: f32) -> bool {
-    match turn {
-        Color::White => new > prev,
-        Color::Black => new < prev,
-    }
-}
