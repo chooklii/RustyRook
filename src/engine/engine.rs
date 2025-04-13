@@ -24,6 +24,7 @@ pub struct PossibleMove {
 pub struct MoveWithRating {
     from: usize,
     to: usize,
+    promoted_to: Option<Promotion>,
     rating: Evaluation,
 }
 
@@ -32,6 +33,7 @@ impl Default for MoveWithRating {
         MoveWithRating {
             from: 0,
             to: 0,
+            promoted_to: None,
             rating: Evaluation {
                 white_pieces_value: 0.0,
                 black_pieces_value: 0.0,
@@ -63,29 +65,27 @@ pub fn search_for_best_move(
             now.elapsed(),
         );
         println!("Best Move Net Rating {:?}", &best_move.rating);
-        send_move(&best_move.from, &best_move.to);
+        send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
     }
 }
 
 fn lost_game(best_move_rating: f32) -> Option<MoveWithRating> {
     return Some(MoveWithRating {
-        from: 0,
-        to: 0,
         rating: Evaluation {
             net_rating: best_move_rating,
             ..Default::default()
         },
+        ..Default::default()
     });
 }
 
 fn draw() -> Option<MoveWithRating> {
     return Some(MoveWithRating {
-        from: 0,
-        to: 0,
         rating: Evaluation {
             net_rating: 0.0,
             ..Default::default()
         },
+        ..Default::default()
     });
 }
 
@@ -132,6 +132,7 @@ fn calculate(
                     best_move = Some(MoveWithRating {
                         from: single.from,
                         to: single.to,
+                        promoted_to: single.promoted_to,
                         rating: evaluation.rating,
                     })
                 }
@@ -153,6 +154,7 @@ fn calculate(
                     best_move = Some(MoveWithRating {
                         from: single.from,
                         to: single.to,
+                        promoted_to: single.promoted_to,
                         rating: evaluation.rating,
                     })
                 }
@@ -212,6 +214,7 @@ fn calculate_takes_only(
                     best_move = Some(MoveWithRating {
                         from: single.from,
                         to: single.to,
+                        promoted_to: single.promoted_to,
                         rating: evaluation.rating,
                     })
                 }
@@ -232,6 +235,7 @@ fn calculate_takes_only(
                     best_move = Some(MoveWithRating {
                         from: single.from,
                         to: single.to,
+                        promoted_to: single.promoted_to,
                         rating: evaluation.rating,
                     })
                 }

@@ -1,6 +1,6 @@
 use rustc_hash::FxHashMap;
 
-use crate::{board::board::Chessboard, figures::{bishop::{self, Bishop}, figures::Figure, rook::Rook}, helper::moves_by_field::MoveInEveryDirection};
+use crate::{board::board::Chessboard, figures::{bishop::{self, Bishop}, figures::Figure, queen::{self, Queen}, rook::Rook}, helper::moves_by_field::MoveInEveryDirection};
 
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy)]
 pub struct Evaluation {
@@ -106,11 +106,21 @@ fn get_king_weight(position: usize, pieces: f32) -> f32 {
 }
 
 fn get_rook_weight(rook: &Rook, position: usize, board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> f32{
-    return ROOK_RATE[position];
+    let threatened_fields = rook.threatened_fields(&board, &position, &moves_by_field, &64);
+    let threat_bonus = threatened_fields.len() as f32 * 0.05;
+    return ROOK_RATE[position] + threat_bonus;
 }
 
 fn get_bishop_weight(bishop: &Bishop, position: usize, board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> f32{
-    return BISHOP_RATE[position];
+    let threatened_fields = bishop.threatened_fields(&board, &position, &moves_by_field, &64);
+    let threat_bonus = threatened_fields.len() as f32 * 0.05;
+    return BISHOP_RATE[position] + threat_bonus;
+}
+
+fn get_queen_weight(queen: &Queen, position: usize, board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> f32{
+    let threatened_fields = queen.threatened_fields(&board, &position, &moves_by_field, &64);
+    let threat_bonus = threatened_fields.len() as f32 * 0.05;
+    return QUEEN_RATE[position] + threat_bonus;
 }
 
 fn get_figure_position_weight(figure: &Figure, position: usize, board: &Chessboard, pieces: f32, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> f32 {
@@ -119,7 +129,7 @@ fn get_figure_position_weight(figure: &Figure, position: usize, board: &Chessboa
         Figure::Knight(_) => KNIGHT_RATE[position],
         Figure::Bishop(bishop) => get_bishop_weight(&bishop, position, &board, &moves_by_field),
         Figure::Rook(rook) => get_rook_weight(&rook, position, &board, &moves_by_field),
-        Figure::Queen(_) => QUEEN_RATE[position],
+        Figure::Queen(queen) => get_queen_weight(&queen, position, &board, &moves_by_field),
         Figure::King(_) => get_king_weight(position, pieces),
     };
 }

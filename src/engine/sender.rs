@@ -1,5 +1,7 @@
 use log::info;
 
+use crate::board::promotion::{convert_promotion_to_output_string, Promotion};
+
 fn get_row_from_number(row: &usize) -> &str {
     return match row % 8 {
         0 => "a",
@@ -21,12 +23,13 @@ fn convert_number_to_chess_notation(position: &usize) -> String {
     row
 }
 
-pub fn send_move(old_position: &usize, new_position: &usize) {
+pub fn send_move(old_position: &usize, new_position: &usize, promoted_to: &Option<Promotion>) {
     let old_field = convert_number_to_chess_notation(old_position);
     let new_field = convert_number_to_chess_notation(new_position);
+    let promoted_to = convert_promotion_to_output_string(&promoted_to);
 
-    info!("Found best Move was: {}{}", old_field, new_field);
-    println!("bestmove {}{}", old_field, new_field);
+    info!("Found best Move was: {}{}{}", old_field, new_field, promoted_to);
+    println!("bestmove {}{}{}", old_field, new_field, promoted_to);
 }
 
 #[cfg(test)]

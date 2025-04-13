@@ -10,7 +10,6 @@ Evaluation
 - castle direction
 - deeper search for less moves
 - rook open files -> possible moves
-- Promotion Calculation!
 
 
 v2:

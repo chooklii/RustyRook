@@ -1,7 +1,7 @@
 use crate::figures::{bishop::Bishop, figures::Figure, knight::Knight, queen::Queen, rook::Rook};
 
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 pub enum Promotion{
     Queen,
     Rook,
@@ -15,6 +15,20 @@ pub fn convert_promotion_to_figure(promoted_to: Promotion) -> Figure{
         Promotion::Knight => Figure::Knight(Knight {}),
         Promotion::Bishop => Figure::Bishop(Bishop {}),
         Promotion::Rook => Figure::Rook(Rook { ..Default::default() })
+    }
+}
+
+pub fn convert_promotion_to_output_string(promoted_to: &Option<Promotion>) -> String{
+    if promoted_to.is_none(){
+        return String::from("");
+    }
+    let promotion = promoted_to.unwrap();
+
+    return match promotion{
+        Promotion::Queen => String::from("Q"),
+        Promotion::Knight => String::from("K"),
+        Promotion::Bishop => String::from("B"),
+        Promotion::Rook => String::from("R")
     }
 }
 
