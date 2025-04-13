@@ -1,9 +1,9 @@
 use rustc_hash::FxHashMap;
-use std::{char::MAX, time::SystemTime};
+use std::{time::SystemTime};
 
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
-    evaluation::{self, evaluate, Evaluation},
+    evaluation::{evaluate, Evaluation},
     figures::color::Color,
     helper::moves_by_field::MoveInEveryDirection,
 };
@@ -42,15 +42,21 @@ impl Default for MoveWithRating {
 }
 
 const MAX_DEPTH: u8 = 4;
-const MAX_TAKES_DEPTH: u8 = 4;
+const MAX_DEPTH_TAKES: u8 = 4;
 
 pub fn search_for_best_move(
     board: &Chessboard,
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) {
     let now = SystemTime::now();
-    if let (Some(best_move), calculations) = calculate(&board, &moves_by_field, -3000.0, 3000.0, 0)
-    {
+
+    if let (Some(best_move), calculations) = calculate(
+        &board,
+        &moves_by_field,
+        -3000.0,
+        3000.0,
+        0,
+    ) {
         println!(
             "Calculated Positions {} and took {:?}",
             calculations,
@@ -90,14 +96,13 @@ fn calculate(
     mut beta: f32,
     depth: u8,
 ) -> (Option<MoveWithRating>, u64) {
-    if depth == MAX_DEPTH{
+    if depth == MAX_DEPTH {
         return calculate_takes_only(&board, &moves_by_field, alpha, beta, 0);
     }
 
+    let mut calculated_positions: u64 = 0;
     let mut best_move_rating = init_best_move(&board.current_move);
     let mut best_move: Option<MoveWithRating> = None;
-    let mut calculated_positions: u64 = 0;
-
     let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, &moves_by_field);
 
     if is_in_check && valid_moves.is_empty() {
@@ -113,9 +118,13 @@ fn calculate(
 
         if white_to_play {
             // max
-            if let (Some(evaluation), calculated_moves) =
-                calculate(&new_board, &moves_by_field, alpha, beta, depth + 1)
-            {
+            if let (Some(evaluation), calculated_moves) = calculate(
+                &new_board,
+                &moves_by_field,
+                alpha,
+                beta,
+                depth + 1,
+            ) {
                 calculated_positions += calculated_moves;
 
                 if best_move_rating < evaluation.rating.net_rating {
@@ -164,21 +173,26 @@ fn calculate_takes_only(
     mut beta: f32,
     depth: u8,
 ) -> (Option<MoveWithRating>, u64) {
-    if depth == MAX_TAKES_DEPTH{
-        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
+    // performance reasons
+    if depth == MAX_DEPTH_TAKES{
+        return (Some(MoveWithRating { rating: evaluate(&board, &moves_by_field), ..Default::default()}),1)
     }
 
+    let mut best_move: Option<MoveWithRating> = Some(MoveWithRating { rating: evaluate(&board, &moves_by_field), ..Default::default()});
     let mut best_move_rating = init_best_move(&board.current_move);
-    let mut best_move: Option<MoveWithRating> = None;
     let mut calculated_positions: u64 = 0;
 
+    if best_move.is_some(){
+        best_move_rating = best_move.as_ref().unwrap().rating.net_rating;
+    }
+
     let (takes_moves, is_in_check) = get_takes_in_position(&board, &moves_by_field);
-    
+
     if is_in_check && takes_moves.is_empty() {
         return (lost_game(best_move_rating), 1);
     } else if takes_moves.is_empty() && !is_in_check {
         // in this case no draw just no takes left to be played
-        return (Some(MoveWithRating { rating: evaluate(&board), ..Default::default()}),1)
+        return (best_move,1)
     }
 
     let white_to_play = board.current_move.eq(&Color::White);
@@ -213,7 +227,6 @@ fn calculate_takes_only(
                 calculate_takes_only(&new_board, &moves_by_field, alpha, beta, depth + 1)
             {
                 calculated_positions += calculated_moves;
-
                 if best_move_rating > evaluation.rating.net_rating {
                     best_move_rating = evaluation.rating.net_rating;
                     best_move = Some(MoveWithRating {
@@ -238,4 +251,3 @@ fn init_best_move(turn: &Color) -> f32 {
         Color::Black => 300.0,
     }
 }
-

@@ -1,4 +1,4 @@
-use std::usize;
+use std::{hash::{Hash, Hasher}, usize};
 
 use bitmaps::Bitmap;
 use regex::Regex;

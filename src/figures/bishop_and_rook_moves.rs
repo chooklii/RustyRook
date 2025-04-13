@@ -141,9 +141,7 @@ fn get_takes_one_direction(
     positions: &mut Vec<SingleMove>,
 ) {
     for &movement in direction_moves {
-        // next field is full
         if board.positions.get(movement) {
-            // field is opponent - add it as well!
             if board.get_opponents().contains_key(&movement) {
                 positions.push(SingleMove{to: movement, promotion: None})
             }

@@ -6,4 +6,4 @@ pub mod bishop;
 pub mod knight;
 pub mod queen;
 pub mod king;
-pub mod BishopAndRookMoves;
+pub mod bishop_and_rook_moves;

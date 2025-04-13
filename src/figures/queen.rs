@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
 
 use super::figures::SingleMove;
-use super::BishopAndRookMoves::{get_bishop_moves, get_fields_threatened_by_bishop, get_fields_threatened_by_rook, get_rook_moves, get_takes_bishop, get_takes_rook};
+use super::bishop_and_rook_moves::{get_bishop_moves, get_fields_threatened_by_bishop, get_fields_threatened_by_rook, get_rook_moves, get_takes_bishop, get_takes_rook};
 
 #[derive(Default, Clone)]
 pub struct Queen {}

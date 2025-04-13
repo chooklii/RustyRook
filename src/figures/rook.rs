@@ -4,7 +4,7 @@ use crate::board::board::Chessboard;
 use crate::helper::moves_by_field::MoveInEveryDirection;
 
 use super::figures::SingleMove;
-use super::BishopAndRookMoves::{get_fields_threatened_by_rook, get_rook_moves, get_takes_rook};
+use super::bishop_and_rook_moves::{get_fields_threatened_by_rook, get_rook_moves, get_takes_rook};
 
 #[derive(Default, Clone)]
 pub struct Rook {
