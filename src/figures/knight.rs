@@ -35,9 +35,9 @@ impl Knight {
         let mut possible_takes = Vec::new();
         if let Some(moves) = moves_by_field.get(own_position){
             for single_move in moves.knight_moves.iter(){
-                if board.get_opponents().contains_key(single_move){
-                    possible_takes.push(SingleMove { to: *single_move, promotion: None });
-                }
+                    if board.get_opponents().contains_key(single_move){
+                        possible_takes.push(SingleMove { to: *single_move, promotion: None });
+                    }
             }
         }
         possible_takes

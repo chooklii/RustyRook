@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -108,7 +110,7 @@ fn get_all_possible_moves(
 ) -> Vec<PossibleMove> {
     let mut moves = Vec::new();
     for (key, val) in figures.iter() {
-        val.possible_moves(board, &key, &opponent_moves, &moves_by_field)
+        val.possible_moves(&board, &key, &opponent_moves, &moves_by_field)
             .into_iter()
             .for_each(|single_move| {
                 moves.push(PossibleMove {
@@ -127,12 +129,12 @@ fn get_all_possible_takes(
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Vec<PossibleMove> {
     let mut moves = Vec::new();
-    for (key, val) in figures.iter() {
-        val.possible_takes(board, &key, &moves_by_field)
+    for (&key, val) in figures.iter() {
+        val.possible_takes(&board, &key, &moves_by_field)
             .into_iter()
             .for_each(|single_move| {
                 moves.push(PossibleMove {
-                    from: key.clone(),
+                    from: key,
                     to: single_move.to,
                     promoted_to: single_move.promotion,
                 })
