@@ -6,12 +6,6 @@ pre go live todos:
 - dont calculate douplicate positions?
 - Order of Moves when Calculating!
 
-Evaluation
-- castle direction
-- deeper search for less moves
-- rook open files -> possible moves
-
-
 v2:
 
 - improve calculation/evaluation performance!

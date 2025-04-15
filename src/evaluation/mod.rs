@@ -1,4 +1,4 @@
-use std::usize;
+use std::{collections::HashSet, usize};
 
 use rustc_hash::FxHashMap;
 
@@ -152,7 +152,7 @@ fn check_where_king_is_located(king_position: &usize, is_black_king: bool) -> Ki
 
 fn get_king_weight(position: usize, pieces: f32) -> f32 {
     // if there is less then 10 pieces value left activate king
-    if pieces >=10.0{
+    if pieces >=15.0{
         return EARLY_GAME_KING_RATE[position];
     }
     return LATE_GAME_KING_RATE[position];
@@ -203,7 +203,7 @@ fn get_figure_weight(figure: &Figure) -> f32 {
         Figure::Bishop(_) => 3.2,
         Figure::Rook(_) => 5.0,
         Figure::Queen(_) => 9.0,
-        Figure::King(_) => 10.0,
+        Figure::King(_) => 0.0,
     };
 }
 
@@ -219,6 +219,17 @@ fn get_opponent_king_bonus(piece_value: f32, king_position: &usize) -> f32{
         return 1.0;
     }
     return 0.0;
+}
+
+fn get_douplicate_pawn_tariff(figures: &FxHashMap<usize, Figure>) -> f32{
+    let pawns: Vec<usize> = figures.iter()
+    .filter(|(_, fig)| fig.is_pawn())
+    .map(|(&position, _)| position % 8)
+    .collect();
+
+    let pawn_count = pawns.len();
+    let unique_rows: HashSet<usize> = HashSet::from_iter(pawns);
+    return (pawn_count - unique_rows.len()) as f32 * 0.3;
 }
 
 pub fn evaluate(board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Evaluation {
@@ -259,9 +270,11 @@ pub fn evaluate(board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEver
     let white_opponent_king_bonus = get_opponent_king_bonus(black_pieces_value, &black_king_usize);
     let black_opponent_king_bonus = get_opponent_king_bonus(white_pieces_value, &white_king_usize);
 
-
-    let white_value = white_pieces_value + white_pieces_position_value + white_opponent_king_bonus;
-    let black_value = black_pieces_value + black_pieces_position_value + black_opponent_king_bonus;
+    let white_douplicate_pawn_tariff = get_douplicate_pawn_tariff(&board.white_figures);
+    let black_douplicate_pawn_tariff = get_douplicate_pawn_tariff(&board.black_figures);
+    
+    let white_value = white_pieces_value + white_pieces_position_value + white_opponent_king_bonus - white_douplicate_pawn_tariff;
+    let black_value = black_pieces_value + black_pieces_position_value + black_opponent_king_bonus - black_douplicate_pawn_tariff;
 
     Evaluation {
         white_pieces_value: white_value,

@@ -1,4 +1,4 @@
-use std::{hash::{Hash, Hasher}, usize};
+use std::usize;
 
 use bitmaps::Bitmap;
 use regex::Regex;
@@ -64,7 +64,7 @@ impl Chessboard{
             let new_field  = self.get_position_id(to_row, to_column);
             
             let promoted_figure = convert_input_string_to_promotion(promoted_to_piece);
-            self.move_figure(old_field, new_field, promoted_figure);            
+            self.move_figure(old_field, new_field, promoted_figure);         
         }
     }
 

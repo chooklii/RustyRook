@@ -1,6 +1,6 @@
 use std::{io::{self}, time::SystemTime};
 use board::board::Chessboard;
-use engine::{count::count_moves, engine::search_for_best_move};
+use engine::{count::count_moves, engine::{search_for_best_move, PossibleMove}};
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use log::info;
