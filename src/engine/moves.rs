@@ -109,12 +109,12 @@ fn get_all_possible_moves(
     moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
 ) -> Vec<PossibleMove> {
     let mut moves = Vec::new();
-    for (key, val) in figures.iter() {
+    for (&key, val) in figures.iter() {
         val.possible_moves(&board, &key, &opponent_moves, &moves_by_field)
             .into_iter()
             .for_each(|single_move| {
                 moves.push(PossibleMove {
-                    from: key.clone(),
+                    from: key,
                     to: single_move.to,
                     promoted_to: single_move.promotion,
                 })
