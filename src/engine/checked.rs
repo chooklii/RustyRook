@@ -1,69 +1,63 @@
-use rustc_hash::FxHashMap;
-
 use crate::{
-    board::board::Chessboard,
-    figures::{color::Color, figures::Figure},
-    helper::{
-        movement::{figure_can_move_backward,figure_can_move_forward},
-        moves_by_field::MoveInEveryDirection,
-    },
+    board::{bitboard::Bitboard, board::Chessboard},
+    figures::{color::Color, piece::Piece},
+    KNIGHT_MOVES, MOVES_BY_FIELD, PAWN_THREATS,
 };
 
 // get all the fields we can place a figure (not king) to prevent a active check by the opponent
 pub fn get_fields_to_prevent_check(
     board: &Chessboard,
-    king_position: &usize,
-    opponent_moves: &Vec<usize>,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-) -> Vec<usize> {
-    let count_of_checks = opponent_moves
-        .iter()
-        .filter(|field| field.eq(&king_position))
-        .count();
-    // if there is more than one check only moving the king can save us
-    if count_of_checks > 1 {
-        return Vec::new();
+    king_position: usize,
+    opponent_moves: Bitboard,
+    count_of_checks: u8
+) -> Bitboard {
+    let mut possible_fields = Bitboard::new();
+
+    // if more than one figure checks only moving the king can save the player
+    if count_of_checks > 1{
+        return possible_fields;
     }
+
     if let Some(rook_checking_field) = check_and_get_rook_movement_check_field(
         board,
-        king_position,
+        &king_position,
         opponent_moves,
-        &moves_by_field,
-    ) {
-        return rook_checking_field;
-    } else if let Some(bishop_checking_field) = check_and_get_bishop_movement_check_field(
+    ){
+        possible_fields.board = possible_fields.board | rook_checking_field.board;
+    }
+    if let Some(bishop_checking_field) = check_and_get_bishop_movement_check_field(
         board,
-        king_position,
+        &king_position,
         opponent_moves,
-        &moves_by_field,
     ) {
-        return bishop_checking_field;
-    } else if let Some(knight_check_field) =
-        check_and_get_knight_check_field(board, king_position, &moves_by_field)
+        possible_fields.board = possible_fields.board | bishop_checking_field.board;
+    } 
+     if let Some(knight_check_field) =
+        check_and_get_knight_check_field(board, king_position)
     {
-        return vec![knight_check_field];
-    } else if let Some(pawn_check_field) = check_and_get_pawn_check_field(board, king_position) {
-        return vec![pawn_check_field];
+        possible_fields.set_field(knight_check_field);
+    } 
+     if let Some(pawn_check_field) = check_and_get_pawn_check_field(board, king_position) {
+        possible_fields.set_field(pawn_check_field);
     }
 
-    Vec::new()
+    possible_fields
 }
 
-fn is_rook_movement_figure(figure: &Figure) -> bool {
-    figure.is_queen() || figure.is_rook()
+fn is_rook_movement_figure(board: &Chessboard,position: usize) -> bool {
+    return board.is_queen_or_rook(board.get_opponent_color(), position);
 }
 
-fn is_bishop_movement_figure(figure: &Figure) -> bool {
-    figure.is_queen() || figure.is_bishop()
+fn is_bishop_movement_figure(board: &Chessboard,position: usize) -> bool {
+    return board.is_queen_or_bishop(board.get_opponent_color(), position);
 }
 
 fn check_and_get_bishop_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
-    opponent_moves: &Vec<usize>,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-) -> Option<Vec<usize>> {
-    if let Some(movement) = moves_by_field.get(king_position) {
+    opponent_moves: Bitboard
+) -> Option<Bitboard> {
+    if let Some(movement) = MOVES_BY_FIELD.get(king_position) {
         let left_fw = check_single_direction_check(
             board,
             opponent_moves,
@@ -108,10 +102,9 @@ fn check_and_get_bishop_movement_check_field(
 fn check_and_get_rook_movement_check_field(
     board: &Chessboard,
     king_position: &usize,
-    opponent_moves: &Vec<usize>,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
-) -> Option<Vec<usize>> {
-    if let Some(moves) = moves_by_field.get(king_position) {
+    opponent_moves: Bitboard,
+) -> Option<Bitboard> {
+    if let Some(moves) = MOVES_BY_FIELD.get(king_position) {
         let left = check_single_direction_check(
             board,
             opponent_moves,
@@ -158,262 +151,150 @@ fn check_and_get_rook_movement_check_field(
 
 fn check_single_direction_check(
     board: &Chessboard,
-    opponent_moves: &Vec<usize>,
+    opponent_moves: Bitboard,
     moves: &Vec<usize>,
-    figure_check: fn(&Figure) -> bool,
-) -> Option<Vec<usize>> {
-    let mut fields_to_prevent_check: Vec<usize> = Vec::new();
+    figure_check: fn(&Chessboard, usize) -> bool
+) -> Option<Bitboard> {
+    let mut fields_to_prevent_check: Bitboard = Bitboard::new();
     for &movement in moves {
-        if board.positions.get(movement) {
-            if let Some(opponent) = board.get_opponents().get(&movement) {
-                if figure_check(opponent) {
-                    fields_to_prevent_check.push(movement);
+        if board.positions.field_is_used(movement) {
+                if figure_check(&board, movement) {
+                    fields_to_prevent_check.set_field(movement);
                     return Some(fields_to_prevent_check);
                 }
-                // field is used by opponent - but not a figure threadning us
-                return None;
-            }
-            // field is used by our own figure
+            // field is used by our own figure or opponent not threatening us
             return None;
-        } else if !opponent_moves.contains(&movement) {
+        } else if !opponent_moves.field_is_used(movement) {
             // opponent does not attack this field thus there can not be a attacker in this row
             return None;
         }
-        fields_to_prevent_check.push(movement);
+        fields_to_prevent_check.set_field(movement);
     }
     return None;
 }
 
 fn check_and_get_knight_check_field(
     board: &Chessboard,
-    king_position: &usize,
-    moves_by_field: &FxHashMap<usize, MoveInEveryDirection>,
+    king_position: usize,
 ) -> Option<usize> {
-    if let Some(moves) = moves_by_field.get(king_position) {
-        for &field in moves.knight_moves.iter() {
-            if field_is_used_by_opponent_knight(board, field) {
-                return Some(field);
-            }
+    if let Some(moves) = KNIGHT_MOVES.get(king_position) {
+        let checking_knigh_board = Bitboard{board: moves.board & board.get_opponent_piece(Piece::Knight).board};
+        if checking_knigh_board.board != 0{
+            return Some(checking_knigh_board.get_first_field());
         }
     }
     return None;
 }
 
-fn field_is_used_by_opponent_knight(board: &Chessboard, position: usize) -> bool {
-    if let Some(figure) = board.get_opponents().get(&position) {
-        return figure.is_knight();
-    }
-    return false;
-}
+fn check_and_get_pawn_check_field(board: &Chessboard, position: usize) -> Option<usize> {
+    let relevant_pawn_fields = PAWN_THREATS[board.current_move as usize][position];
+    let possible_checks = Bitboard{board: relevant_pawn_fields.board & board.get_opponent_piece(Piece::Pawn).board};
 
-fn check_and_get_pawn_check_field(board: &Chessboard, position: &usize) -> Option<usize> {
-    match board.current_move {
-        Color::White => check_and_get_pawn_check_field_white(board, position),
-        Color::Black => check_and_get_pawn_check_field_black(board, position),
-    }
-}
-
-fn check_and_get_pawn_check_field_black(board: &Chessboard, position: &usize) -> Option<usize> {
-    // king is - for whatever reason :D - on a1-h1
-    if !figure_can_move_backward(&position) {
+    if possible_checks.board == 0{
         return None;
+    }else{
+        return Some(possible_checks.get_first_field());
     }
-    // left
-    if let Some(figure) = board.get_opponents().get(&(position - 9)) {
-        if figure.is_pawn() {
-            return Some(position - 9);
-        };
-    }
-    // right
-    if let Some(figure) = board.get_opponents().get(&(position - 7)) {
-        if figure.is_pawn() {
-            return Some(position - 7);
-        };
-    }
-    return None;
-}
-
-fn check_and_get_pawn_check_field_white(board: &Chessboard, position: &usize) -> Option<usize> {
-    if !figure_can_move_forward(&position) {
-        return None;
-    }
-    // left
-    if let Some(figure) = board.get_opponents().get(&(position + 7)) {
-        if figure.is_pawn() {
-            return Some(position + 7);
-        };
-    }
-    // right
-    if let Some(figure) = board.get_opponents().get(&(position + 9)) {
-        if figure.is_pawn() {
-            return Some(position + 9);
-        };
-    }
-    return None;
 }
 
 #[cfg(test)]
 mod tests {
 
-    use bitmaps::Bitmap;
-
     use crate::{
-        figures::{
-            bishop::Bishop, color::Color, figures::Figure, king::King, knight::Knight, pawn::Pawn,
-            rook::Rook,
-        },
-        helper::moves_by_field::get_moves_for_each_field,
+        board::bitboard::Bitboard, figures::color::Color
     };
 
     use super::*;
 
     #[test]
     fn test_rook_check() {
-        let possible_moves = get_moves_for_each_field();
 
         let mut board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: FxHashMap::default(),
-            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
-        board.positions.set(19, true);
-        board.positions.set(16, true);
-        board.positions.set(1, true);
+        board.positions.set_field(19);
+        board.positions.set_field(16);
+        board.positions.set_field(1);
 
-        board.white_figures.insert(
-            19,
-            Figure::King(King {
-                ..Default::default()
-            }),
-        );
-        board.black_figures.insert(
-            16,
-            Figure::Rook(Rook {
-                ..Default::default()
-            }),
-        );
+        board.figures[Color::White as usize][Piece::King as usize].set_field(19);
+        board.figures[Color::Black as usize][Piece::Rook as usize].set_field(16);
 
-        let mut opponent_moves: Vec<usize> = Vec::new();
-        opponent_moves.push(19);
-        opponent_moves.push(18);
-        opponent_moves.push(17);
+        let mut opponent_moves = Bitboard::new();
+        opponent_moves.set_field(19);
+        opponent_moves.set_field(18);
+        opponent_moves.set_field(17);
         assert_eq!(
             3,
-            check_and_get_rook_movement_check_field(&board, &19, &opponent_moves, &possible_moves)
+            check_and_get_rook_movement_check_field(&board, &19, opponent_moves)
                 .unwrap()
+                .get_used_fields()
                 .len()
         );
     }
 
     #[test]
     fn test_bishop_check() {
-        let possible_moves = get_moves_for_each_field();
         let mut board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: FxHashMap::default(),
-            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
-        board.positions.set(19, true);
-        board.positions.set(55, true);
+        board.positions.set_field(19);
+        board.positions.set_field(55);
 
-        board.white_figures.insert(
-            19,
-            Figure::King(King {
-                ..Default::default()
-            }),
-        );
-        board.black_figures.insert(
-            55,
-            Figure::Bishop(Bishop {
-                ..Default::default()
-            }),
-        );
+        board.figures[Color::White as usize][Piece::King as usize].set_field(19);
+        board.figures[Color::Black as usize][Piece::Bishop as usize].set_field(55);
 
-        let mut opponent_moves: Vec<usize> = Vec::new();
-        opponent_moves.push(46);
-        opponent_moves.push(37);
-        opponent_moves.push(28);
-        opponent_moves.push(19);
-        assert_eq!(
-            4,
+        let mut opponent_moves = Bitboard::new();
+        opponent_moves.set_field(46);
+        opponent_moves.set_field(37);
+        opponent_moves.set_field(28);
+        opponent_moves.set_field(19);
+        assert_eq!(4,
             check_and_get_bishop_movement_check_field(
                 &board,
                 &19,
-                &opponent_moves,
-                &possible_moves
+                opponent_moves,
             )
             .unwrap()
+            .get_used_fields()
             .len()
         );
     }
 
     #[test]
     fn test_pawn_check_white() {
-        let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: FxHashMap::default(),
-            black_figures: FxHashMap::default(),
             ..Default::default()
         };
 
-        board.positions.set(19, true);
-        board.positions.set(26, true);
+        board.positions.set_field(19);
+        board.positions.set_field(26);
 
-        board.white_figures.insert(
-            19,
-            Figure::King(King {
-                ..Default::default()
-            }),
-        );
-        board.black_figures.insert(
-            26,
-            Figure::Pawn(Pawn {
-                color: Color::Black,
-                ..Default::default()
-            }),
-        );
-
-        let opponent_moves: Vec<usize> = Vec::new();
-        let result = get_fields_to_prevent_check(&board, &19, &opponent_moves, &moves_by_field);
+        board.figures[Color::White as usize][Piece::King as usize].set_field(19);
+        board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(26);
+        let opponent_moves = Bitboard::new();
+        let result = get_fields_to_prevent_check(&board, 19, opponent_moves, 0).get_used_fields();
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&26))
     }
 
     #[test]
     fn test_knigh_check_black() {
-        let moves_by_field = get_moves_for_each_field();
         let mut board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: FxHashMap::default(),
-            black_figures: FxHashMap::default(),
+            positions: Bitboard::new(),
             current_move: Color::Black,
             ..Default::default()
         };
 
-        board.positions.set(8, true);
-        board.positions.set(18, true);
+        board.positions.set_field(8);
+        board.positions.set_field(18);
 
-        board.black_figures.insert(
-            8,
-            Figure::King(King {
-                color: Color::Black,
-                ..Default::default()
-            }),
-        );
-        board.white_figures.insert(
-            18,
-            Figure::Knight(Knight {
-                ..Default::default()
-            }),
-        );
+        board.figures[Color::Black as usize][Piece::King as usize].set_field(8);
+        board.figures[Color::White as usize][Piece::Knight as usize].set_field(18);
 
-        let opponent_moves: Vec<usize> = Vec::new();
-        let result = get_fields_to_prevent_check(&board, &8, &opponent_moves, &moves_by_field);
+        let opponent_moves = Bitboard::new();
+        let result = get_fields_to_prevent_check(&board, 8, opponent_moves, 0).get_used_fields();
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&18))
     }

@@ -1,4 +1,4 @@
-use crate::figures::{bishop::Bishop, figures::Figure, knight::Knight, queen::Queen, rook::Rook};
+use crate::figures::piece::Piece;
 
 
 #[derive(PartialEq, Eq, Clone, Debug, Copy)]
@@ -9,12 +9,12 @@ pub enum Promotion{
     Bishop
 }
 
-pub fn convert_promotion_to_figure(promoted_to: Promotion) -> Figure{
+pub fn convert_promotion_to_figure(promoted_to: Promotion) -> Piece{
     match promoted_to{
-        Promotion::Queen => Figure::Queen(Queen {}),
-        Promotion::Knight => Figure::Knight(Knight {}),
-        Promotion::Bishop => Figure::Bishop(Bishop {}),
-        Promotion::Rook => Figure::Rook(Rook { ..Default::default() })
+        Promotion::Queen => Piece::Queen,
+        Promotion::Knight => Piece::Knight,
+        Promotion::Bishop => Piece::Bishop,
+        Promotion::Rook => Piece::Rook
     }
 }
 

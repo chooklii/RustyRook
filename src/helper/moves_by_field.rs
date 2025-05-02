@@ -2,12 +2,15 @@ use std::cmp::min;
 
 use rustc_hash::FxHashMap;
 
+use crate::{board::bitboard::Bitboard, figures::color::Color};
+
 /*
  calculate all maximum possible moves in every direction once and then just use them when calculating the moves
+ 
+ Functions in here should prob. only be used for static values as they are not improved for performance
 */
 #[derive(Debug, Clone)]
 pub struct MoveInEveryDirection {
-    pub knight_moves: Vec<usize>,
     pub left: Vec<usize>,
     pub right: Vec<usize>,
     pub forward: Vec<usize>,
@@ -21,7 +24,6 @@ pub struct MoveInEveryDirection {
 impl Default for MoveInEveryDirection {
     fn default() -> MoveInEveryDirection {
         MoveInEveryDirection {
-            knight_moves: Vec::new(),
             left: Vec::new(),
             right: Vec::new(),
             forward: Vec::new(),
@@ -33,7 +35,6 @@ impl Default for MoveInEveryDirection {
         }
     }
 }
-
 pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
     let mut values: FxHashMap<usize, MoveInEveryDirection> = FxHashMap::default();
 
@@ -85,7 +86,6 @@ pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
             values.insert(
                 index,
                 MoveInEveryDirection {
-                    knight_moves: get_knight_moves_for_field(index, &left, &right, &forward, &back),
                     // Bishop Movement
                     left_back,
                     left_forward,
@@ -103,47 +103,193 @@ pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
     return values;
 }
 
-fn get_knight_moves_for_field(
-    position: usize,
-    left: &Vec<usize>,
-    right: &Vec<usize>,
-    forward: &Vec<usize>,
-    back: &Vec<usize>,
-) -> Vec<usize> {
-    let mut moves = Vec::new();
+pub fn get_pawn_promotion_moves() -> Bitboard{
+    let mut board = Bitboard::new();
 
-    if left.len() >= 2 {
-        if back.len() >= 1 {
-            moves.push(position - 10);
-        }
-        if forward.len() >= 1 {
-            moves.push(position + 6);
-        }
+    for val in 0..=7{
+        board.set_field(val);
     }
-    if right.len() >= 2 {
-        if back.len() >= 1 {
-            moves.push(position - 6);
-        }
-        if forward.len() >= 1 {
-            moves.push(position + 10);
-        }
+    for val in 56..=63{
+        board.set_field(val);
     }
-    if back.len() >= 2 {
-        if left.len() >= 1 {
-            moves.push(position - 17);
-        }
-        if right.len() >= 1 {
-            moves.push(position - 15);
-        }
-    }
-    if forward.len() >= 2 {
-        if left.len() >= 1 {
-            moves.push(position + 15);
-        }
-        if right.len() >= 1 {
-            moves.push(position + 17);
-        }
-    }
+    board
+}
 
+pub fn get_bishop_blockers_for_field(column: usize, row: usize) -> Bitboard {
+    let mut blockers = Bitboard::new();
+    let position: usize = usize::from(column as usize * 8 + row as usize);
+    let left = 0..row;
+    let right = 0..(7 - row);
+    let forward = 1..(8 - column);
+    let back = 1..(column + 1);
+
+    let left_fw_moves = min(left.len(), forward.len());
+    let left_bw_moves = min(left.len(), back.len());
+    let right_fw_moves = min(right.len(), forward.len());
+    let right_bw_moves = min(right.len(), back.len());
+
+    if left_fw_moves > 1 {
+        for val in 1..left_fw_moves {
+            blockers.set_field(position + (val * 7))
+        }
+    }
+    if left_bw_moves > 1 {
+        for val in 1..left_bw_moves {
+            blockers.set_field(position - (val * 9))
+        }
+    }
+    if right_fw_moves > 1 {
+        for val in 1..right_fw_moves {
+            blockers.set_field(position + (val * 9))
+        }
+    }
+    if right_bw_moves > 1 {
+        for val in 1..right_bw_moves {
+            blockers.set_field(position - (val * 7))
+        }
+    }
+    blockers
+}
+
+pub fn get_rook_blockers_for_field(column: usize, row: usize) -> Bitboard {
+    let mut moves = Bitboard::new();
+    let position: usize = usize::from(column as usize * 8 + row as usize);
+
+    if row > 1 {
+        for val in 0..(row - 1) {
+            moves.set_field(position - val - 1)
+        }
+    }
+    if row <= 6 {
+        for val in 0..(6 - row) {
+            moves.set_field(position + val + 1)
+        }
+    }
+    if column <= 6 {
+        for val in 1..=(6 - column) {
+            moves.set_field(position + (val * 8))
+        }
+    }
+    if column > 1 {
+        for val in 1..=(column - 1) {
+            moves.set_field(position - (val * 8))
+        }
+    }
+    moves
+}
+
+pub fn get_douplicate_pawn_boards() -> [Bitboard; 8]{
+    let mut fields = [Bitboard::new(); 8];
+
+    for column in 0..8 {
+        for row in 0..8 {
+            let position: usize = usize::from(column as usize * 8 + row as usize);
+            fields[row].set_field(position);
+        }
+    }
+    fields
+}
+
+
+pub fn get_pawn_takes_for_field() -> [[Bitboard; 64];2] {
+    let mut moves  = [[Bitboard::new(); 64],[Bitboard::new(); 64]];
+    for column in 0..8 {
+        for row in 0..8 {
+            let position: usize = usize::from(column as usize * 8 + row as usize);
+
+            if row >=1{
+                if column <=6{
+                    moves[Color::White as usize][position].set_field(position +7);
+                }
+                if column >=1{
+                    moves[Color::Black as usize][position].set_field(position - 9);
+                }
+            }
+            if row <=6{
+                if column <=6{
+                    moves[Color::White as usize][position].set_field(position +9);
+                }
+                if column >=1{
+                    moves[Color::Black as usize][position].set_field(position - 7);
+                }
+            }
+        }
+    }
+    moves  
+}
+
+pub fn get_king_moves_for_field() -> [Bitboard; 64] {
+    let mut moves: [Bitboard; 64] = [Bitboard::new(); 64];
+    for column in 0..8 {
+        for row in 0..8 {
+            let position: usize = usize::from(column as usize * 8 + row as usize);
+            if column >=1 {
+                moves[position].set_field(position - 8);
+                if row >=1 {
+                    moves[position].set_field(position - 9);
+                }
+                if row <=6 {
+                    moves[position].set_field(position - 7);
+                }
+            }
+            if column <=6 {
+                moves[position].set_field(position + 8);
+                if row >=1 {
+                    moves[position].set_field(position + 7);
+                }
+                if row <=6 {
+                    moves[position].set_field(position + 9);
+                }
+            }
+            if row >= 1 {
+                moves[position].set_field(position - 1);
+            }
+            if row <=6 {
+                moves[position].set_field(position + 1);
+            }
+        }
+    }
+    moves
+}
+
+pub fn get_knight_moves_for_field() -> [Bitboard; 64] {
+    let mut moves: [Bitboard; 64] = [Bitboard::new(); 64];
+    for column in 0..8 {
+        for row in 0..8 {
+            let position: usize = usize::from(column as usize * 8 + row as usize);
+            if row >= 2 {
+                if column >= 1 {
+                    moves[position].set_field(position - 10);
+                }
+                if column <=6 {
+                    moves[position].set_field(position + 6);
+                }
+            }
+            if row <= 5 {
+                if column >= 1 {
+                    moves[position].set_field(position - 6);
+                }
+                if column <=6 {
+                    moves[position].set_field(position + 10);
+                }
+            }
+            if column >= 2 {
+                if row >= 1 {
+                    moves[position].set_field(position - 17);
+                }
+                if row <= 6 {
+                    moves[position].set_field(position - 15);
+                }
+            }
+            if column <=5 {
+                if row >= 1 {
+                    moves[position].set_field(position + 15);
+                }
+                if row <= 6 {
+                    moves[position].set_field(position + 17);
+                }
+            }
+        }
+    }
     moves
 }

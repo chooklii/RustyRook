@@ -1,41 +1,127 @@
-use std::{io::{self}, time::SystemTime};
+
+use crate::engine::transposition::zobrist::{get_transposition_figure_random_numbers,get_transposition_en_passant_numbers};
+use board::bitboard::Bitboard;
 use board::board::Chessboard;
-use engine::{count::count_moves, engine::{search_for_best_move, PossibleMove}};
+use engine::{
+    count::count_moves,
+    engine::search_for_best_move,
+    transposition::{self, table::TranspositionTable},
+};
+use helper::{
+    magic_bitboards::{
+        init_with_predefined::{
+            init_bishop_magic_arrays, init_bishop_magic_moves_array, init_rook_magic_arrays,
+            init_rook_magic_moves_array,
+        },
+        magic_bitboard::MagicBitboard,
+    },
+    moves_by_field::{
+        get_douplicate_pawn_boards, get_king_moves_for_field, get_knight_moves_for_field,
+        get_moves_for_each_field, get_pawn_promotion_moves, get_pawn_takes_for_field,
+        MoveInEveryDirection,
+    },
+};
+use lazy_static::lazy_static;
+use log::info;
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
-use log::info;
-use helper::moves_by_field::{get_moves_for_each_field, MoveInEveryDirection};
+use std::{
+    io::{self},
+    time::SystemTime,
+};
 
 mod board;
-mod figures;
 mod engine;
-mod helper;
 mod evaluation;
+mod figures;
+mod helper;
+
+lazy_static! {
+    static ref KNIGHT_MOVES: [Bitboard; 64] = {
+        get_knight_moves_for_field()
+    };
+    static ref KING_MOVES: [Bitboard; 64] = {
+        get_king_moves_for_field()
+    };
+    // by color as well
+    static ref PAWN_THREATS: [[Bitboard; 64];2] = {
+        get_pawn_takes_for_field()
+    };
+    // can ignore color as black can never move to 8th row and white to 1st
+    static ref PAWN_PROMOTION_FIELDS: Bitboard = {
+        get_pawn_promotion_moves()
+    };
+    // magic bitboards split into magic and possible moves for magic
+    static ref BISHOP_MAGIC_BITBOARDS: [MagicBitboard; 64] = {
+        init_bishop_magic_arrays()
+    };
+    static ref BISHOP_MAGIC_POSITIONS: [Vec<Bitboard>; 64] = {
+        init_bishop_magic_moves_array()
+    };
+    static ref ROOK_MAGIC_BITBOARDS: [MagicBitboard; 64] = {
+        init_rook_magic_arrays()
+    };
+    static ref ROOK_MAGIC_POSITIONS: [Vec<Bitboard>; 64] = {
+        init_rook_magic_moves_array()
+    };
+    static ref MOVES_BY_FIELD: FxHashMap<usize, MoveInEveryDirection> = {
+        get_moves_for_each_field()
+    };
+    static ref DOUPLICATE_PAWN_TARIFF: [Bitboard; 8] = {
+        get_douplicate_pawn_boards()
+    };
+    // static u64 to calculate zobrist hash for each color
+    static ref ZOBRIST_FIGURE_NUMBERS: [[[u64; 64];6];2] = {
+        get_transposition_figure_random_numbers()
+    };
+    static ref ZOBRIST_SEED: u64 = {
+        3847293847293847239
+    };
+    static ref ZOBRIST_CURRENT_MOVE: u64 = {
+        9182739182739182731
+    };
+    static ref ZOBRIST_EN_PASSANT: [u64; 64] = {
+        get_transposition_en_passant_numbers()
+    };
+    // white short, white long - black short, black long
+    static ref ZOBRIST_CASTLE_NUMBERS: [u64;4] = {
+        [
+            13294823984729384712,
+            8473928472384729384,
+            1923847192384719238,
+            982374928374928374
+        ]
+    };
+}
 
 
-fn main(){
+fn main() {
     init_logger!("rustyRook").unwrap();
     parse_input();
 }
 
-fn map_input_to_action(commands: Vec<&str>, chessboard: &mut Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
+fn map_input_to_action(
+    commands: Vec<&str>,
+    chessboard: &mut Chessboard,
+    transposition: &mut TranspositionTable,
+) {
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard),
-        "go" => make_move(&chessboard, &moves_by_field),
-        "debug" => debug_moves(&chessboard, moves_by_field,),
+        "go" => make_move(&chessboard, transposition),
+        "debug" => debug_moves(&chessboard),
         "quit" => quit(),
-        _ => quit()
+        _ => quit(),
     }
 }
 
-fn debug_moves(chessboard: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
+fn debug_moves(chessboard: &Chessboard) {
     let now = SystemTime::now();
     let max_depth: u8 = 4;
-    let moves = count_moves(&chessboard, moves_by_field, max_depth);
+    let moves = count_moves(&chessboard, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,
@@ -44,9 +130,9 @@ fn debug_moves(chessboard: &Chessboard, moves_by_field: &FxHashMap<usize, MoveIn
     );
 }
 
-fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
+fn update_board(move_vec: Vec<&str>, board: &mut Chessboard) {
     board.set_to_default();
-    for single_move in move_vec{
+    for single_move in move_vec {
         // ignore both for now - should not be needed as ucinewgame resets game
         if single_move != "position" && single_move != "startpos" && single_move != "moves" {
             board.update_position_from_uci_input(single_move);
@@ -54,37 +140,51 @@ fn update_board(move_vec: Vec<&str>, board: &mut Chessboard){
     }
 }
 
-fn make_move(board: &Chessboard, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>){
-    search_for_best_move(&board, &moves_by_field);
+fn make_move(board: &Chessboard, transposition: &mut TranspositionTable) {
+    search_for_best_move(&board, transposition);
 }
 
-fn quit(){
+fn quit() {
     panic!("Unknown!");
 }
 
-fn init_new_game(){
+fn init_new_game() {
     println!("isready");
 }
-fn send_is_ready(){
+fn send_is_ready() {
+    // init all static values
+    let _ = KING_MOVES.get(0);
+    let _ = KNIGHT_MOVES.get(0);
+    let _ = PAWN_THREATS.get(0);
+    let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
+    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
+    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
+
+    // positions are based on magic and impl. init magics
+    let _ = BISHOP_MAGIC_POSITIONS[0];
+    let _ = ROOK_MAGIC_POSITIONS[0];
     println!("readyok");
 }
 
-fn send_uci_message(){
+fn send_uci_message() {
     println!("id name RustyRook");
     println!("id author Benjamin Zenth");
     println!("uciok");
 }
 
 // recieve input from UCI
-fn parse_input() -> String{
-    let mut chessboard = Chessboard{..Default::default()};
-    // can prob be made static - but in some way is static :D
-    let moves_by_field = get_moves_for_each_field();
-    loop{
+fn parse_input() -> String {
+    let mut chessboard = Chessboard {
+        ..Default::default()
+    };
+    let mut transposition_table: TranspositionTable = TranspositionTable {
+        ..Default::default()
+    };
+    loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &moves_by_field);
+        map_input_to_action(commands, &mut chessboard, &mut transposition_table);
     }
 }

@@ -1,7 +1,7 @@
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 pub enum Color {
-    Black,
     White,
+    Black,
 }
 
 impl Default for Color{

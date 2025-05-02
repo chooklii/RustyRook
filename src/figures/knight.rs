@@ -1,95 +1,69 @@
-use rustc_hash::FxHashMap;
+use crate::{board::{bitboard::Bitboard, board::Chessboard}, engine::engine::PossibleMove, KNIGHT_MOVES};
 
-use crate::{board::board::Chessboard, helper::moves_by_field::MoveInEveryDirection};
-
-use super::figures::SingleMove;
-
-
-#[derive(Default, Clone)]
-pub struct Knight {}
-
-impl Knight {
-
-    pub fn possible_moves(&self, board: &Chessboard, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove> {
-        let mut possible_moves = Vec::new();
-
-        if let Some(moves) = moves_by_field.get(own_position){
-            for field in moves.knight_moves.iter(){
-                
-                if !board.get_next_player_figures().contains_key(&field) {
-                    possible_moves.push(SingleMove{to: *field, promotion: None});
-                }  
-            }
-        }
-        possible_moves
+pub fn get_possible_knight_moves(
+    board: &Chessboard,
+    own_position: usize
+) -> Vec<PossibleMove> {
+    let mut possible_moves = Vec::new();
+    if let Some(moves) = KNIGHT_MOVES.get(own_position) {
+        let own_positions = board.get_positions_by_current_player();
+        let movement = Bitboard{board: moves.board & !own_positions.board};
+        movement.iterate_board(|position| possible_moves.push(PossibleMove { from: own_position, to: position, promoted_to: None }));      
     }
+    possible_moves
+}
 
-    pub fn threatened_fields(&self, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<usize>{
-        if let Some(moves) = moves_by_field.get(own_position){
-            return moves.knight_moves.to_owned()
-        }
-        return Vec::new();
-    }
+pub fn get_fields_threatened_by_knight(
+    own_position: usize
+) -> Bitboard {
+    // if field is not defined we want to know and fail
+    return *KNIGHT_MOVES.get(own_position).unwrap();
+}
 
-    pub fn possible_takes(&self, board: &Chessboard, own_position: &usize, moves_by_field: &FxHashMap<usize, MoveInEveryDirection>) -> Vec<SingleMove>{
-        let mut possible_takes = Vec::new();
-        if let Some(moves) = moves_by_field.get(own_position){
-            for single_move in moves.knight_moves.iter(){
-                    if board.get_opponents().contains_key(single_move){
-                        possible_takes.push(SingleMove { to: *single_move, promotion: None });
-                    }
-            }
-        }
-        possible_takes
+pub fn get_possible_knight_takes(
+    board: &Chessboard,
+    own_position: usize,
+    possible_takes: &mut Vec<PossibleMove>
+){
+    if let Some(moves) = KNIGHT_MOVES.get(own_position) {
+        let movement = Bitboard{board: moves.board & board.get_opponents().board};
+        movement.iterate_board(|position| possible_takes.push(PossibleMove { to: position, from: own_position, promoted_to: None }));
     }
 }
 
-
 #[cfg(test)]
-mod tests{
-    use bitmaps::Bitmap;
+mod tests {
 
-    use crate::helper::moves_by_field::get_moves_for_each_field;
+    use crate::figures::color::Color;
 
     use super::*;
 
     #[test]
-    fn test_empty_board(){
-        let possible_moves = get_moves_for_each_field();
-        let figure = Knight {
-            ..Default::default()
-        };
-        let board = Chessboard {
-            positions: Bitmap::<64>::new(),
-            white_figures: FxHashMap::default(),
-            black_figures: FxHashMap::default(),
-            ..Default::default()
-        };
+    fn test_empty_board() {
+        let board = Chessboard::empty(Color::White);
 
-        let moves = figure.possible_moves(&board, &27, &possible_moves);
+        let moves = get_possible_knight_moves(&board, 27);
         assert_eq!(8, moves.len());
 
-        let moves = figure.possible_moves(&board, &0, &possible_moves);
+        let moves = get_possible_knight_moves(&board, 0);
         assert_eq!(2, moves.len());
 
-        let moves = figure.possible_moves(&board, &54, &possible_moves);
+        let moves = get_possible_knight_moves(&board, 54);
         assert_eq!(4, moves.len());
     }
 
     #[test]
-    fn test_takes_default_board(){
-        let possible_moves = get_moves_for_each_field();
-        let figure = Knight {
-            ..Default::default()
-        };
+    fn test_takes_default_board() {
         let board = Chessboard {
             ..Default::default()
         };
 
-        let moves = figure.possible_takes(&board, &1, &possible_moves);
+        let mut moves: Vec<PossibleMove> = Vec::new();
+        get_possible_knight_takes(&board, 1, &mut moves);
         assert_eq!(0, moves.len());
 
-        let moves = figure.possible_takes(&board, &33, &possible_moves);
+        let mut moves: Vec<PossibleMove> = Vec::new();
+        get_possible_knight_takes(&board, 33, &mut moves);
         // 48, 50
         assert_eq!(2, moves.len());
     }

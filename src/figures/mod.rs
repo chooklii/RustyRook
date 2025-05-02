@@ -1,9 +1,6 @@
-pub mod figures;
 pub mod color;
 pub mod pawn;
-pub mod rook;
-pub mod bishop;
 pub mod knight;
-pub mod queen;
 pub mod king;
-pub mod bishop_and_rook_moves;
+pub mod sliding_moves;
+pub mod piece;
