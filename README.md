@@ -1,26 +1,17 @@
 # RustyRook-
 Chess Engine written in Rust
 
-pre go live todos:
+todos: 
+-> Test Undo Moves for Performance
+-> Makes moves incremently by depth and use time given by user
+-> Test Move Ordering by Transposition Table 
+-> Test Move Ordering by Takes first
+-> Repetition
+-> Test and Improve Evaluation
 
-- Order of Moves when Calculating!
 
--> Zugwiederholung -> Resolve with Trans Table Position Unique Key
-
-v2:
-- improve calculation/evaluation performance!
-- only calculate pins when rook/queen/bishop left
-- undo move for performance?
-- Rayon
-
-todo:
-
-Refactor Fields to prevent check to magic bitboards
-Refacotor Pinned Pieces
-Maybe Refactor Pawn EnPassant, but does not effect performance by much
-
-f32 Evaluation -> u64???
-
-Problem:
-Order Moves
--> Go by Depth
+todos later:
+-> Refactor Fields to prevent check to magic bitboards
+-> Refacotor Pinned Pieces
+-> Maybe Refactor Pawn EnPassant, but does not effect performance by much
+-> Test Rayon

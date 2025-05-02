@@ -65,37 +65,42 @@ impl Default for Chessboard {
 }
 
 impl Chessboard {
+    // used by tests
     pub fn empty(color: Color) -> Chessboard {
-        Chessboard {
-            positions: Bitboard::new(),
-            used_positions: [Bitboard::new(), Bitboard::new()],
-            figures: [
-                [
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                ],
-                [
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                    Bitboard::new(),
-                ],
-            ],
-            current_move: color,
-            en_passant: None,
-            castle: Castle {
-                ..Default::default()
-            },
-            zobrist_key: u64::default()
-        }
+        let mut board = Chessboard{..Default::default()};
+        board.set_empty();
+        board.current_move = color;
+        board
     }
 
+    fn set_empty(&mut self){
+        self.positions = Bitboard::new();
+        self.used_positions = [Bitboard::new(), Bitboard::new()];
+        self.figures = [
+            [
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+            ],
+            [
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+            ],
+        ];
+        self.current_move = Color::White;
+        self.en_passant = None;
+        self.castle = Castle {
+            ..Default::default()
+        };
+        self.zobrist_key = u64::default()
+    }
     fn set_current_move(&mut self) {
         // todo? maybe add "static" here due to performance?
         self.zobrist_key ^= *ZOBRIST_CURRENT_MOVE;
@@ -355,7 +360,6 @@ impl Chessboard {
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize, promoted_to: Option<Promotion>) {
-
         if let Some(promoted_figure) = promoted_to {
             self.update_figure_to_promoted_one(from, to, promoted_figure);
 
@@ -526,7 +530,7 @@ impl Chessboard {
             return;
         }
         if false {
-            let position = String::from("8/pR1r3k/2pN2pp/3NQ3/2B5/8/P1q2PPP/5KK1");
+            let position = String::from("rn1qkb1r/ppp1pppp/8/6B1/3Pn1b1/4NN2/PPP1PPPP/R2QKB1R b KQkq - 2 6");
             self.create_position_from_input_string(position);
             return;
         }
@@ -538,6 +542,7 @@ impl Chessboard {
 
     // e.g. 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1
     fn create_position_from_input_string(&mut self, position: String) {
+        self.set_empty();
         let mut current_position: usize = 56;
         let mut positions_finished = false;
         for c in position.chars() {

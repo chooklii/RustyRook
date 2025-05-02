@@ -51,7 +51,7 @@ impl Default for MoveWithRating {
 }
 
 const MAX_DEPTH: u8 = 4;
-const MAX_DEPTH_TAKES: u8 = 10;
+const MAX_DEPTH_TAKES: u8 = 4;
 
 pub fn search_for_best_move(
     board: &Chessboard,
