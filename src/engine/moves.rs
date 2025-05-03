@@ -2,11 +2,11 @@ use crate::{
     board::{bitboard::Bitboard, board::Chessboard},
     figures::{
         color::Color, king::{get_fields_threatened_by_king, get_possible_king_moves, get_possible_king_takes}, knight::{
-            get_fields_threatened_by_knight, get_possible_knight_moves, get_possible_knight_takes,
+            get_fields_threatened_by_knight, get_possible_knight_moves, get_possible_knight_moves_to_prevent_check, get_possible_knight_takes
         }, pawn::{
-            get_fields_threatened_by_pawn, get_possible_pawn_moves, get_possible_pawn_takes_and_promotion
+            get_fields_threatened_by_pawn, get_possible_pawn_moves, get_possible_pawn_moves_to_prevent_check, get_possible_pawn_takes_and_promotion
         }, piece::Piece, sliding_moves::{
-            get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook, get_possible_bishop_moves, get_possible_bishop_takes, get_possible_queen_moves, get_possible_queen_takes, get_possible_rook_moves, get_possible_rook_takes
+            get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook, get_possible_bishop_moves, get_possible_bishop_moves_to_prevent_check, get_possible_bishop_takes, get_possible_queen_moves, get_possible_queen_moves_to_prevent_check, get_possible_queen_takes, get_possible_rook_moves, get_possible_rook_moves_to_prevent_check, get_possible_rook_takes
         }
     },
 };
@@ -31,9 +31,9 @@ pub fn get_takes_in_position(
 
     let moves = if is_in_check {
         let all_moves =
-            get_all_possible_moves(&board, board.current_move, opponent_moves);
+            get_all_possible_moves(&board, board.current_move, opponent_moves, true, true);
         let prevent_check_fields =
-            get_fields_to_prevent_check(&board, king_position, opponent_moves, count_of_checks);
+            get_fields_to_prevent_check(&board, king_position, opponent_moves);
         // either figure is king (we allow all his moves - or figure can prevent check)
         all_moves
             .into_iter()
@@ -60,23 +60,12 @@ pub fn get_valid_moves_in_position(
     // get moves from opponent - we ignore our own king position for rook/bishop/queen to standing on d8, and going to c8 to prevent check from h8
     let (opponent_moves, count_of_checks) =
         get_all_threatened_fields(&board, board.get_opponent_color(), king_position);
-    let mut moves: Vec<PossibleMove> =
-        get_all_possible_moves(&board, board.current_move, opponent_moves);
     // if opponent moves include own king -> we are in check
     let is_in_check = opponent_moves.field_is_used(king_position);
-    if is_in_check {
-        let prevent_check_fields = 
-            get_fields_to_prevent_check(&board, king_position, opponent_moves, count_of_checks);
-        // either figure is king (we allow all his moves - or figure can prevent check)
-        moves = moves
-            .into_iter()
-            .filter(|mov| {
-                prevent_check_fields.field_is_used(mov.to)
-                    || mov.from.eq(&king_position)
-                    || en_passant_to_prevent_check(&board, &mov, prevent_check_fields)
-            })
-            .collect()
-    }
+    let is_in_double_check = is_in_check && count_of_checks > 1;
+
+    let moves: Vec<PossibleMove> = get_all_possible_moves(&board, board.current_move, opponent_moves, is_in_check, is_in_double_check);
+
     let not_pinned_moves: Vec<PossibleMove> =
         get_not_pinned_pieces(&board, &king_position, moves);
     return (not_pinned_moves, is_in_check);
@@ -158,12 +147,63 @@ fn get_all_threatened_fields(
     (moves, cound_of_checks)
 }
 
+fn get_all_prevent_check_moves(
+    board: &Chessboard,
+    color: Color,
+    opponent_moves: Bitboard,
+) -> Vec<PossibleMove>{
+    let king_position = board.get_pieces(color, Piece::King).get_first_field();
+    let prevent_check_fields = get_fields_to_prevent_check(&board, king_position, opponent_moves);
+
+    let mut moves = Vec::new();
+
+    let bishop_positions = board.get_pieces(color, Piece::Bishop);
+    bishop_positions.iterate_board(|position| {
+        get_possible_bishop_moves_to_prevent_check(&board, position, prevent_check_fields, &mut moves);
+    });
+
+    let queen_positions = board.get_pieces(color, Piece::Queen);
+    queen_positions.iterate_board(|position| {
+        get_possible_queen_moves_to_prevent_check(&board, position, prevent_check_fields, &mut moves);
+    });
+    
+    let knight_positions = board.get_pieces(color, Piece::Knight);
+    knight_positions.iterate_board(|position| {
+        get_possible_knight_moves_to_prevent_check(position, prevent_check_fields, &mut moves);
+    });
+
+    let rook_positions = board.get_pieces(color, Piece::Rook);
+    rook_positions.iterate_board(|position| {
+        get_possible_rook_moves_to_prevent_check(&board, position, prevent_check_fields, &mut moves);
+    });
+
+    let king_position = board.get_pieces(color, Piece::King).get_first_field();
+    moves.append(&mut get_possible_king_moves(&board, king_position, color, opponent_moves));
+
+    let pawn_positions = board.get_pieces(color, Piece::Pawn);   
+    pawn_positions.iterate_board(|position| {
+        get_possible_pawn_moves_to_prevent_check(&board, position, color, prevent_check_fields, &mut moves);
+    });
+
+    moves
+}
 // default logic get all pseudo legal moves
 fn get_all_possible_moves(
     board: &Chessboard,
     color: Color,
-    opponent_moves: Bitboard
+    opponent_moves: Bitboard,
+    is_in_check: bool,
+    is_in_double_check: bool,
 ) -> Vec<PossibleMove> {
+
+    // if we are in double check only moving the king can save us
+    if is_in_double_check{
+        let king_position = board.get_pieces(color, Piece::King).get_first_field();
+        return get_possible_king_moves(&board, king_position, color, opponent_moves);
+    }
+    if is_in_check{
+        return get_all_prevent_check_moves(board, color, opponent_moves);
+    }
     let mut moves = Vec::new();
 
     let bishop_positions = board.get_pieces(color, Piece::Bishop);
@@ -262,7 +302,7 @@ fn en_passant_to_prevent_check(
     mov: &PossibleMove,
     prevent_check_fields: Bitboard,
 ) -> bool {
-    // if there is more than one field to prevent check if cannot be from a pawn and prevented by en passant
+    // if there is more than one field to prevent check it cannot be from a pawn and prevented by en passant
     if board.en_passant.is_none() || prevent_check_fields.board.count_ones() > 1 {
         return false;
     }

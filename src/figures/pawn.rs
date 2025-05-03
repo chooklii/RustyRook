@@ -122,8 +122,8 @@ fn add_pawn_takes(
     board: &Chessboard,
     own_color: Color,
     own_position: usize,
-    possible_moves: &mut Vec<PossibleMove>
-){
+    possible_moves: &mut Vec<PossibleMove>,
+) {
     let possible_takes = &PAWN_THREATS[own_color as usize][own_position];
 
     let real_takes = Bitboard {
@@ -188,9 +188,9 @@ pub fn get_possible_pawn_moves(
     }
     // one field forward
     if !board.positions.field_is_used(one_step_forward) {
-        if figure_will_promote(one_step_forward, &own_color){
+        if figure_will_promote(one_step_forward, &own_color) {
             add_promotion_to_possible_moves(own_position, one_step_forward, &mut possible_moves);
-        }else{
+        } else {
             possible_moves.push(PossibleMove {
                 to: one_step_forward,
                 from: own_position,
@@ -248,14 +248,126 @@ pub fn get_possible_pawn_takes_and_promotion(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-    possible_moves: &mut Vec<PossibleMove>
-){
+    possible_moves: &mut Vec<PossibleMove>,
+) {
     add_pawn_takes(&board, own_color, own_position, possible_moves);
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
     if figure_will_promote(one_step_forward, &own_color)
         && !board.positions.field_is_used(one_step_forward)
     {
         add_promotion_to_possible_moves(own_position, one_step_forward, possible_moves);
+    }
+}
+
+pub fn get_possible_pawn_moves_to_prevent_check(
+    board: &Chessboard,
+    own_position: usize,
+    own_color: Color,
+    prevent_check_fields: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>,
+) {
+    // Takes
+    let possible_takes = &PAWN_THREATS[own_color as usize][own_position];
+
+    let real_takes = Bitboard {
+        board: possible_takes.board & board.get_opponents().board & prevent_check_fields.board,
+    };
+    let takes_with_promotion = Bitboard {
+        board: real_takes.board & PAWN_PROMOTION_FIELDS.board & prevent_check_fields.board,
+    };
+
+    // we either have takes with promotion or regular takes - never both
+    if takes_with_promotion.board != 0 {
+        takes_with_promotion.iterate_board(|new_field| {
+            add_promotion_to_possible_moves(own_position, new_field, possible_moves)
+        });
+    } else {
+        real_takes.iterate_board(|new_field| {
+            possible_moves.push(PossibleMove {
+                from: own_position,
+                to: new_field,
+                promoted_to: None,
+            })
+        });
+    }
+
+    let one_step_forward = calculate_forward_position(own_position, own_color, 8);
+    if let Some(possible_en_passant) = board.en_passant {
+        // en passant can only prevent check if there is exactly one field we can prevent check
+        // (and that is the figure checking aka pawn)
+        if prevent_check_fields.board.count_ones() == 1 {
+            // both fields are null checked above
+            let checked_by_field = prevent_check_fields.get_first_field();
+            let en_passant_field = board.en_passant.unwrap();
+            // they are not the same -> no en passant to prevent possible
+            if checked_by_field == en_passant_field {
+                if figure_can_move_left(own_position, &own_color) {
+                    if en_passant_position_left(&own_position, own_color) == possible_en_passant
+                        && en_passant_no_check(
+                            &board,
+                            &own_position,
+                            own_color,
+                            &possible_en_passant,
+                        )
+                    {
+                        let take_left_position = take_left_position(&one_step_forward, own_color);
+                        possible_moves.push(PossibleMove {
+                            from: own_position,
+                            to: take_left_position,
+                            promoted_to: None,
+                        });
+                    }
+                }
+                if figure_can_move_right(own_position, &own_color) {
+                    if let Some(possible_en_passant) = board.en_passant {
+                        if en_passant_position_right(&own_position, own_color)
+                            == possible_en_passant
+                            && en_passant_no_check(
+                                &board,
+                                &own_position,
+                                own_color,
+                                &possible_en_passant,
+                            )
+                        {
+                            let take_right_position =
+                                take_right_position(&one_step_forward, own_color);
+                            possible_moves.push(PossibleMove {
+                                to: take_right_position,
+                                from: own_position,
+                                promoted_to: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // one field forward
+    if !board.positions.field_is_used(one_step_forward) {
+        if prevent_check_fields.field_is_used(one_step_forward) {
+            if figure_will_promote(one_step_forward, &own_color) {
+                add_promotion_to_possible_moves(own_position, one_step_forward, possible_moves);
+            } else {
+                possible_moves.push(PossibleMove {
+                    to: one_step_forward,
+                    from: own_position,
+                    promoted_to: None,
+                });
+            }
+        }
+
+        // two fields forward
+        if can_move_two_fields(own_position, own_color) {
+            let two_steps_forward = calculate_forward_position(own_position, own_color, 16);
+
+            if prevent_check_fields.field_is_used(two_steps_forward) && !board.positions.field_is_used(two_steps_forward) {
+                possible_moves.push(PossibleMove {
+                    to: two_steps_forward,
+                    from: own_position,
+                    promoted_to: None,
+                });
+            }
+        }
     }
 }
 

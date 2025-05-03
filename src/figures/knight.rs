@@ -20,6 +20,15 @@ pub fn get_fields_threatened_by_knight(
     return *KNIGHT_MOVES.get(own_position).unwrap();
 }
 
+pub fn get_possible_knight_moves_to_prevent_check(
+    own_position: usize,
+    prevent_check_fields: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>
+){
+    let moves = Bitboard{board: KNIGHT_MOVES[own_position].board & prevent_check_fields.board};
+    moves.iterate_board(|single| possible_moves.push(PossibleMove { from:own_position, to: single, promoted_to: None }));
+}
+
 pub fn get_possible_knight_takes(
     board: &Chessboard,
     own_position: usize,

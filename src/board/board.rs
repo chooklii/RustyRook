@@ -534,6 +534,12 @@ impl Chessboard {
             self.create_position_from_input_string(position);
             return;
         }
+        if false{
+            let position = String::from("8/8/8/1Ppp3r/1K3p1k/8/4P1P1/1R6 w - c6 0 3");
+            self.create_position_from_input_string(position);
+            self.en_passant = Some(34);
+            return;
+        }
 
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

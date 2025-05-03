@@ -84,6 +84,20 @@ pub fn get_possible_rook_moves(
     return possible_moves
 }
 
+pub fn get_possible_rook_moves_to_prevent_check(
+    board: &Chessboard,
+    position: usize,
+    prevent_check_fields: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>,
+){
+    let move_options = &ROOK_MAGIC_POSITIONS[position];
+    let magic_options = &ROOK_MAGIC_BITBOARDS[position];
+    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+
+    let moves = Bitboard{board:magic_moves.board & prevent_check_fields.board};
+    moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
+}
+
 pub fn get_possible_bishop_takes(
     board: &Chessboard,
     position: usize,
@@ -95,6 +109,20 @@ pub fn get_possible_bishop_takes(
 
     let moves = Bitboard{board:magic_moves.board & board.get_opponents().board};
 
+    moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
+}
+
+pub fn get_possible_bishop_moves_to_prevent_check(
+    board: &Chessboard,
+    position: usize,
+    prevent_check_fields: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>,
+){
+    let move_options = &BISHOP_MAGIC_POSITIONS[position];
+    let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
+    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+
+    let moves = Bitboard{board:magic_moves.board & prevent_check_fields.board};
     moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
 }
 
@@ -119,6 +147,16 @@ pub fn get_possible_queen_takes(
 ){
     get_possible_rook_takes(board, position, possible_moves);
     get_possible_bishop_takes(board, position, possible_moves);
+}
+
+pub fn get_possible_queen_moves_to_prevent_check(
+    board: &Chessboard,
+    position: usize,
+    prevent_check_fields: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>,
+){
+    get_possible_rook_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
+    get_possible_bishop_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
 }
 
 #[cfg(test)]

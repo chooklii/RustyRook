@@ -120,7 +120,7 @@ fn map_input_to_action(
 
 fn debug_moves(chessboard: &Chessboard) {
     let now = SystemTime::now();
-    let max_depth: u8 = 4;
+    let max_depth: u8 = 1;
     let moves = count_moves(&chessboard, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",

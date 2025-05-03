@@ -10,7 +10,7 @@ todos:
 -> Test Move Ordering by Takes first
 -> Repetition
 -> Test and Improve Evaluation
-
+-> Change en-passant to be the field the pawn moves to!
 
 todos later:
 -> Refactor Fields to prevent check to magic bitboards

@@ -8,15 +8,9 @@ use crate::{
 pub fn get_fields_to_prevent_check(
     board: &Chessboard,
     king_position: usize,
-    opponent_moves: Bitboard,
-    count_of_checks: u8
+    opponent_moves: Bitboard
 ) -> Bitboard {
     let mut possible_fields = Bitboard::new();
-
-    // if more than one figure checks only moving the king can save the player
-    if count_of_checks > 1{
-        return possible_fields;
-    }
 
     if let Some(rook_checking_field) = check_and_get_rook_movement_check_field(
         board,
@@ -274,7 +268,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::King as usize].set_field(19);
         board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(26);
         let opponent_moves = Bitboard::new();
-        let result = get_fields_to_prevent_check(&board, 19, opponent_moves, 0).get_used_fields();
+        let result = get_fields_to_prevent_check(&board, 19, opponent_moves).get_used_fields();
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&26))
     }
@@ -294,7 +288,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::Knight as usize].set_field(18);
 
         let opponent_moves = Bitboard::new();
-        let result = get_fields_to_prevent_check(&board, 8, opponent_moves, 0).get_used_fields();
+        let result = get_fields_to_prevent_check(&board, 8, opponent_moves).get_used_fields();
         assert_eq!(1, result.len());
         assert_eq!(true, result.contains(&18))
     }
