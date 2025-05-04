@@ -10,7 +10,7 @@ use crate::{
 use crate::transposition::transposition::Flag;
 
 use super::{
-    moves::{get_takes_in_position, get_valid_moves_in_position},
+    moves::{get_valid_moves_in_position},
     sender::send_move, transposition::{self, table::TranspositionTable, transposition::Transposition},
 };
 
@@ -125,7 +125,7 @@ fn calculate(
     let mut best_move: MoveWithRating = MoveWithRating {
         ..Default::default()
     };
-    let (valid_moves, is_in_check) = get_valid_moves_in_position(&board);
+    let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, &transposition, true);
     if is_in_check && valid_moves.is_empty() {
         return (lost_game(&board.current_move, depth), 1);
     } else if valid_moves.is_empty() && !is_in_check {
@@ -254,7 +254,7 @@ fn calculate_takes_only(
     };
     let mut calculated_positions: u64 = 0;
 
-    let (takes_moves, is_in_check) = get_takes_in_position(&board);
+    let (takes_moves, is_in_check) = get_valid_moves_in_position(&board, &transposition, false);
     if is_in_check && takes_moves.is_empty() {
         return (
             lost_game_evaluation(&board.current_move, MAX_DEPTH_TAKES + depth),

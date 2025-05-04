@@ -2,15 +2,13 @@ use crate::{board::{bitboard::Bitboard, board::Chessboard}, engine::engine::Poss
 
 pub fn get_possible_knight_moves(
     board: &Chessboard,
-    own_position: usize
-) -> Vec<PossibleMove> {
-    let mut possible_moves = Vec::new();
+    own_position: usize,
+    possible_moves: &mut Vec<PossibleMove>
+){
     if let Some(moves) = KNIGHT_MOVES.get(own_position) {
-        let own_positions = board.get_positions_by_current_player();
-        let movement = Bitboard{board: moves.board & !own_positions.board};
+        let movement = Bitboard{board: moves.board & !board.positions.board};
         movement.iterate_board(|position| possible_moves.push(PossibleMove { from: own_position, to: position, promoted_to: None }));      
     }
-    possible_moves
 }
 
 pub fn get_fields_threatened_by_knight(
@@ -51,13 +49,16 @@ mod tests {
     fn test_empty_board() {
         let board = Chessboard::empty(Color::White);
 
-        let moves = get_possible_knight_moves(&board, 27);
+        let mut moves = Vec::new();
+        get_possible_knight_moves(&board, 27, &mut moves);
         assert_eq!(8, moves.len());
 
-        let moves = get_possible_knight_moves(&board, 0);
+        let mut moves = Vec::new();
+        get_possible_knight_moves(&board, 0, &mut moves);
         assert_eq!(2, moves.len());
 
-        let moves = get_possible_knight_moves(&board, 54);
+        let mut moves = Vec::new();
+        get_possible_knight_moves(&board, 54, &mut moves);
         assert_eq!(4, moves.len());
     }
 

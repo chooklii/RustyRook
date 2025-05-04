@@ -621,7 +621,7 @@ impl Chessboard {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::count::count_moves;
+    use crate::engine::{count::count_moves, transposition::table::TranspositionTable};
     use super::*;
 
     #[test]
@@ -828,7 +828,7 @@ mod tests {
         let board = Chessboard {
             ..Default::default()
         };
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board, &TranspositionTable{..Default::default()},4);
         assert_eq!(197281, count);
     }
 
@@ -840,7 +840,7 @@ mod tests {
         let position_2 =
             String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
         board.create_position_from_input_string(position_2);
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board, &TranspositionTable{..Default::default()},4);
         assert_eq!(4085603, count);
     }
 
@@ -850,7 +850,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         let position_3 = String::from("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ");
         board.create_position_from_input_string(position_3);
-        let count = count_moves(&board, 5);
+        let count = count_moves(&board, &TranspositionTable{..Default::default()},5);
         assert_eq!(674624, count);
     }
 
@@ -862,7 +862,7 @@ mod tests {
         let position_4 =
             String::from("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
         board.create_position_from_input_string(position_4);
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board, &TranspositionTable{..Default::default()},4);
         assert_eq!(422333, count);
     }
 
@@ -874,7 +874,7 @@ mod tests {
         let position_5 =
             String::from("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
         board.create_position_from_input_string(position_5);
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board,&TranspositionTable{..Default::default()}, 4);
         assert_eq!(2103487, count);
     }
 
@@ -888,7 +888,7 @@ mod tests {
         );
         board.create_position_from_input_string(position_6);
 
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board,&TranspositionTable{..Default::default()}, 4);
         assert_eq!(3894594, count);
     }
 
@@ -900,7 +900,7 @@ mod tests {
         let position = String::from("2Q3n1/R7/k7/8/8/8/P1r3P1/3K4 b - - 0 18");
         board.create_position_from_input_string(position);
 
-        let count = count_moves(&board, 4);
+        let count = count_moves(&board,&TranspositionTable{..Default::default()}, 4);
         assert_eq!(36899, count);
     }
 }

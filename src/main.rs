@@ -112,16 +112,16 @@ fn map_input_to_action(
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard),
         "go" => make_move(&chessboard, transposition),
-        "debug" => debug_moves(&chessboard),
+        "debug" => debug_moves(&chessboard, transposition),
         "quit" => quit(),
         _ => quit(),
     }
 }
 
-fn debug_moves(chessboard: &Chessboard) {
+fn debug_moves(chessboard: &Chessboard, transposition: &TranspositionTable) {
     let now = SystemTime::now();
-    let max_depth: u8 = 1;
-    let moves = count_moves(&chessboard, max_depth);
+    let max_depth: u8 = 4;
+    let moves = count_moves(&chessboard,transposition, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,

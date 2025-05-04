@@ -1,4 +1,4 @@
-use super::transposition::{Flag, Transposition};
+use super::transposition::{self, Flag, Transposition};
 
 
 pub struct TranspositionTable{
@@ -29,6 +29,16 @@ impl TranspositionTable{
         let index = self.get_index(transposition.hash);
         // in v1 we just overwrite everything, maybe need to add check for existing value and if so depth/flag check
         self.table[index] = transposition;
+    }
+
+    pub fn get_entry_without_check(&self, board_hash: u64) -> Option<Transposition>{
+        let index = self.get_index(board_hash);
+        if let Some(&transposition) = self.table.get(index){
+            if transposition.hash == board_hash && board_hash != 0{
+                return Some(transposition)
+            }
+        }
+        return None;
     }
 
     pub fn get_entry(&self, board_hash: u64, depth: u8, alpha: f32, beta: f32) -> Option<Transposition>{

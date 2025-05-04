@@ -153,9 +153,8 @@ pub fn get_possible_pawn_moves(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-) -> Vec<PossibleMove> {
-    let mut possible_moves = Vec::new();
-    add_pawn_takes(&board, own_color, own_position, &mut possible_moves);
+    possible_moves: &mut Vec<PossibleMove>
+){
 
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
     if let Some(possible_en_passant) = board.en_passant {
@@ -187,10 +186,8 @@ pub fn get_possible_pawn_moves(
         }
     }
     // one field forward
-    if !board.positions.field_is_used(one_step_forward) {
-        if figure_will_promote(one_step_forward, &own_color) {
-            add_promotion_to_possible_moves(own_position, one_step_forward, &mut possible_moves);
-        } else {
+    if !board.positions.field_is_used(one_step_forward){
+        if !figure_will_promote(one_step_forward, &own_color) {
             possible_moves.push(PossibleMove {
                 to: one_step_forward,
                 from: own_position,
@@ -210,7 +207,6 @@ pub fn get_possible_pawn_moves(
             }
         }
     }
-    possible_moves
 }
 
 fn add_promotion_to_possible_moves(
@@ -389,7 +385,8 @@ mod tests {
             ..Default::default()
         };
 
-        let moves = get_possible_pawn_moves(&board, 12, Color::White);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 12, Color::White, &mut moves);
 
         assert_eq!(2, moves.len());
     }
@@ -401,7 +398,8 @@ mod tests {
         board.positions.set_field(23);
         board.positions.set_field(24);
         board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(23);
-        let moves = get_possible_pawn_moves(&board, 16, Color::White);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 16, Color::White, &mut moves);
 
         // should not be able to take from Field 16(A3) to 23(H3)
         assert_eq!(0, moves.len());
@@ -415,7 +413,8 @@ mod tests {
             ..Default::default()
         };
         board.set_to_default();
-        let moves = get_possible_pawn_moves(&board, 55, Color::Black);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 55, Color::Black, &mut moves);
 
         assert_eq!(2, moves.len());
     }
@@ -428,7 +427,8 @@ mod tests {
         board.positions.set_field(34);
         board.used_positions[Color::Black as usize].set_field(34);
 
-        let moves = get_possible_pawn_moves(&board, 35, Color::White);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 35, Color::White, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(true, move_fields.contains(&42));
     }
@@ -446,7 +446,8 @@ mod tests {
         };
         board.figures[Color::White as usize][Piece::Pawn as usize].set_field(27);
 
-        let moves = get_possible_pawn_moves(&board, 26, Color::Black);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 26, Color::Black, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(true, move_fields.contains(&19));
     }
@@ -471,7 +472,8 @@ mod tests {
         board.used_positions[Color::White as usize].set_field(31);
         board.used_positions[Color::Black as usize].set_field(24);
 
-        let moves = get_possible_pawn_moves(&board, 26, Color::Black);
+        let mut moves = Vec::new();
+        get_possible_pawn_moves(&board, 26, Color::Black, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(false, move_fields.contains(&19));
     }
@@ -481,7 +483,8 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         board.figures[Color::White as usize][Piece::Pawn as usize].set_field(52);
 
-        let moves = get_possible_pawn_moves(&board, 52, Color::White);
+        let mut moves = Vec::new();
+        get_possible_pawn_takes_and_promotion(&board, 52, Color::White, &mut moves);
         assert_eq!(4, moves.len())
     }
 
@@ -492,7 +495,8 @@ mod tests {
         board.figures[Color::White as usize][Piece::Knight as usize].set_field(6);
         board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(15);
 
-        let moves = get_possible_pawn_moves(&board, 15, Color::Black);
+        let mut moves = Vec::new();
+        get_possible_pawn_takes_and_promotion(&board, 15, Color::Black, &mut moves);
         assert_eq!(8, moves.len())
     }
 }
