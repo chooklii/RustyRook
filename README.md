@@ -11,6 +11,7 @@ todos:
 -> Repetition
 -> Test and Improve Evaluation
 -> Change en-passant to be the field the pawn moves to!
+-> Fix Zobrist for Move
 
 todos later:
 -> Refactor Fields to prevent check to magic bitboards

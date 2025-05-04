@@ -30,7 +30,7 @@ use super::{
     checked::get_fields_to_prevent_check,
     engine::PossibleMove,
     ray::get_pinned_pieces_and_possible_moves,
-    transposition::{table::TranspositionTable, transposition::Transposition},
+    transposition::{table::TranspositionTable, transposition::Transposition, zobrist},
 };
 
 pub fn get_valid_moves_in_position(
@@ -240,9 +240,9 @@ fn get_all_possible_moves(
     //todo add checks to opponent here as well
 
     let prev_best_move_opt = transposition.get_entry_without_check(board.zobrist_key);
-
     // we only want some moves which we think should be calculated
     if !get_all_moves {
+        // disabled for now
         add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
         return moves;
     }
@@ -290,6 +290,8 @@ fn add_prev_best_move_as_first_move(
             && single.promoted_to == prev_best_move.promoted_to
     }) {
         moves.remove(pos);
+    }else{
+        println!("Got Best Move which is not part of Moves - Should not happen!{:?} - {:?}", moves, prev_best_move);
     }
     moves.insert(0, prev_best_move);
 }

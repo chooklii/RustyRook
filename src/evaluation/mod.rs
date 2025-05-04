@@ -175,6 +175,9 @@ fn get_position_weight(board: &Chessboard, color: Color, king_position: &KingPos
     let mut score: f32 = 0.0;
     board.get_pieces(color, Piece::Pawn).iterate_board(|position| score+=get_pawn_rate(position, color, &king_position));
     board.get_pieces(color, Piece::Knight).iterate_board(|position| score += KNIGHT_RATE[position]);
+    if king_usize == 64{
+        println!("{:?}", board.played_moves);
+    }
     board.get_pieces(color, Piece::Bishop).iterate_board(|position| score+=get_bishop_weight(position, &board, color, king_usize));
     board.get_pieces(color, Piece::Rook).iterate_board(|position| score+=get_rook_weight(position, &board, king_usize));
     board.get_pieces(color, Piece::Queen).iterate_board(|position| score+=get_queen_weight(position, &board, king_usize));

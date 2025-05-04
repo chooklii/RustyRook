@@ -1,3 +1,5 @@
+use crate::ZOBRIST_CURRENT_MOVE;
+
 use super::transposition::{self, Flag, Transposition};
 
 
@@ -26,15 +28,22 @@ impl TranspositionTable{
     }
 
     pub fn save_entry(&mut self, transposition: Transposition){
+        if transposition.hash == 0{
+            println!("Trying to add shit data: {:?}", transposition);
+        }
         let index = self.get_index(transposition.hash);
         // in v1 we just overwrite everything, maybe need to add check for existing value and if so depth/flag check
         self.table[index] = transposition;
     }
 
     pub fn get_entry_without_check(&self, board_hash: u64) -> Option<Transposition>{
+        if board_hash == 0{
+            println!("Should not happen - why?");
+            return None;
+        }
         let index = self.get_index(board_hash);
         if let Some(&transposition) = self.table.get(index){
-            if transposition.hash == board_hash && board_hash != 0{
+            if transposition.hash == board_hash{
                 return Some(transposition)
             }
         }
@@ -42,7 +51,6 @@ impl TranspositionTable{
     }
 
     pub fn get_entry(&self, board_hash: u64, depth: u8, alpha: f32, beta: f32) -> Option<Transposition>{
-
         let index = self.get_index(board_hash);
 
         if let Some(&transposition) = self.table.get(index){

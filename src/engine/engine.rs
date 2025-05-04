@@ -1,11 +1,9 @@
 use std::time::SystemTime;
 
-use rustc_hash::FxHashMap;
-
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
     evaluation::evaluate,
-    figures::color::Color,
+    figures::color::Color, ZOBRIST_CURRENT_MOVE,
 };
 use crate::transposition::transposition::Flag;
 
@@ -125,6 +123,7 @@ fn calculate(
     let mut best_move: MoveWithRating = MoveWithRating {
         ..Default::default()
     };
+    let mut calculated_all_moves = true;
     let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, &transposition, true);
     if is_in_check && valid_moves.is_empty() {
         return (lost_game(&board.current_move, depth), 1);
@@ -136,7 +135,7 @@ fn calculate(
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
         // check transposition table
-        if let Some(val) = transposition.get_entry(board.zobrist_key, depth_to_end, alpha, beta){
+        if let Some(val) = transposition.get_entry(new_board.zobrist_key, depth_to_end, alpha, beta){
             if maximizing{
                 alpha = alpha.max(val.evaluation);
                 if best_move_rating < val.evaluation{
@@ -180,11 +179,12 @@ fn calculate(
             alpha = alpha.max(evaluation.rating);
 
             if beta <= alpha {
+                calculated_all_moves = false;
                 transposition.save_entry(Transposition { 
-                    hash: new_board.zobrist_key, 
+                    hash: board.zobrist_key, 
                     depth: depth_to_end, 
                     evaluation: evaluation.rating, 
-                    best_move: PossibleMove { from: single.from, to: single.to, promoted_to: single.promoted_to }, 
+                    best_move: single, 
                     flag: Flag::Upperbound });
                 break;
             }
@@ -205,17 +205,22 @@ fn calculate(
             }
             beta = beta.min(evaluation.rating);
             if beta <= alpha {
+                calculated_all_moves = false;
                 transposition.save_entry(Transposition { 
-                    hash: new_board.zobrist_key, 
+                    hash: board.zobrist_key, 
                     depth: depth_to_end, 
                     evaluation: evaluation.rating, 
-                    best_move: PossibleMove { from: single.from, to: single.to, promoted_to: single.promoted_to }, 
+                    best_move: single, 
                     flag: Flag::Lowerbound });
                 break;
             }
         }
     }
-    if best_move.from != 0 || best_move.to != 0{
+    if best_move.from == 0 && best_move.to == 0{
+        println!("WHY")
+    }
+
+    if calculated_all_moves && (best_move.from != 0 || best_move.to != 0){
         transposition.save_entry(Transposition { 
             hash: board.zobrist_key, 
             depth: depth_to_end, 
@@ -268,7 +273,6 @@ fn calculate_takes_only(
     for single in takes_moves.into_iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
-
         if let Some(val) = transposition.get_entry(new_board.zobrist_key, depth_till_end, alpha, beta){
             if maximizing{
                 alpha = alpha.max(val.evaluation);
@@ -299,7 +303,7 @@ fn calculate_takes_only(
 
             if beta <= alpha {
                 transposition.save_entry(Transposition { 
-                    hash: new_board.zobrist_key, 
+                    hash: board.zobrist_key, 
                     depth: depth_till_end, 
                     evaluation, 
                     best_move: single, 
@@ -318,7 +322,7 @@ fn calculate_takes_only(
             beta = beta.min(evaluation);
             if beta <= alpha {
                 transposition.save_entry(Transposition { 
-                    hash: new_board.zobrist_key, 
+                    hash: board.zobrist_key, 
                     depth: depth_till_end, 
                     evaluation, 
                     best_move: single, 
@@ -336,6 +340,5 @@ fn calculate_takes_only(
         best_move, 
         flag: Flag::Exact });
     }
-
     return (best_move_evaluation, calculated_positions);
 }

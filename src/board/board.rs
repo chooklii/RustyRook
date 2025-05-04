@@ -27,6 +27,8 @@ pub struct Chessboard {
     pub en_passant: Option<usize>,
     pub castle: Castle,
     pub zobrist_key: u64,
+    //todo remove bevor final version -> only for debug
+    pub played_moves: Vec<PossibleMove>
 }
 
 impl Default for Chessboard {
@@ -58,6 +60,7 @@ impl Default for Chessboard {
                 ..Default::default()
             },
             zobrist_key: *ZOBRIST_SEED,
+            played_moves: Vec::new()
         };
         board.set_to_default();
         board
@@ -360,6 +363,7 @@ impl Chessboard {
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize, promoted_to: Option<Promotion>) {
+        self.played_moves.push(PossibleMove { from, to, promoted_to });
         if let Some(promoted_figure) = promoted_to {
             self.update_figure_to_promoted_one(from, to, promoted_figure);
 
@@ -534,12 +538,6 @@ impl Chessboard {
             self.create_position_from_input_string(position);
             return;
         }
-        if false{
-            let position = String::from("8/8/8/1Ppp3r/1K3p1k/8/4P1P1/1R6 w - c6 0 3");
-            self.create_position_from_input_string(position);
-            self.en_passant = Some(34);
-            return;
-        }
 
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -621,7 +619,7 @@ impl Chessboard {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::{count::count_moves, transposition::table::TranspositionTable};
+    use crate::{engine::{count::count_moves, transposition::table::TranspositionTable}, make_move};
     use super::*;
 
     #[test]
@@ -902,5 +900,15 @@ mod tests {
 
         let count = count_moves(&board,&TranspositionTable{..Default::default()}, 4);
         assert_eq!(36899, count);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_if_zobrist_for_color_works(){
+        let mut board = Chessboard::empty(Color::White);
+        let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
+        board.create_position_from_input_string(position);
+        make_move(&board,&mut TranspositionTable{..Default::default()});
+        // just count to check if we run into issues with king related zo zobrist
     }
 }
