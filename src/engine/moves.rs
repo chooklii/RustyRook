@@ -242,8 +242,7 @@ fn get_all_possible_moves(
     let prev_best_move_opt = transposition.get_entry_without_check(board.zobrist_key);
     // we only want some moves which we think should be calculated
     if !get_all_moves {
-        // disabled for now
-        add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
+        add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt, false);
         return moves;
     }
 
@@ -269,14 +268,14 @@ fn get_all_possible_moves(
     pawn_positions.iterate_board(|position| {
         get_possible_pawn_moves(&board, position, color, &mut moves);
     });
-
-    add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
+    add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt, true);
     moves
 }
 
 fn add_prev_best_move_as_first_move(
     moves: &mut Vec<PossibleMove>,
     prev_best_move_opt: Option<Transposition>,
+    calculate_all_moves: bool
 ) {
     if prev_best_move_opt.is_none() {
         return;
@@ -290,8 +289,10 @@ fn add_prev_best_move_as_first_move(
             && single.promoted_to == prev_best_move.promoted_to
     }) {
         moves.remove(pos);
-    }else{
+    }else if calculate_all_moves{
+        // validate transpositional table - dev mode
         println!("Got Best Move which is not part of Moves - Should not happen!{:?} - {:?}", moves, prev_best_move);
+        panic!()
     }
     moves.insert(0, prev_best_move);
 }
@@ -315,31 +316,4 @@ fn get_not_pinned_pieces(
                 || pinned_pieces.get(&mov.from).unwrap().contains(&mov.to)
         })
         .collect()
-}
-
-// check if move is en en passant to prevent a check given from a pawn
-fn en_passant_to_prevent_check(
-    board: &Chessboard,
-    mov: &PossibleMove,
-    prevent_check_fields: Bitboard,
-) -> bool {
-    // if there is more than one field to prevent check it cannot be from a pawn and prevented by en passant
-    if board.en_passant.is_none() || prevent_check_fields.board.count_ones() > 1 {
-        return false;
-    }
-    // both fields are null checked above
-    let checked_by_field = prevent_check_fields.get_first_field();
-    let en_passant_field = board.en_passant.unwrap();
-    if checked_by_field != en_passant_field {
-        return false;
-    }
-    let own_pawns = board.get_pieces(board.current_move, Piece::Pawn);
-
-    if own_pawns.field_is_used(mov.from) {
-        return match board.current_move {
-            Color::Black => mov.to + 8 == en_passant_field,
-            Color::White => mov.to - 8 == en_passant_field,
-        };
-    }
-    return false;
 }

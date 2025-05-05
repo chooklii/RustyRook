@@ -28,8 +28,9 @@ impl TranspositionTable{
     }
 
     pub fn save_entry(&mut self, transposition: Transposition){
-        if transposition.hash == 0{
+        if transposition.hash == 0 || (transposition.best_move.from == 0 && transposition.best_move.to == 0){
             println!("Trying to add shit data: {:?}", transposition);
+            return;
         }
         let index = self.get_index(transposition.hash);
         // in v1 we just overwrite everything, maybe need to add check for existing value and if so depth/flag check
