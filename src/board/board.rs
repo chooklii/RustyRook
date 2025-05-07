@@ -908,7 +908,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
         board.create_position_from_input_string(position);
-        make_move(&board,&mut TranspositionTable{..Default::default()});
+        make_move(&board,&mut TranspositionTable{..Default::default()}, &mut Vec::new());
         // just count to check if we run into issues with king related zo zobrist
     }
 }

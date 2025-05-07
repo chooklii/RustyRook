@@ -1,5 +1,7 @@
 use std::time::SystemTime;
 
+use log::info;
+
 use crate::transposition::transposition::Flag;
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
@@ -52,20 +54,20 @@ impl Default for MoveWithRating {
 const MAX_DEPTH: u8 = 4;
 const MAX_DEPTH_TAKES: u8 = 4;
 
-pub fn search_for_best_move(board: &Chessboard, transposition: &mut TranspositionTable) {
+pub fn search_for_best_move(board: &Chessboard, transposition: &mut TranspositionTable, repetition_is_possible: bool, twice_played_moved: &Vec<u64>) {
     let now = SystemTime::now();
 
     let maximizing = board.current_move.eq(&Color::White);
     let alpha = -3000.0;
     let beta = 3000.0;
     let (best_move, calculations) =
-        calculate(&board, transposition, maximizing, alpha, beta, 0, true);
+        calculate(&board, transposition, maximizing, alpha, beta, 0, true, repetition_is_possible, twice_played_moved);
     println!(
-        "Calculated Positions {} and took {:?}",
+        "Calculated Positions {} and took {:?} - Net Rating: {}",
         calculations,
         now.elapsed(),
+        best_move.rating
     );
-    println!("Best Move Net Rating {:?}", &best_move.rating);
     send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
 }
 
@@ -93,7 +95,8 @@ fn draw() -> MoveWithRating {
 
 fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
     if !calculate_all_moves{
-        return evaluate(&board)
+        // ugly fix for when not calculating all moves to not take current board as 0
+        return evaluate(&board, false, &Vec::new());
     }
     match board.current_move {
         Color::White => -3001.0,
@@ -109,26 +112,30 @@ fn calculate(
     mut beta: f32,
     depth: u8,
     calculate_all_moves: bool,
+    repetition_is_possible: bool,
+    twice_played_moved: &Vec<u64>
 ) -> (MoveWithRating, u64) {
     if depth == MAX_DEPTH && calculate_all_moves {
         let (move_with_rating, calculated_moves) =
-            calculate(&board, transposition, maximizing, alpha, beta, 0, false);
+            calculate(&board, transposition, maximizing, alpha, beta, 0, false, repetition_is_possible, twice_played_moved);
         return (move_with_rating, calculated_moves);
     }
     if depth == MAX_DEPTH_TAKES && !calculate_all_moves{
-        let evaluation = evaluate(&board);
+        let evaluation = evaluate(&board, repetition_is_possible, twice_played_moved);
         // init without a best move is no issue as long as we calculate more than depth = 1
         return (MoveWithRating{rating: evaluation, ..Default::default()}, 1);
     }
     let depth_to_end = if calculate_all_moves {MAX_DEPTH + MAX_DEPTH_TAKES - depth}else{MAX_DEPTH_TAKES -depth};
     // transposition has values - no need to calculate again!
     if let Some(val) = transposition.get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
+        // maybe cleanup and remove later
+        let evaluation = if repetition_is_possible && twice_played_moved.contains(&board.zobrist_key){ 0.0}else{ val.evaluation};
         return (
             MoveWithRating {
                 from: val.best_move.from,
                 to: val.best_move.to,
                 promoted_to: val.best_move.promoted_to,
-                rating: val.evaluation,
+                rating: evaluation,
             },
             0,
         );
@@ -152,7 +159,6 @@ fn calculate(
         rating: best_move_rating,
         ..Default::default()
     };
-
     for single in valid_moves.into_iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
@@ -166,6 +172,8 @@ fn calculate(
                 beta,
                 depth + 1,
                 calculate_all_moves,
+                repetition_is_possible,
+                twice_played_moved
             );
 
             calculated_positions += calculated_moves;
@@ -193,6 +201,8 @@ fn calculate(
                 beta,
                 depth + 1,
                 calculate_all_moves,
+                repetition_is_possible,
+                twice_played_moved
             );
             calculated_positions += calculated_moves;
 
@@ -226,6 +236,5 @@ fn calculate(
             flag: transposition_flag,
         });
     }
-
     return (best_move, calculated_positions);
 }
