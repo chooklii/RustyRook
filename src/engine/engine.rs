@@ -6,7 +6,7 @@ use crate::transposition::transposition::Flag;
 use crate::{
     board::{board::Chessboard, promotion::Promotion},
     evaluation::evaluate,
-    figures::color::Color
+    figures::color::Color,
 };
 
 use super::{
@@ -54,15 +54,35 @@ impl Default for MoveWithRating {
 const MAX_DEPTH: u8 = 4;
 const MAX_DEPTH_TAKES: u8 = 4;
 
-pub fn search_for_best_move(board: &Chessboard, transposition: &mut TranspositionTable, repetition_is_possible: bool, twice_played_moved: &Vec<u64>) {
+pub fn search_for_best_move(
+    board: &Chessboard,
+    transposition: &mut TranspositionTable,
+    repetition_is_possible: bool,
+    twice_played_moved: &Vec<u64>,
+) {
     let now = SystemTime::now();
 
     let maximizing = board.current_move.eq(&Color::White);
     let alpha = -3000.0;
     let beta = 3000.0;
-    let (best_move, calculations) =
-        calculate(&board, transposition, maximizing, alpha, beta, 0, true, repetition_is_possible, twice_played_moved);
+    let (best_move, calculations) = calculate(
+        &board,
+        transposition,
+        maximizing,
+        alpha,
+        beta,
+        0,
+        true,
+        repetition_is_possible,
+        twice_played_moved,
+    );
     println!(
+        "Calculated Positions {} and took {:?} - Net Rating: {}",
+        calculations,
+        now.elapsed(),
+        best_move.rating
+    );
+    info!(
         "Calculated Positions {} and took {:?} - Net Rating: {}",
         calculations,
         now.elapsed(),
@@ -94,9 +114,8 @@ fn draw() -> MoveWithRating {
 }
 
 fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
-    if !calculate_all_moves{
-        // ugly fix for when not calculating all moves to not take current board as 0
-        return evaluate(&board, false, &Vec::new());
+    if !calculate_all_moves {
+        return evaluate(&board);
     }
     match board.current_move {
         Color::White => -3001.0,
@@ -113,34 +132,53 @@ fn calculate(
     depth: u8,
     calculate_all_moves: bool,
     repetition_is_possible: bool,
-    twice_played_moved: &Vec<u64>
+    twice_played_moved: &Vec<u64>,
 ) -> (MoveWithRating, u64) {
     if depth == MAX_DEPTH && calculate_all_moves {
-        let (move_with_rating, calculated_moves) =
-            calculate(&board, transposition, maximizing, alpha, beta, 0, false, repetition_is_possible, twice_played_moved);
+        let (move_with_rating, calculated_moves) = calculate(
+            &board,
+            transposition,
+            maximizing,
+            alpha,
+            beta,
+            0,
+            false,
+            repetition_is_possible,
+            twice_played_moved,
+        );
         return (move_with_rating, calculated_moves);
     }
-    if depth == MAX_DEPTH_TAKES && !calculate_all_moves{
-        let evaluation = evaluate(&board, repetition_is_possible, twice_played_moved);
+    if depth == MAX_DEPTH_TAKES && !calculate_all_moves {
+        let evaluation = evaluate(&board);
         // init without a best move is no issue as long as we calculate more than depth = 1
-        return (MoveWithRating{rating: evaluation, ..Default::default()}, 1);
-    }
-    let depth_to_end = if calculate_all_moves {MAX_DEPTH + MAX_DEPTH_TAKES - depth}else{MAX_DEPTH_TAKES -depth};
-    // transposition has values - no need to calculate again!
-    if let Some(val) = transposition.get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
-        // maybe cleanup and remove later
-        let evaluation = if repetition_is_possible && twice_played_moved.contains(&board.zobrist_key){ 0.0}else{ val.evaluation};
         return (
             MoveWithRating {
-                from: val.best_move.from,
-                to: val.best_move.to,
-                promoted_to: val.best_move.promoted_to,
                 rating: evaluation,
+                ..Default::default()
             },
-            0,
+            1,
         );
     }
-
+    let depth_to_end = if calculate_all_moves {
+        MAX_DEPTH + MAX_DEPTH_TAKES - depth
+    } else {
+        MAX_DEPTH_TAKES - depth
+    };
+    // transposition has values - no need to calculate again!
+    if depth != 0 || !calculate_all_moves {
+        // we dont want to repeat over and over the same move - better to calculate again if we are at depth 0
+        if let Some(val) = transposition.get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
+            return (
+                MoveWithRating {
+                    from: val.best_move.from,
+                    to: val.best_move.to,
+                    promoted_to: val.best_move.promoted_to,
+                    rating: val.evaluation,
+                },
+                0,
+            );
+        }
+    }
     let mut calculated_positions: u64 = 0;
     let mut best_move_rating = init_best_move(&board, calculate_all_moves);
     let (valid_moves, is_in_check) =
@@ -149,9 +187,15 @@ fn calculate(
         return (lost_game(&board.current_move, depth), 1);
     } else if calculate_all_moves && valid_moves.is_empty() && !is_in_check {
         return (draw(), 1);
-    }else if valid_moves.is_empty() && !is_in_check {
+    } else if valid_moves.is_empty() && !is_in_check {
         // in this case no draw just no takes left to be checked
-        return (MoveWithRating{rating: best_move_rating, ..Default::default()}, 1);
+        return (
+            MoveWithRating {
+                rating: best_move_rating,
+                ..Default::default()
+            },
+            1,
+        );
     }
     // track if it was cut or if calculation is exact
     let mut transposition_flag = Flag::Exact;
@@ -162,19 +206,31 @@ fn calculate(
     for single in valid_moves.into_iter() {
         let mut new_board = board.clone();
         new_board.move_figure(single.from, single.to, single.promoted_to);
+        // white
         if maximizing {
-            // white
-            let (evaluation, calculated_moves) = calculate(
-                &new_board,
-                transposition,
-                !maximizing,
-                alpha,
-                beta,
-                depth + 1,
-                calculate_all_moves,
-                repetition_is_possible,
-                twice_played_moved
-            );
+            // check for repetition
+            let (evaluation, calculated_moves) =
+                if repetition_is_possible && twice_played_moved.contains(&new_board.zobrist_key) {
+                    (
+                        MoveWithRating {
+                            rating: 0.0,
+                            ..Default::default()
+                        },
+                        1,
+                    )
+                } else {
+                    calculate(
+                        &new_board,
+                        transposition,
+                        !maximizing,
+                        alpha,
+                        beta,
+                        depth + 1,
+                        calculate_all_moves,
+                        repetition_is_possible,
+                        twice_played_moved,
+                    )
+                };
 
             calculated_positions += calculated_moves;
             if best_move_rating < evaluation.rating {
@@ -191,19 +247,30 @@ fn calculate(
                 transposition_flag = Flag::Upperbound;
                 break;
             }
+        // black
         } else {
-            // black
-            let (evaluation, calculated_moves) = calculate(
-                &new_board,
-                transposition,
-                !maximizing,
-                alpha,
-                beta,
-                depth + 1,
-                calculate_all_moves,
-                repetition_is_possible,
-                twice_played_moved
-            );
+            let (evaluation, calculated_moves) =
+                if repetition_is_possible && twice_played_moved.contains(&new_board.zobrist_key) {
+                    (
+                        MoveWithRating {
+                            rating: 0.0,
+                            ..Default::default()
+                        },
+                        1,
+                    )
+                } else {
+                    calculate(
+                        &new_board,
+                        transposition,
+                        !maximizing,
+                        alpha,
+                        beta,
+                        depth + 1,
+                        calculate_all_moves,
+                        repetition_is_possible,
+                        twice_played_moved,
+                    )
+                };
             calculated_positions += calculated_moves;
 
             if best_move_rating > evaluation.rating {
@@ -223,7 +290,7 @@ fn calculate(
         }
     }
     // best move is 0 -> 0 if we only calculate some moves and none of them is good
-    if best_move.from != 0 || best_move.to != 0{
+    if best_move.from != 0 || best_move.to != 0 {
         transposition.save_entry(Transposition {
             hash: board.zobrist_key,
             depth: depth_to_end,

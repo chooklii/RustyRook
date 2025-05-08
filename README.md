@@ -1,8 +1,10 @@
 # RustyRook-
 Chess Engine written in Rust
 
+Known Issues:
+-> Repetition does not work as intended in some cases
+
 todos: 
--> Test Undo Moves for Performance
 -> Makes moves incremently by depth and use time given by user
 -> Test Move Ordering by Transposition Table 
 ---> Own Takes where Opponent Cannot Take > Takes > Silent Moves
@@ -18,5 +20,4 @@ todos later:
 
 
 Check for Check first
--> If Double Check - Only King Moves
 -> Calculate Pinned Pieces Prior to Own Move Generation

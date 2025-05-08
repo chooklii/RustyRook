@@ -225,12 +225,8 @@ fn get_pieces_value(board: &Chessboard, color: Color) -> f32{
 }
 
 
-pub fn evaluate(board: &Chessboard, repetition_is_possible: bool, twice_played_movec: &Vec<u64>) -> f32 {
-    // this is pseudo exact - it is possible that at a given depth we repeat moves and think we are more ahead than we are
-    // but it is good enough and prevents repetition when move has (really) been played two times
-    if repetition_is_possible && twice_played_movec.contains(&board.zobrist_key){
-        return 0.0;
-    }   
+pub fn evaluate(board: &Chessboard) -> f32 {
+ 
     let white_pieces_value: f32 = get_pieces_value(&board, Color::White);
     let black_pieces_value: f32 = get_pieces_value(&board, Color::Black);
 
