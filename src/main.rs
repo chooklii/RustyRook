@@ -169,17 +169,6 @@ fn init_new_game() {
     println!("isready");
 }
 fn send_is_ready() {
-    // init all static values
-    let _ = KING_MOVES.get(0);
-    let _ = KNIGHT_MOVES.get(0);
-    let _ = PAWN_THREATS.get(0);
-    let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
-    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
-    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
-
-    // positions are based on magic and impl. init magics
-    let _ = BISHOP_MAGIC_POSITIONS[0];
-    let _ = ROOK_MAGIC_POSITIONS[0];
     println!("readyok");
 }
 
@@ -187,6 +176,18 @@ fn send_uci_message() {
     println!("id name RustyRook");
     println!("id author Benjamin Zenth");
     println!("uciok");
+}
+
+fn init_static_values(){
+    let _ = KING_MOVES.get(0);
+    let _ = KNIGHT_MOVES.get(0);
+    let _ = PAWN_THREATS.get(0);
+    let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
+    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
+    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
+    // positions are based on magic and impl. init magics
+    let _ = BISHOP_MAGIC_POSITIONS[0];
+    let _ = ROOK_MAGIC_POSITIONS[0];
 }
 
 // recieve input from UCI
@@ -200,6 +201,7 @@ fn parse_input() -> String {
     // Repetition
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
+    init_static_values();
     loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();

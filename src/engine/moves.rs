@@ -57,7 +57,6 @@ pub fn get_valid_moves_in_position(
         is_in_double_check,
         calculate_all_moves,
     );
-
     let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(&board, &king_position, moves);
     return (not_pinned_moves, is_in_check);
 }
