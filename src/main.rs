@@ -104,24 +104,26 @@ fn map_input_to_action(
     commands: Vec<&str>,
     chessboard: &mut Chessboard,
     transposition: &mut TranspositionTable,
+    once_played_positions: &mut Vec<u64>,
+    twice_played_positions: &mut Vec<u64>
 ) {
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
-        "position" => update_board(commands, chessboard),
-        "go" => make_move(&chessboard, transposition),
-        "debug" => debug_moves(&chessboard),
+        "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
+        "go" => make_move(&chessboard, transposition, twice_played_positions),
+        "debug" => debug_moves(&chessboard, transposition),
         "quit" => quit(),
         _ => quit(),
     }
 }
 
-fn debug_moves(chessboard: &Chessboard) {
+fn debug_moves(chessboard: &Chessboard, transposition: &TranspositionTable) {
     let now = SystemTime::now();
     let max_depth: u8 = 4;
-    let moves = count_moves(&chessboard, max_depth);
+    let moves = count_moves(&chessboard,transposition, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,
@@ -130,18 +132,33 @@ fn debug_moves(chessboard: &Chessboard) {
     );
 }
 
-fn update_board(move_vec: Vec<&str>, board: &mut Chessboard) {
+fn update_board(
+    move_vec: Vec<&str>, 
+    board: &mut Chessboard,
+    once_played_positions: &mut Vec<u64>, 
+    twice_played_positions: &mut Vec<u64>) {
+    // not beautiful - but also not really important for performance
     board.set_to_default();
+    once_played_positions.clear();
+    twice_played_positions.clear();
     for single_move in move_vec {
         // ignore both for now - should not be needed as ucinewgame resets game
         if single_move != "position" && single_move != "startpos" && single_move != "moves" {
             board.update_position_from_uci_input(single_move);
+            
+            // performance does not matter for these few moves
+            if !once_played_positions.contains(&board.zobrist_key){
+                once_played_positions.push(board.zobrist_key);
+            }else if !twice_played_positions.contains(&board.zobrist_key){
+                twice_played_positions.push(board.zobrist_key);
+            }
         }
     }
 }
 
-fn make_move(board: &Chessboard, transposition: &mut TranspositionTable) {
-    search_for_best_move(&board, transposition);
+fn make_move(board: &Chessboard, transposition: &mut TranspositionTable, twice_played_positions: &Vec<u64>) {
+    let possible_repetition = !twice_played_positions.is_empty();
+    search_for_best_move(&board, transposition, possible_repetition, twice_played_positions);
 }
 
 fn quit() {
@@ -152,17 +169,6 @@ fn init_new_game() {
     println!("isready");
 }
 fn send_is_ready() {
-    // init all static values
-    let _ = KING_MOVES.get(0);
-    let _ = KNIGHT_MOVES.get(0);
-    let _ = PAWN_THREATS.get(0);
-    let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
-    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
-    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
-
-    // positions are based on magic and impl. init magics
-    let _ = BISHOP_MAGIC_POSITIONS[0];
-    let _ = ROOK_MAGIC_POSITIONS[0];
     println!("readyok");
 }
 
@@ -170,6 +176,18 @@ fn send_uci_message() {
     println!("id name RustyRook");
     println!("id author Benjamin Zenth");
     println!("uciok");
+}
+
+fn init_static_values(){
+    let _ = KING_MOVES.get(0);
+    let _ = KNIGHT_MOVES.get(0);
+    let _ = PAWN_THREATS.get(0);
+    let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
+    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
+    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
+    // positions are based on magic and impl. init magics
+    let _ = BISHOP_MAGIC_POSITIONS[0];
+    let _ = ROOK_MAGIC_POSITIONS[0];
 }
 
 // recieve input from UCI
@@ -180,11 +198,15 @@ fn parse_input() -> String {
     let mut transposition_table: TranspositionTable = TranspositionTable {
         ..Default::default()
     };
+    // Repetition
+    let mut once_played_positions: Vec<u64> = Vec::new();
+    let mut twice_played_positions: Vec<u64> = Vec::new();
+    init_static_values();
     loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &mut transposition_table);
+        map_input_to_action(commands, &mut chessboard, &mut transposition_table, &mut once_played_positions, &mut twice_played_positions);
     }
 }

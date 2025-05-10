@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     board::board::Chessboard,
-    helper::moves_by_field::MoveInEveryDirection, MOVES_BY_FIELD,
+    MOVES_BY_FIELD,
 };
 
 // File Contains Logic to check for possible pinned Figures
@@ -97,8 +97,6 @@ fn check_and_add_pin_one_direction(
 
 #[cfg(test)]
 mod tests {
-
-    use crate::helper::moves_by_field::get_moves_for_each_field;
 
     use super::*;
 

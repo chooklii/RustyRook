@@ -16,19 +16,33 @@ pub fn get_possible_king_takes(
     }
 }
 
+// does not include castle and should only be used when in check where castle is not possible
+pub fn get_all_king_moves_in_check(
+    board: &Chessboard,
+    own_position: usize,
+    opponent_moves: Bitboard,
+    possible_moves: &mut Vec<PossibleMove>){
+        if let Some(move_by_field) = KING_MOVES.get(own_position){
+            let normal_movement = Bitboard{board: 
+                move_by_field.board 
+                & !board.get_positions_by_current_player().board
+                & !opponent_moves.board
+            };
+            normal_movement.iterate_board(|pos| possible_moves.push(PossibleMove { from: own_position, to: pos, promoted_to: None }));
+        }
+    }
+
 pub fn get_possible_king_moves(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
     opponent_moves: Bitboard,
-) -> Vec<PossibleMove> {
-
-    let mut possible_moves = Vec::new();
-
+    possible_moves: &mut Vec<PossibleMove>
+){
     if let Some(move_by_field) = KING_MOVES.get(own_position){
         let normal_movement = Bitboard{board: 
             move_by_field.board 
-            & !board.get_positions_by_current_player().board
+            & !board.positions.board
             & !opponent_moves.board
         };
         normal_movement.iterate_board(|pos| possible_moves.push(PossibleMove { from: own_position, to: pos, promoted_to: None }));
@@ -37,11 +51,10 @@ pub fn get_possible_king_moves(
     // castle
     if board.castle.can_castle(own_color) && !opponent_moves.field_is_used(own_position) {
         match own_color {
-            Color::White => white_castle(&board, opponent_moves, &mut possible_moves),
-            Color::Black => black_castle(&board, opponent_moves, &mut possible_moves),
+            Color::White => white_castle(&board, opponent_moves, possible_moves),
+            Color::Black => black_castle(&board, opponent_moves, possible_moves),
         }
     }
-    possible_moves
 }
 
 pub fn get_fields_threatened_by_king(own_position: usize) -> Bitboard {
@@ -129,13 +142,16 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         board.castle.set_has_castled(Color::Black);
 
-        let moves = get_possible_king_moves(&board, 10, Color::Black,Bitboard::new());
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 10, Color::Black,Bitboard::new(), &mut moves);
         assert_eq!(8, moves.len());
 
-        let moves = get_possible_king_moves(&board, 0,Color::Black, Bitboard::new());
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 0,Color::Black, Bitboard::new(), &mut moves);
         assert_eq!(3, moves.len());
 
-        let moves = get_possible_king_moves(&board, 31,Color::Black, Bitboard::new());
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 31,Color::Black, Bitboard::new(), &mut moves);
         assert_eq!(5, moves.len());
     }
 
@@ -151,9 +167,10 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let own_moves = get_possible_king_moves(&board, 4, Color::White,Bitboard::new());
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 4, Color::White,Bitboard::new(), &mut moves);
 
-        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         // can castle left and right
         assert_eq!(7, own_move_positions.len());
 
@@ -175,8 +192,9 @@ mod tests {
         let mut opponent_moves = Bitboard::new();
         opponent_moves.set_field(2);
 
-        let own_moves = get_possible_king_moves(&board, 4,Color::White, opponent_moves);
-        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 4,Color::White, opponent_moves, &mut moves);
+        let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(6, own_move_positions.len());
         assert_eq!(true, own_move_positions.contains(&6));
         assert_eq!(false, own_move_positions.contains(&2));
@@ -196,8 +214,9 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let own_moves = get_possible_king_moves(&board, 4,Color::White, Bitboard::new());
-        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 4,Color::White, Bitboard::new(), &mut moves);
+        let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(6, own_move_positions.len());
         assert_eq!(true, own_move_positions.contains(&6));
         assert_eq!(false, own_move_positions.contains(&2));
@@ -217,8 +236,9 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let own_moves = get_possible_king_moves(&board, 4, Color::White,Bitboard::new());
-        let own_move_positions: Vec<usize> = own_moves.into_iter().map(|x| x.to).collect();
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 4, Color::White,Bitboard::new(), &mut moves);
+        let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
 
         // castle is not possible as there are figures in the way
         assert_eq!(5, own_move_positions.len());
@@ -252,7 +272,8 @@ mod tests {
         opponent_moves.set_field(58);
         opponent_moves.set_field(57);
 
-        let own_moves = get_possible_king_moves(&board, 59,Color::Black, opponent_moves);
-        assert_eq!(0, own_moves.len());
+        let mut moves = Vec::new();
+        get_possible_king_moves(&board, 59,Color::Black, opponent_moves, &mut moves);
+        assert_eq!(0, moves.len());
     }
 }
