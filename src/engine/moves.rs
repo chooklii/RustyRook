@@ -30,7 +30,7 @@ use super::{
     checked::get_fields_to_prevent_check,
     engine::PossibleMove,
     ray::get_pinned_pieces_and_possible_moves,
-    transposition::{table::TranspositionTable, transposition::Transposition, zobrist},
+    transposition::{table::TranspositionTable, transposition::Transposition},
 };
 
 pub fn get_valid_moves_in_position(

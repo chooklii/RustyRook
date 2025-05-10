@@ -1,6 +1,6 @@
 use crate::{
     board::{bitboard::Bitboard, board::Chessboard},
-    figures::{color::Color, piece::Piece},
+    figures::piece::Piece,
     KNIGHT_MOVES, MOVES_BY_FIELD, PAWN_THREATS,
 };
 
