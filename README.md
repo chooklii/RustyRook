@@ -8,13 +8,11 @@ todos:
 -> Makes moves incremently by depth and use time given by user
 -> Test and Improve Evaluation
 
-Check for Check first
--> Calculate Pinned Pieces Prior to Own Move Generation
-
-todos later:
+todos maybe later:
 -> Refactor Fields of prevent check to magic bitboards
 -> Refacotor Pinned Pieces
 -> Maybe Refactor Pawn EnPassant, but does not effect performance by much
+--> to field figure can move to to en passant
 -> Test Rayon
 -> Test Move Ordering by Transposition Table 
 ---> Own Takes where Opponent Cannot Take > Takes > Silent Moves

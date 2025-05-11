@@ -1,10 +1,8 @@
 use std::usize;
 
 use regex::Regex;
-use rustc_hash::FxHashMap;
 
 use crate::{
-    engine::engine::PossibleMove,
     figures::{color::Color, piece::Piece},
     helper::movement::{figure_can_move_left, figure_can_move_right},
     ZOBRIST_CASTLE_NUMBERS, ZOBRIST_CURRENT_MOVE, ZOBRIST_EN_PASSANT, ZOBRIST_FIGURE_NUMBERS,
@@ -26,9 +24,7 @@ pub struct Chessboard {
     // possible field with figure that can be taken en passant
     pub en_passant: Option<usize>,
     pub castle: Castle,
-    pub zobrist_key: u64,
-    //todo remove bevor final version -> only for debug
-    pub played_moves: Vec<PossibleMove>
+    pub zobrist_key: u64
 }
 
 impl Default for Chessboard {
@@ -59,8 +55,7 @@ impl Default for Chessboard {
             castle: Castle {
                 ..Default::default()
             },
-            zobrist_key: *ZOBRIST_SEED,
-            played_moves: Vec::new()
+            zobrist_key: *ZOBRIST_SEED
         };
         board.set_to_default();
         board
@@ -239,8 +234,6 @@ impl Chessboard {
                 self.zobrist_key ^= ZOBRIST_EN_PASSANT[new_field];
                 return;
             }
-        } else if let Some(en_passant) = self.en_passant {
-            self.zobrist_key ^= ZOBRIST_EN_PASSANT[en_passant];
         }
         self.en_passant = None;
     }
@@ -253,8 +246,6 @@ impl Chessboard {
                 self.zobrist_key ^= ZOBRIST_EN_PASSANT[new_field];
                 return;
             }
-        } else if let Some(en_passant) = self.en_passant {
-            self.zobrist_key ^= ZOBRIST_EN_PASSANT[en_passant];
         }
         self.en_passant = None;
     }
@@ -263,7 +254,11 @@ impl Chessboard {
         // no possible en passant no need to check any longer
         if self.en_passant.is_none() {
             return;
-        }
+        }        
+        // we have none checked en_passant at this point
+        let en_passanted_figure = self.en_passant.unwrap();
+        // remove possible prev. en passant from zobrist
+        self.zobrist_key ^= ZOBRIST_EN_PASSANT[en_passanted_figure];
         let pawns = self.get_pieces(self.current_move, Piece::Pawn);
 
         // check if figure moving is actually a pawn
@@ -278,8 +273,6 @@ impl Chessboard {
         if !is_en_passant {
             return;
         }
-        // we have none checked en_passant at this point
-        let en_passanted_figure = self.en_passant.unwrap();
         self.remove_piece(self.get_opponent_color(), Piece::Pawn, en_passanted_figure);
     }
 
@@ -363,7 +356,6 @@ impl Chessboard {
     }
 
     pub fn move_figure(&mut self, from: usize, to: usize, promoted_to: Option<Promotion>) {
-        self.played_moves.push(PossibleMove { from, to, promoted_to });
         if let Some(promoted_figure) = promoted_to {
             self.update_figure_to_promoted_one(from, to, promoted_figure);
 

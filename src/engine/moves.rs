@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::{
     board::{bitboard::Bitboard, board::Chessboard},
     figures::{
@@ -290,7 +292,7 @@ fn add_prev_best_move_as_first_move(
         moves.remove(pos);
     }else if calculate_all_moves{
         // validate transpositional table - dev mode
-        println!("Got Best Move which is not part of Moves - Should not happen!{:?} - {:?}", moves, prev_best_move);
+        info!("Got Best Move which is not part of Moves - Should not happen!{:?} - {:?}", moves, prev_best_move);
         panic!()
     }
     moves.insert(0, prev_best_move);
