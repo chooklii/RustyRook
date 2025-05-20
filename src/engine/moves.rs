@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use log::info;
 
 use crate::{
@@ -32,12 +34,11 @@ use super::{
     checked::get_fields_to_prevent_check,
     engine::PossibleMove,
     ray::get_pinned_pieces_and_possible_moves,
-    transposition::{table::TranspositionTable, transposition::Transposition},
+    transposition::{table::{get_entry_without_check}, transposition::Transposition},
 };
 
 pub fn get_valid_moves_in_position(
     board: &Chessboard,
-    transposition: &TranspositionTable,
     calculate_all_moves: bool,
 ) -> (Vec<PossibleMove>, bool) {
     let king_position = board
@@ -52,7 +53,6 @@ pub fn get_valid_moves_in_position(
 
     let moves: Vec<PossibleMove> = get_all_possible_moves(
         &board,
-        &transposition,
         board.current_move,
         opponent_moves,
         is_in_check,
@@ -191,7 +191,6 @@ fn get_all_prevent_check_moves(
 // default logic get all pseudo legal moves
 fn get_all_possible_moves(
     board: &Chessboard,
-    transposition: &TranspositionTable,
     color: Color,
     opponent_moves: Bitboard,
     is_in_check: bool,
@@ -240,7 +239,7 @@ fn get_all_possible_moves(
 
     //todo add checks to opponent here as well
 
-    let prev_best_move_opt = transposition.get_entry_without_check(board.zobrist_key);
+    let prev_best_move_opt = get_entry_without_check(board.zobrist_key);
     // we only want some moves which we think should be calculated
     if !get_all_moves {
         add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt, false);

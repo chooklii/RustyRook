@@ -2,10 +2,11 @@
 use crate::engine::transposition::zobrist::{get_transposition_figure_random_numbers,get_transposition_en_passant_numbers};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
+use dashmap::DashMap;
 use engine::{
     count::count_moves,
     engine::search_for_best_move,
-    transposition::{self, table::TranspositionTable},
+    transposition::{transposition::Transposition},
 };
 use helper::{
     magic_bitboards::{
@@ -23,18 +24,19 @@ use helper::{
 };
 use lazy_static::lazy_static;
 use log::info;
+use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use std::{
-    io::{self},
-    time::SystemTime,
+    io::{self}, sync::{Arc, Mutex}, time::SystemTime
 };
-
 mod board;
 mod engine;
 mod evaluation;
 mod figures;
 mod helper;
+
+static TRANSPOSITION_TABLE: Lazy<DashMap<u64, Transposition>> = Lazy::new(||DashMap::with_capacity(3_200_000));
 
 lazy_static! {
     static ref KNIGHT_MOVES: [Bitboard; 64] = {
@@ -103,7 +105,6 @@ fn main() {
 fn map_input_to_action(
     commands: Vec<&str>,
     chessboard: &mut Chessboard,
-    transposition: &mut TranspositionTable,
     once_played_positions: &mut Vec<u64>,
     twice_played_positions: &mut Vec<u64>
 ) {
@@ -113,17 +114,17 @@ fn map_input_to_action(
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
-        "go" => make_move(&chessboard, transposition, twice_played_positions),
-        "debug" => debug_moves(&chessboard, transposition),
+        "go" => make_move(&chessboard, twice_played_positions),
+        "debug" => debug_moves(&chessboard),
         "quit" => quit(),
         _ => quit(),
     }
 }
 
-fn debug_moves(chessboard: &Chessboard, transposition: &TranspositionTable) {
+fn debug_moves(chessboard: &Chessboard) {
     let now = SystemTime::now();
     let max_depth: u8 = 4;
-    let moves = count_moves(&chessboard,transposition, max_depth);
+    let moves = count_moves(&chessboard, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,
@@ -156,9 +157,9 @@ fn update_board(
     }
 }
 
-fn make_move(board: &Chessboard, transposition: &mut TranspositionTable, twice_played_positions: &Vec<u64>) {
+fn make_move(board: &Chessboard, twice_played_positions: &Vec<u64>) {
     let possible_repetition = !twice_played_positions.is_empty();
-    search_for_best_move(&board, transposition, possible_repetition, twice_played_positions);
+    search_for_best_move(&board, possible_repetition, twice_played_positions);
 }
 
 fn quit() {
@@ -195,9 +196,6 @@ fn parse_input() -> String {
     let mut chessboard = Chessboard {
         ..Default::default()
     };
-    let mut transposition_table: TranspositionTable = TranspositionTable {
-        ..Default::default()
-    };
     // Repetition
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
@@ -207,6 +205,6 @@ fn parse_input() -> String {
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &mut transposition_table, &mut once_played_positions, &mut twice_played_positions);
+        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions);
     }
 }
