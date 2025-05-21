@@ -15,7 +15,7 @@ use super::{
     promotion::{convert_input_string_to_promotion, convert_promotion_to_figure, Promotion},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Chessboard {
     pub positions: Bitboard,
     pub used_positions: [Bitboard; 2],
@@ -611,7 +611,6 @@ impl Chessboard {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
 
     use crate::{engine::{count::count_moves}, make_move};
     use super::*;

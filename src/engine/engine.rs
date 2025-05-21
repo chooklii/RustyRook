@@ -1,8 +1,14 @@
 use log::info;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU8;
+use std::sync::atomic::Ordering;
 use std::sync::mpsc;
+use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 use std::time::SystemTime;
 
 use crate::engine::transposition::transposition::Flag;
@@ -15,9 +21,8 @@ use crate::{
 
 use super::transposition::table::get_entry;
 use super::{
-    moves::get_valid_moves_in_position,
-    sender::send_move,
-    transposition::{transposition::Transposition},
+    moves::get_valid_moves_in_position, sender::send_move,
+    transposition::transposition::Transposition,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -37,7 +42,7 @@ impl Default for PossibleMove {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct MoveWithRating {
     from: usize,
     to: usize,
@@ -56,8 +61,7 @@ impl Default for MoveWithRating {
     }
 }
 
-const MAX_DEPTH: u8 = 4;
-const MAX_DEPTH_TAKES: u8 = 4;
+const MAX_DEPTH_TAKES: u8 = 0;
 
 pub fn search_for_best_move(
     board: &Chessboard,
@@ -66,21 +70,20 @@ pub fn search_for_best_move(
 ) {
     let now = SystemTime::now();
 
-    let best_move = calculate_root_level(
+    let (best_move, depth) = calculate_root_level(
         board.clone(),
-        true,
         repetition_is_possible,
         twice_played_moved.clone(),
     );
     println!(
         "Calculated Positions to depth {} and took {:?} - Net Rating: {}",
-        MAX_DEPTH,
+        depth,
         now.elapsed(),
         best_move.rating
     );
     info!(
         "Calculated Positions to depth {} and took {:?} - Net Rating: {}",
-        MAX_DEPTH,
+        depth,
         now.elapsed(),
         best_move.rating
     );
@@ -121,15 +124,12 @@ fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
 
 fn calculate_root_level(
     board: Chessboard,
-    calculate_all_moves: bool,
     repetition_is_possible: bool,
     twice_played_moved: Vec<u64>,
-) -> MoveWithRating {
+) -> (MoveWithRating, u8) {
     let (tx, rx) = mpsc::channel();
-
-    let maximizing = board.current_move.eq(&Color::White);
-    let alpha = -3000.0;
-    let beta = 3000.0;
+    let timer = Arc::new(AtomicBool::new(false));
+    let mut depth = 0;
     let best_move_rating = match board.current_move {
         Color::White => -3001.0,
         Color::Black => 3001.0,
@@ -138,38 +138,125 @@ fn calculate_root_level(
         rating: best_move_rating,
         ..Default::default()
     };
-    
-    let (valid_moves, _) =
-        get_valid_moves_in_position(&board, calculate_all_moves);
 
-
-    thread::spawn(move|| {
-        valid_moves.par_iter().for_each(|single| {
-            let mut new_board = board.clone();
-            new_board.move_figure(single.from, single.to, single.promoted_to);
-            let root_move = calculate(
-                &new_board,
-                !maximizing,
-                alpha,
-                beta,
-                1,
-                calculate_all_moves,
-                repetition_is_possible,
-                &twice_played_moved,
-            );
-            let _ = tx.send(MoveWithRating { from: single.from, to: single.to, promoted_to: single.promoted_to, rating: root_move.rating });
-        });
+    // iterative deepening
+    let timer_clone = Arc::clone(&timer);
+    thread::spawn(move || {
+        iterative_deepening(
+            board.clone(),
+            repetition_is_possible,
+            twice_played_moved.clone(),
+            tx,
+            timer_clone,
+        )
+    });
+    // stop deepening after given time
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(3));
+        timer.store(true, Ordering::SeqCst);
+        println!("Stop")
     });
 
     for received in rx {
-        if maximizing && received.rating > best_move.rating{
-            best_move = received;
+        depth+=1;
+        println!("Recieved at Depth {} {:?}", depth, received);
+        best_move = received;
+    }
+    return (best_move, depth);
+}
+
+fn iterative_deepening(
+    board: Chessboard,
+    repetition_is_possible: bool,
+    twice_played_moved: Vec<u64>,
+    tx: Sender<MoveWithRating>,
+    timer_clone: Arc<AtomicBool>
+) {
+    let maximizing = board.current_move.eq(&Color::White);
+    for max_depth in 1..=100 {
+        let mut alpha = -3000.0;
+        let mut beta = 3000.0;
+        if timer_clone.load(Ordering::Relaxed) {
+            break;
         }
-        else if !maximizing && received.rating < best_move.rating{
-            best_move = received;
+        let (mut valid_moves, _) = get_valid_moves_in_position(&board, true);
+
+        // calculate best move sequential to get baseline alpha/beta
+        let first_move = valid_moves.remove(0);
+        let first_move_calculation = calculate(
+                    &board,
+                    maximizing,
+                    alpha,
+                    beta,
+                    0,
+                    max_depth,
+                    true,
+                    repetition_is_possible,
+                    &twice_played_moved,
+                    &timer_clone
+                );
+
+        if maximizing{
+            alpha = first_move_calculation.rating
+        }else{
+            beta = first_move_calculation.rating
         }
-    };
-    return best_move;
+        
+        let mut moves_with_rating: Vec<MoveWithRating> = valid_moves
+            .par_iter()
+            .map(|single| {
+                let mut new_board = board.clone();
+                new_board.move_figure(single.from, single.to, single.promoted_to);
+                let single_move = calculate(
+                    &new_board,
+                    !maximizing,
+                    alpha,
+                    beta,
+                    1,
+                    max_depth,
+                    true,
+                    repetition_is_possible,
+                    &twice_played_moved,
+                    &timer_clone
+                );
+                MoveWithRating {
+                    from: single.from,
+                    to: single.to,
+                    promoted_to: single.promoted_to,
+                    rating: single_move.rating,
+                }
+            })
+            .collect();
+        // add back best move
+        moves_with_rating.push(MoveWithRating{
+            from: first_move.from,
+            to: first_move.to,
+            promoted_to: first_move.promoted_to,
+            rating: first_move_calculation.rating
+        });
+
+        // prevent sending not calculated moves
+        if timer_clone.load(Ordering::Relaxed) {
+            break;
+        }
+
+        if maximizing {
+            let depth_best_move_opt = moves_with_rating
+                .iter()
+                .max_by(|a, b| a.rating.partial_cmp(&b.rating).unwrap());
+            if let Some(depth_best_move) = depth_best_move_opt {
+                let _ = tx.send(*depth_best_move);
+            }
+        } else {
+            let depth_best_move_opt = moves_with_rating
+                .iter()
+                .min_by(|a, b| a.rating.partial_cmp(&b.rating).unwrap());
+            if let Some(depth_best_move) = depth_best_move_opt {
+                let _ = tx.send(*depth_best_move);
+            }
+        }
+    }
+    drop(tx)
 }
 
 fn calculate(
@@ -178,23 +265,13 @@ fn calculate(
     mut alpha: f32,
     mut beta: f32,
     depth: u8,
+    max_depth: u8,
     calculate_all_moves: bool,
     repetition_is_possible: bool,
     twice_played_moved: &Vec<u64>,
+    timer: &AtomicBool,
 ) -> MoveWithRating {
-    if depth == MAX_DEPTH && calculate_all_moves {
-        return calculate(
-            &board,
-            maximizing,
-            alpha,
-            beta,
-            0,
-            false,
-            repetition_is_possible,
-            twice_played_moved,
-        );
-    }
-    if depth == MAX_DEPTH_TAKES && !calculate_all_moves {
+    if timer.load(Ordering::Relaxed) || (depth == MAX_DEPTH_TAKES && !calculate_all_moves) {
         let evaluation = evaluate(&board);
         // init without a best move is no issue as long as we calculate more than depth = 1
         return MoveWithRating {
@@ -202,8 +279,22 @@ fn calculate(
             ..Default::default()
         };
     }
+    if depth == max_depth && calculate_all_moves {
+        return calculate(
+            &board,
+            maximizing,
+            alpha,
+            beta,
+            0,
+            max_depth,
+            false,
+            repetition_is_possible,
+            twice_played_moved,
+            &timer
+        );
+    }
     let depth_to_end = if calculate_all_moves {
-        MAX_DEPTH + MAX_DEPTH_TAKES - depth
+        max_depth + MAX_DEPTH_TAKES - depth
     } else {
         MAX_DEPTH_TAKES - depth
     };
@@ -220,8 +311,7 @@ fn calculate(
         }
     }
     let mut best_move_rating = init_best_move(&board, calculate_all_moves);
-    let (valid_moves, is_in_check) =
-        get_valid_moves_in_position(&board, calculate_all_moves);
+    let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, calculate_all_moves);
     if is_in_check && valid_moves.is_empty() {
         return lost_game(&board.current_move, depth);
     } else if calculate_all_moves && valid_moves.is_empty() && !is_in_check {
@@ -258,9 +348,11 @@ fn calculate(
                         alpha,
                         beta,
                         depth + 1,
+                        max_depth,
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
+                        &timer
                     )
                 };
             if best_move_rating < evaluation.rating {
@@ -292,9 +384,11 @@ fn calculate(
                         alpha,
                         beta,
                         depth + 1,
+                        max_depth,
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
+                        &timer
                     )
                 };
 
@@ -316,17 +410,20 @@ fn calculate(
     }
     // best move is 0 -> 0 if we only calculate some moves and none of them is good
     if best_move.from != 0 || best_move.to != 0 {
-        TRANSPOSITION_TABLE.insert(board.zobrist_key, Transposition {
-            hash: board.zobrist_key,
-            depth: depth_to_end,
-            evaluation: best_move_rating,
-            best_move: PossibleMove {
-                from: best_move.from,
-                to: best_move.to,
-                promoted_to: best_move.promoted_to,
+        TRANSPOSITION_TABLE.insert(
+            board.zobrist_key,
+            Transposition {
+                hash: board.zobrist_key,
+                depth: depth_to_end,
+                evaluation: best_move_rating,
+                best_move: PossibleMove {
+                    from: best_move.from,
+                    to: best_move.to,
+                    promoted_to: best_move.promoted_to,
+                },
+                flag: transposition_flag,
             },
-            flag: transposition_flag,
-        });
+        );
     }
     return best_move;
 }

@@ -1,7 +1,5 @@
 use std::usize;
 
-use log::info;
-
 use crate::{board::board::Chessboard, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, helper::moves_by_field::MoveInEveryDirection, DOUPLICATE_PAWN_TARIFF};
 
 // a1 to h8
