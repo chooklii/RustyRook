@@ -61,7 +61,7 @@ impl Default for MoveWithRating {
     }
 }
 
-const MAX_DEPTH_TAKES: u8 = 0;
+const MAX_DEPTH_TAKES: u8 = 4;
 
 pub fn search_for_best_move(
     board: &Chessboard,
@@ -154,11 +154,10 @@ fn calculate_root_level(
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(3));
         timer.store(true, Ordering::SeqCst);
-        println!("Stop")
     });
 
     for received in rx {
-        depth+=1;
+        depth+=2;
         println!("Recieved at Depth {} {:?}", depth, received);
         best_move = received;
     }
@@ -173,7 +172,7 @@ fn iterative_deepening(
     timer_clone: Arc<AtomicBool>
 ) {
     let maximizing = board.current_move.eq(&Color::White);
-    for max_depth in 1..=100 {
+    for max_depth in 2..=100 {
         let mut alpha = -3000.0;
         let mut beta = 3000.0;
         if timer_clone.load(Ordering::Relaxed) {
@@ -183,12 +182,14 @@ fn iterative_deepening(
 
         // calculate best move sequential to get baseline alpha/beta
         let first_move = valid_moves.remove(0);
+        let mut new_board = board.clone();
+        new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
         let first_move_calculation = calculate(
-                    &board,
-                    maximizing,
+                    &new_board,
+                    !maximizing,
                     alpha,
                     beta,
-                    0,
+                    1,
                     max_depth,
                     true,
                     repetition_is_possible,
@@ -201,7 +202,7 @@ fn iterative_deepening(
         }else{
             beta = first_move_calculation.rating
         }
-        
+
         let mut moves_with_rating: Vec<MoveWithRating> = valid_moves
             .par_iter()
             .map(|single| {
@@ -238,6 +239,10 @@ fn iterative_deepening(
         // prevent sending not calculated moves
         if timer_clone.load(Ordering::Relaxed) {
             break;
+        }
+        if max_depth %2 != 0{
+            // we only want calculations ending on opponenrt moves
+            continue;
         }
 
         if maximizing {

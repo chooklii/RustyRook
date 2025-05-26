@@ -1,9 +1,8 @@
-use dashmap::DashMap;
 use log::info;
 
 use crate::TRANSPOSITION_TABLE;
 
-use super::transposition::{self, Flag, Transposition};
+use super::transposition::{Flag, Transposition};
 
 
 pub fn get_entry_without_check(board_hash: u64) -> Option<Transposition> {
