@@ -3,11 +3,11 @@ Chess Engine written in Rust
 
 Known Issues:
 -> Repetition does not work as intended in some cases
+-> Black not working as intended (initial alpha/beta wrong)
+-> Panic on move tests
 
 todos: 
--> Makes moves incremently by depth and use time given by user
 -> Test and Improve Evaluation
--> Make prev. best Move sequential to have baseline alpha/beta
 
 
 todos maybe later:

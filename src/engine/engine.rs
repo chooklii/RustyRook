@@ -64,27 +64,28 @@ impl Default for MoveWithRating {
 const MAX_DEPTH_TAKES: u8 = 4;
 
 pub fn search_for_best_move(
+    time_for_move: u64,
     board: &Chessboard,
     repetition_is_possible: bool,
     twice_played_moved: &Vec<u64>,
 ) {
-    let now = SystemTime::now();
 
     let (best_move, depth) = calculate_root_level(
+        time_for_move,
         board.clone(),
         repetition_is_possible,
         twice_played_moved.clone(),
     );
     println!(
-        "Calculated Positions to depth {} and took {:?} - Net Rating: {}",
+        "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
         depth,
-        now.elapsed(),
+        time_for_move,
         best_move.rating
     );
     info!(
-        "Calculated Positions to depth {} and took {:?} - Net Rating: {}",
+        "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
         depth,
-        now.elapsed(),
+        time_for_move,
         best_move.rating
     );
     send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
@@ -123,6 +124,7 @@ fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
 }
 
 fn calculate_root_level(
+    time_for_move: u64,
     board: Chessboard,
     repetition_is_possible: bool,
     twice_played_moved: Vec<u64>,
@@ -152,12 +154,12 @@ fn calculate_root_level(
     });
     // stop deepening after given time
     thread::spawn(move || {
-        thread::sleep(Duration::from_secs(3));
+        thread::sleep(Duration::from_millis(time_for_move));
         timer.store(true, Ordering::SeqCst);
     });
 
     for received in rx {
-        depth+=2;
+        depth += 2;
         println!("Recieved at Depth {} {:?}", depth, received);
         best_move = received;
     }
@@ -169,7 +171,7 @@ fn iterative_deepening(
     repetition_is_possible: bool,
     twice_played_moved: Vec<u64>,
     tx: Sender<MoveWithRating>,
-    timer_clone: Arc<AtomicBool>
+    timer_clone: Arc<AtomicBool>,
 ) {
     let maximizing = board.current_move.eq(&Color::White);
     for max_depth in 2..=100 {
@@ -180,22 +182,22 @@ fn iterative_deepening(
         }
         let (mut valid_moves, _) = get_valid_moves_in_position(&board, true);
 
-        // calculate best move sequential to get baseline alpha/beta
+        // calculate best move sequential to get baseline alpha
         let first_move = valid_moves.remove(0);
         let mut new_board = board.clone();
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
         let first_move_calculation = calculate(
-                    &new_board,
-                    !maximizing,
-                    alpha,
-                    beta,
-                    1,
-                    max_depth,
-                    true,
-                    repetition_is_possible,
-                    &twice_played_moved,
-                    &timer_clone
-                );
+            &new_board,
+            !maximizing,
+            alpha,
+            beta,
+            1,
+            max_depth,
+            true,
+            repetition_is_possible,
+            &twice_played_moved,
+            &timer_clone,
+        );
 
         if maximizing{
             alpha = first_move_calculation.rating
@@ -218,7 +220,7 @@ fn iterative_deepening(
                     true,
                     repetition_is_possible,
                     &twice_played_moved,
-                    &timer_clone
+                    &timer_clone,
                 );
                 MoveWithRating {
                     from: single.from,
@@ -229,18 +231,18 @@ fn iterative_deepening(
             })
             .collect();
         // add back best move
-        moves_with_rating.push(MoveWithRating{
+        moves_with_rating.push(MoveWithRating {
             from: first_move.from,
             to: first_move.to,
             promoted_to: first_move.promoted_to,
-            rating: first_move_calculation.rating
+            rating: first_move_calculation.rating,
         });
 
         // prevent sending not calculated moves
         if timer_clone.load(Ordering::Relaxed) {
             break;
         }
-        if max_depth %2 != 0{
+        if max_depth % 2 != 0 {
             // we only want calculations ending on opponenrt moves
             continue;
         }
@@ -295,7 +297,7 @@ fn calculate(
             false,
             repetition_is_possible,
             twice_played_moved,
-            &timer
+            &timer,
         );
     }
     let depth_to_end = if calculate_all_moves {
@@ -303,17 +305,13 @@ fn calculate(
     } else {
         MAX_DEPTH_TAKES - depth
     };
-    // we dont want to repeat over and over the same move - better to calculate again if we are at depth 0
-    // transposition has values - no need to calculate again!
-    if depth != 0 || !calculate_all_moves {
-        if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
-            return MoveWithRating {
-                from: val.best_move.from,
-                to: val.best_move.to,
-                promoted_to: val.best_move.promoted_to,
-                rating: val.evaluation,
-            };
-        }
+    if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
+        return MoveWithRating {
+            from: val.best_move.from,
+            to: val.best_move.to,
+            promoted_to: val.best_move.promoted_to,
+            rating: val.evaluation,
+        };
     }
     let mut best_move_rating = init_best_move(&board, calculate_all_moves);
     let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, calculate_all_moves);
@@ -357,7 +355,7 @@ fn calculate(
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
-                        &timer
+                        &timer,
                     )
                 };
             if best_move_rating < evaluation.rating {
@@ -393,7 +391,7 @@ fn calculate(
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
-                        &timer
+                        &timer,
                     )
                 };
 

@@ -8,6 +8,7 @@ use engine::{
     engine::search_for_best_move,
     transposition::{transposition::Transposition},
 };
+use figures::color::Color;
 use helper::{
     magic_bitboards::{
         init_with_predefined::{
@@ -114,7 +115,7 @@ fn map_input_to_action(
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
-        "go" => make_move(&chessboard, twice_played_positions),
+        "go" => make_move(commands, &chessboard, twice_played_positions),
         "debug" => debug_moves(&chessboard),
         "quit" => quit(),
         _ => quit(),
@@ -157,9 +158,68 @@ fn update_board(
     }
 }
 
-fn make_move(board: &Chessboard, twice_played_positions: &Vec<u64>) {
+fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &Vec<u64>) {
+    let time_for_move = get_time_for_move(commands, board.current_move);
     let possible_repetition = !twice_played_positions.is_empty();
-    search_for_best_move(&board, possible_repetition, twice_played_positions);
+    search_for_best_move(time_for_move, &board, possible_repetition, twice_played_positions);
+}
+
+fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
+    return match color{
+        Color::White => get_time(commands, "wtime", "winc"),
+        Color::Black => get_time(commands, "btime", "binc")
+    }
+}
+
+fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) -> u64{
+    let mut user_time: u64 = 0;
+
+    let given_time_opt = get_value_from_commands(&commands, overall_time_key);
+
+    // no timelimit -> we take 5s to calculate
+    if given_time_opt.is_none(){
+        return 5000;
+    }
+    let given_time = given_time_opt.unwrap();
+    
+    // if there is an increment calculate average from rest time and add it to time
+    let moves_until_increment_opt = get_value_from_commands(&commands, "movestogo");
+    if let Some(move_until_increment) = moves_until_increment_opt{
+        user_time += given_time / (move_until_increment +2) // +2 to add some buffer for overhead
+    }else{
+        user_time += given_time / 40 // just make some guess to manage time
+    }
+
+    // check and add move increment
+    let increment_opt = get_value_from_commands(&commands, increment_key);
+    if let Some(increment) = increment_opt{
+        user_time +=increment;
+    }
+    
+    if user_time > 5000{
+        // max take 5s, so we dont calculate forever
+        return 5000 
+    }
+    if user_time < 1000{
+        // min 1s
+        return 1000;
+    }
+
+    user_time
+}
+
+
+fn get_value_from_commands(commands:  &Vec<&str>, key: &str) -> Option<u64>{
+    let increment_index_opt = commands.iter().position(|x| x.eq(&key));
+    if let Some(increment_index) = increment_index_opt{
+        if let Some(increment) = commands.get(increment_index+1){
+            let value_result = increment.parse();
+            if value_result.is_ok(){
+                return Some(value_result.unwrap());
+            }
+        }
+    }
+    return None;
 }
 
 fn quit() {

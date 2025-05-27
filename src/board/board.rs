@@ -526,10 +526,13 @@ impl Chessboard {
             return;
         }
         if false {
-            let position = String::from("rn1qkb1r/ppp1pppp/8/6B1/3Pn1b1/4NN2/PPP1PPPP/R2QKB1R b KQkq - 2 6");
+            // todo: Queen Sack 
+            let position = String::from("3rk2r/ppq3pp/2n2n2/3p3P/8/2P2P1B/PP2P2P/R1Q1K1NR b KQk - 4 14");
             self.create_position_from_input_string(position);
             return;
         }
+
+
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         self.create_position_from_input_string(default_position);
@@ -900,7 +903,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
         board.create_position_from_input_string(position);
-        make_move(&board, &mut Vec::new());
+        make_move(Vec::new(),&board, &mut Vec::new());
         // just count to check if we run into issues with king related zo zobrist
     }
 }
