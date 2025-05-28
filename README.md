@@ -2,12 +2,12 @@
 Chess Engine written in Rust
 
 Known Issues:
--> Repetition does not work as intended in some cases
 -> Black not working as intended (initial alpha/beta wrong)
--> Panic on move tests
+---> Due to transposition table being in the perspective of white -> change to negamax
 
 todos: 
 -> Test and Improve Evaluation
+-> Cleanup Engine 
 
 
 todos maybe later:

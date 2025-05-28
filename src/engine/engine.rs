@@ -19,6 +19,7 @@ use crate::{
     figures::color::Color,
 };
 
+use super::transposition;
 use super::transposition::table::get_entry;
 use super::{
     moves::get_valid_moves_in_position, sender::send_move,
@@ -61,15 +62,12 @@ impl Default for MoveWithRating {
     }
 }
 
-const MAX_DEPTH_TAKES: u8 = 4;
-
 pub fn search_for_best_move(
     time_for_move: u64,
     board: &Chessboard,
     repetition_is_possible: bool,
     twice_played_moved: &Vec<u64>,
 ) {
-
     let (best_move, depth) = calculate_root_level(
         time_for_move,
         board.clone(),
@@ -78,15 +76,11 @@ pub fn search_for_best_move(
     );
     println!(
         "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
-        depth,
-        time_for_move,
-        best_move.rating
+        depth, time_for_move, best_move.rating
     );
     info!(
         "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
-        depth,
-        time_for_move,
-        best_move.rating
+        depth, time_for_move, best_move.rating
     );
     send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
 }
@@ -130,6 +124,7 @@ fn calculate_root_level(
     twice_played_moved: Vec<u64>,
 ) -> (MoveWithRating, u8) {
     let (tx, rx) = mpsc::channel();
+    let now = SystemTime::now();
     let timer = Arc::new(AtomicBool::new(false));
     let mut depth = 0;
     let best_move_rating = match board.current_move {
@@ -160,6 +155,12 @@ fn calculate_root_level(
 
     for received in rx {
         depth += 2;
+        println!(
+            "info depth {} time {} score cp {}",
+            depth,
+            now.elapsed().unwrap_or(Duration::new(0, 0)).as_millis(),
+            (received.rating * 100.0).round()
+        );
         println!("Recieved at Depth {} {:?}", depth, received);
         best_move = received;
     }
@@ -182,7 +183,9 @@ fn iterative_deepening(
         }
         let (mut valid_moves, _) = get_valid_moves_in_position(&board, true);
 
-        // calculate best move sequential to get baseline alpha
+        // on odd numbers (we dont really care about, as they end with our move) calculate odd takes to end on opponent move
+        let max_depth_takes = if max_depth % 2 == 0 { 4 } else { 3 };
+        // calculate best move sequential to get baseline alpha/beta
         let first_move = valid_moves.remove(0);
         let mut new_board = board.clone();
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
@@ -193,15 +196,16 @@ fn iterative_deepening(
             beta,
             1,
             max_depth,
+            max_depth_takes,
             true,
             repetition_is_possible,
             &twice_played_moved,
             &timer_clone,
         );
 
-        if maximizing{
+        if maximizing {
             alpha = first_move_calculation.rating
-        }else{
+        } else {
             beta = first_move_calculation.rating
         }
 
@@ -217,6 +221,7 @@ fn iterative_deepening(
                     beta,
                     1,
                     max_depth,
+                    max_depth_takes,
                     true,
                     repetition_is_possible,
                     &twice_played_moved,
@@ -273,12 +278,13 @@ fn calculate(
     mut beta: f32,
     depth: u8,
     max_depth: u8,
+    max_depth_takes: u8,
     calculate_all_moves: bool,
     repetition_is_possible: bool,
     twice_played_moved: &Vec<u64>,
     timer: &AtomicBool,
 ) -> MoveWithRating {
-    if timer.load(Ordering::Relaxed) || (depth == MAX_DEPTH_TAKES && !calculate_all_moves) {
+    if timer.load(Ordering::Relaxed) || (depth == max_depth_takes && !calculate_all_moves) {
         let evaluation = evaluate(&board);
         // init without a best move is no issue as long as we calculate more than depth = 1
         return MoveWithRating {
@@ -294,6 +300,7 @@ fn calculate(
             beta,
             0,
             max_depth,
+            max_depth_takes,
             false,
             repetition_is_possible,
             twice_played_moved,
@@ -301,18 +308,24 @@ fn calculate(
         );
     }
     let depth_to_end = if calculate_all_moves {
-        max_depth + MAX_DEPTH_TAKES - depth
+        max_depth + max_depth_takes - depth
     } else {
-        MAX_DEPTH_TAKES - depth
+        max_depth_takes - depth
     };
     if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
-        return MoveWithRating {
-            from: val.best_move.from,
-            to: val.best_move.to,
-            promoted_to: val.best_move.promoted_to,
-            rating: val.evaluation,
-        };
+        // only use value from transposition if it does not result in a repetition
+        if !(repetition_is_possible
+            && results_in_repetition(val, &mut board.clone(), twice_played_moved))
+        {
+            return MoveWithRating {
+                from: val.best_move.from,
+                to: val.best_move.to,
+                promoted_to: val.best_move.promoted_to,
+                rating: val.evaluation,
+            };
+        }
     }
+
     let mut best_move_rating = init_best_move(&board, calculate_all_moves);
     let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, calculate_all_moves);
     if is_in_check && valid_moves.is_empty() {
@@ -352,6 +365,7 @@ fn calculate(
                         beta,
                         depth + 1,
                         max_depth,
+                        max_depth_takes,
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
@@ -388,6 +402,7 @@ fn calculate(
                         beta,
                         depth + 1,
                         max_depth,
+                        max_depth_takes,
                         calculate_all_moves,
                         repetition_is_possible,
                         twice_played_moved,
@@ -429,4 +444,21 @@ fn calculate(
         );
     }
     return best_move;
+}
+
+// if repetition is possible make move and check if it is a repetition
+fn results_in_repetition(
+    transposition: Transposition,
+    board: &mut Chessboard,
+    twice_played_moved: &Vec<u64>,
+) -> bool {
+    board.move_figure(
+        transposition.best_move.from,
+        transposition.best_move.to,
+        transposition.best_move.promoted_to,
+    );
+    if twice_played_moved.contains(&board.zobrist_key) {
+        return true;
+    }
+    return false;
 }

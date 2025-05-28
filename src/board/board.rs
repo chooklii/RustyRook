@@ -525,9 +525,9 @@ impl Chessboard {
             self.create_position_from_input_string(position_5);
             return;
         }
-        if false {
-            // todo: Queen Sack 
-            let position = String::from("3rk2r/ppq3pp/2n2n2/3p3P/8/2P2P1B/PP2P2P/R1Q1K1NR b KQk - 4 14");
+        if false{
+            // sack knight on a2
+            let position = String::from("r2qkb1r/pppbpp1p/5np1/1B1p4/1n1P1B2/2N1P3/PPP1QPPP/R3K1NR b KQkq - 3 7");
             self.create_position_from_input_string(position);
             return;
         }

@@ -1,7 +1,3 @@
-use std::sync::{Arc, Mutex};
-
-use log::info;
-
 use crate::{
     board::{bitboard::Bitboard, board::Chessboard},
     figures::{
@@ -242,7 +238,7 @@ fn get_all_possible_moves(
     let prev_best_move_opt = get_entry_without_check(board.zobrist_key);
     // we only want some moves which we think should be calculated
     if !get_all_moves {
-        add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt, false);
+        add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
         return moves;
     }
 
@@ -268,14 +264,13 @@ fn get_all_possible_moves(
     pawn_positions.iterate_board(|position| {
         get_possible_pawn_moves(&board, position, color, &mut moves);
     });
-    add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt, true);
+    add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
     moves
 }
 
 fn add_prev_best_move_as_first_move(
     moves: &mut Vec<PossibleMove>,
     prev_best_move_opt: Option<Transposition>,
-    calculate_all_moves: bool
 ) {
     if prev_best_move_opt.is_none() {
         return;
@@ -289,10 +284,6 @@ fn add_prev_best_move_as_first_move(
             && single.promoted_to == prev_best_move.promoted_to
     }) {
         moves.remove(pos);
-    }else if calculate_all_moves{
-        // validate transpositional table - dev mode
-        info!("Got Best Move which is not part of Moves - Should not happen!{:?} - {:?}", moves, prev_best_move);
-        panic!()
     }
     moves.insert(0, prev_best_move);
 }

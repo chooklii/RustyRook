@@ -29,7 +29,7 @@ use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use std::{
-    io::{self}, sync::{Arc, Mutex}, time::SystemTime
+    io::{self}, time::SystemTime
 };
 mod board;
 mod engine;
@@ -174,8 +174,13 @@ fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
 fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) -> u64{
     let mut user_time: u64 = 0;
 
-    let given_time_opt = get_value_from_commands(&commands, overall_time_key);
+    // given a exact time per move
+    let exact_movetime_opt = get_value_from_commands(&commands, "movetime");
+    if let Some(exact_movetime) = exact_movetime_opt{
+        return exact_movetime - 100; // buffer to send and finish calculation
+    }
 
+    let given_time_opt = get_value_from_commands(&commands, overall_time_key);
     // no timelimit -> we take 5s to calculate
     if given_time_opt.is_none(){
         return 5000;
@@ -187,10 +192,10 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
     if let Some(move_until_increment) = moves_until_increment_opt{
         user_time += given_time / (move_until_increment +2) // +2 to add some buffer for overhead
     }else{
-        user_time += given_time / 40 // just make some guess to manage time
+        user_time += given_time / 40 // just make some guess on total count of moves to manage time
     }
 
-    // check and add move increment
+    // add by move increment to each calculation
     let increment_opt = get_value_from_commands(&commands, increment_key);
     if let Some(increment) = increment_opt{
         user_time +=increment;
@@ -204,7 +209,6 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
         // min 1s
         return 1000;
     }
-
     user_time
 }
 
@@ -223,7 +227,7 @@ fn get_value_from_commands(commands:  &Vec<&str>, key: &str) -> Option<u64>{
 }
 
 fn quit() {
-    panic!("Unknown!");
+    panic!("Unknown Command!");
 }
 
 fn init_new_game() {
