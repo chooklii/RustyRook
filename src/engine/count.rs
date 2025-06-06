@@ -24,7 +24,7 @@ fn make_moves_and_count_moves(
         return 0;
     };
     for single in valid_moves.into_iter() {
-        let mut new_board = board.clone();
+        let mut new_board = *board;
         new_board.move_figure(single.from, single.to, single.promoted_to);
         if depth < max_depth {
             let moves =

@@ -66,13 +66,13 @@ pub fn search_for_best_move(
     time_for_move: u64,
     board: &Chessboard,
     repetition_is_possible: bool,
-    twice_played_moved: &Vec<u64>,
+    twice_played_moved: &[u64],
 ) {
     let (best_move, depth) = calculate_root_level(
         time_for_move,
-        board.clone(),
+        *board,
         repetition_is_possible,
-        twice_played_moved.clone(),
+        twice_played_moved.to_owned(),
     );
     println!(
         "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
@@ -271,7 +271,7 @@ fn calculate(
             false,
             repetition_is_possible,
             twice_played_moved,
-            &timer,
+            timer,
         );
     }
     let depth_to_end = if calculate_all_moves {
@@ -291,7 +291,7 @@ fn calculate(
         }
     }
 
-    let mut best_move_rating = init_best_move(&board, calculate_all_moves);
+    let mut best_move_rating = init_best_move(board, calculate_all_moves);
     let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, calculate_all_moves);
     if is_in_check && valid_moves.is_empty() {
         return lost_game(depth);
@@ -311,7 +311,7 @@ fn calculate(
         ..Default::default()
     };
     for single in valid_moves.into_iter() {
-        let mut new_board = board.clone();
+        let mut new_board = *board;
         new_board.move_figure(single.from, single.to, single.promoted_to);
 
         // check for repetition
@@ -332,7 +332,7 @@ fn calculate(
                     calculate_all_moves,
                     repetition_is_possible,
                     twice_played_moved,
-                    &timer,
+                    timer,
                 )
             };
         let adjusted_evaluation = -evaluation.rating;
