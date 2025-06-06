@@ -531,6 +531,24 @@ impl Chessboard {
             self.create_position_from_input_string(position);
             return;
         }
+        if false{
+            // bishop sack -> moves pawn instead
+            let position = String::from("1r1qkb1r/ppp1pppp/2n2n2/1Q1pN3/3P1B2/2N4P/PPb1PPP1/2R1KB1R b Kk - 1 9");
+            self.create_position_from_input_string(position);
+            return;
+        }
+        if false{
+            // rook sack
+            let position = String::from("8/5ppp/2ppk3/P2p4/3Pr1b1/4B1R1/1r5P/2R3K1 b - - 5 45");
+            self.create_position_from_input_string(position);
+            return;
+        }
+        if false {
+            // does not take +3 figure
+            let position = String::from("2r1kb1r/pppq1ppp/4p3/3pPb2/4NB2/4P3/PPPQBPPP/R3K2R b KQk - 0 11");
+            self.create_position_from_input_string(position);
+            return;
+        }
 
 
         let default_position =

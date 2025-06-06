@@ -1,4 +1,4 @@
-use log::info;
+use std::panic;
 
 use crate::TRANSPOSITION_TABLE;
 
@@ -7,8 +7,7 @@ use super::transposition::{Flag, Transposition};
 
 pub fn get_entry_without_check(board_hash: u64) -> Option<Transposition> {
     if board_hash == 0 {
-        info!("Should not happen - why?");
-        return None;
+        panic!("Getting Value from Transposition Table with Hash 0")
     }
     if let Some(transposition) = TRANSPOSITION_TABLE.get(&board_hash) {
         if transposition.hash == board_hash {
