@@ -219,14 +219,6 @@ fn get_pieces_value(board: &Chessboard, color: Color) -> f32{
     score
 }
 
-// current move has already switched with played move
-pub fn evaluate_for_other_color(board: &Chessboard) -> f32{
-    let evaluation = evaluate(&board);
-    match board.current_move{
-        Color::White => evaluation,
-        Color::Black => -evaluation
-    }
-}
 
 pub fn evaluate_for_own_color(board: &Chessboard) -> f32{
     let evaluation = evaluate(&board);

@@ -525,31 +525,6 @@ impl Chessboard {
             self.create_position_from_input_string(position_5);
             return;
         }
-        if false{
-            // sack knight on a2
-            let position = String::from("r2qkb1r/pppbpp1p/5np1/1B1p4/1n1P1B2/2N1P3/PPP1QPPP/R3K1NR b KQkq - 3 7");
-            self.create_position_from_input_string(position);
-            return;
-        }
-        if false{
-            // bishop sack -> moves pawn instead
-            let position = String::from("1r1qkb1r/ppp1pppp/2n2n2/1Q1pN3/3P1B2/2N4P/PPb1PPP1/2R1KB1R b Kk - 1 9");
-            self.create_position_from_input_string(position);
-            return;
-        }
-        if false{
-            // rook sack
-            let position = String::from("8/5ppp/2ppk3/P2p4/3Pr1b1/4B1R1/1r5P/2R3K1 b - - 5 45");
-            self.create_position_from_input_string(position);
-            return;
-        }
-        if false {
-            // does not take +3 figure
-            let position = String::from("2r1kb1r/pppq1ppp/4p3/3pPb2/4NB2/4P3/PPPQBPPP/R3K2R b KQk - 0 11");
-            self.create_position_from_input_string(position);
-            return;
-        }
-
 
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -557,7 +532,7 @@ impl Chessboard {
     }
 
     // e.g. 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1
-    fn create_position_from_input_string(&mut self, position: String) {
+    pub fn create_position_from_input_string(&mut self, position: String) {
         self.set_empty();
         let mut current_position: usize = 56;
         let mut positions_finished = false;

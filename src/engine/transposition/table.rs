@@ -6,9 +6,6 @@ use super::transposition::{Flag, Transposition};
 
 
 pub fn get_entry_without_check(board_hash: u64) -> Option<Transposition> {
-    if board_hash == 0 {
-        panic!("Getting Value from Transposition Table with Hash 0")
-    }
     if let Some(transposition) = TRANSPOSITION_TABLE.get(&board_hash) {
         if transposition.hash == board_hash {
             return Some(*transposition);
@@ -23,7 +20,6 @@ pub fn get_entry(board_hash: u64, depth: u8, alpha: f32, beta: f32) -> Option<Tr
         if transposition.hash != board_hash || transposition.depth < depth {
             return None;
         }
-
         // already made calculation was exact - what more can we expect?
         if transposition.flag == Flag::Exact {
             return Some(*transposition);

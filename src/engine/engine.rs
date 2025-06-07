@@ -2,7 +2,6 @@ use log::info;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 use std::sync::atomic::AtomicBool;
-use std::sync::atomic::AtomicU8;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
@@ -11,15 +10,11 @@ use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 
+use crate::board::{board::Chessboard, promotion::Promotion};
 use crate::engine::transposition::transposition::Flag;
-use crate::evaluation::evaluate_for_other_color;
 use crate::evaluation::evaluate_for_own_color;
 use crate::TRANSPOSITION_TABLE;
-use crate::{
-    board::{board::Chessboard, promotion::Promotion},
-};
 
-use super::transposition;
 use super::transposition::table::get_entry;
 use super::{
     moves::get_valid_moves_in_position, sender::send_move,
@@ -87,6 +82,7 @@ pub fn search_for_best_move(
 
 fn lost_game(depth: u8) -> MoveWithRating {
     return MoveWithRating {
+        // m8 in 2 > m8 in 5
         rating: -3000.0 + depth as f32,
         ..Default::default()
     };
@@ -169,7 +165,7 @@ fn iterative_deepening(
 
         // on odd numbers (we dont really care about, as they end with our move) calculate odd takes to end on opponent move
         let max_depth_takes = if max_depth % 2 == 0 { 4 } else { 3 };
-        // calculate best move sequential to get baseline alpha/beta
+        // calculate prev. best move sequential to get baseline alpha
         let first_move = valid_moves.remove(0);
         let mut new_board = board.clone();
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
@@ -185,13 +181,13 @@ fn iterative_deepening(
             &twice_played_moved,
             &timer_clone,
         );
-        let alpha = first_move_calculation.rating;
+        let alpha = -first_move_calculation.rating;
         let mut moves_with_rating: Vec<MoveWithRating> = valid_moves
-            .iter() //TODO!!!!
+            .par_iter() 
             .map(|single| {
                 let mut new_board = board.clone();
                 new_board.move_figure(single.from, single.to, single.promoted_to);
-                let single_move = calculate(
+                let move_with_rating = calculate(
                     &new_board,
                     -beta,
                     -alpha,
@@ -207,7 +203,7 @@ fn iterative_deepening(
                     from: single.from,
                     to: single.to,
                     promoted_to: single.promoted_to,
-                    rating: single_move.rating,
+                    rating: -move_with_rating.rating,
                 }
             })
             .collect();
@@ -217,7 +213,7 @@ fn iterative_deepening(
             from: first_move.from,
             to: first_move.to,
             promoted_to: first_move.promoted_to,
-            rating: first_move_calculation.rating,
+            rating: -first_move_calculation.rating,
         });
 
         // prevent sending not calculated moves
@@ -281,7 +277,9 @@ fn calculate(
     };
     if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
         // only use value from transposition if it does not result in a repetition
-        if !(repetition_is_possible && results_in_repetition(val, &mut board.clone(), twice_played_moved)){
+        if !(repetition_is_possible
+            && results_in_repetition(val, &mut board.clone(), twice_played_moved))
+        {
             return MoveWithRating {
                 from: val.best_move.from,
                 to: val.best_move.to,
@@ -304,7 +302,6 @@ fn calculate(
             ..Default::default()
         };
     }
-    // track if it was cut or if calculation is exact
     let mut transposition_flag = Flag::Exact;
     let mut best_move: MoveWithRating = MoveWithRating {
         rating: best_move_rating,
@@ -315,7 +312,7 @@ fn calculate(
         new_board.move_figure(single.from, single.to, single.promoted_to);
 
         // check for repetition
-        let evaluation =
+        let move_with_rating =
             if repetition_is_possible && twice_played_moved.contains(&new_board.zobrist_key) {
                 MoveWithRating {
                     rating: 0.0,
@@ -326,7 +323,7 @@ fn calculate(
                     &new_board,
                     -beta,
                     -alpha,
-                    depth+1,
+                    depth + 1,
                     max_depth,
                     max_depth_takes,
                     calculate_all_moves,
@@ -335,7 +332,7 @@ fn calculate(
                     timer,
                 )
             };
-        let adjusted_evaluation = -evaluation.rating;
+        let adjusted_evaluation = -move_with_rating.rating;
         if best_move_rating < adjusted_evaluation {
             best_move_rating = adjusted_evaluation;
             best_move = MoveWithRating {
@@ -347,19 +344,21 @@ fn calculate(
         }
         alpha = alpha.max(adjusted_evaluation);
         if alpha >= beta {
-            //break;
+            break;
         }
-    }
-    if best_move_rating <= alpha {
-        transposition_flag = Flag::Upperbound;
-    } else if best_move_rating >= beta {
-        transposition_flag = Flag::Lowerbound;
     }
     // dont save best move from only takes in transposition table
     if calculate_all_moves {
-        if best_move.from == 0 && best_move.to == 0{
+        if best_move.from == 0 && best_move.to == 0 {
             panic!("Best Move is 0 -> 0") // Dev Mode
         }
+
+        if best_move_rating <= alpha {
+            transposition_flag = Flag::Upperbound;
+        } else if best_move_rating >= beta {
+            transposition_flag = Flag::Lowerbound;
+        }
+
         TRANSPOSITION_TABLE.insert(
             board.zobrist_key,
             Transposition {
@@ -390,4 +389,61 @@ fn results_in_repetition(
         transposition.best_move.promoted_to,
     );
     return twice_played_moved.contains(&board.zobrist_key);
+}
+
+// test all kinds of positions which made problems during development
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn test_sacking_queen(){
+        // sacked queen by moving knight
+        let position = String::from("r3k2r/pppq1pp1/2n1p2p/3p1b2/1b1PnP2/2N1P1B1/PPPQB1PP/R4KNR w kq - 8 11");
+        
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(position);
+    
+        let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
+        assert_ne!(best_move.from, 18);
+    }
+
+    #[test]
+    fn test_not_taking_figure(){
+        // does not take +3 figure
+        let position = String::from("2r1kb1r/pppq1ppp/4p3/3pPb2/4NB2/4P3/PPPQBPPP/R3K2R b KQk - 0 11");
+        
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(position);
+    
+        let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
+        assert_eq!(best_move.to, 28);
+    }
+
+    #[test]
+    fn test_sacking_rook(){
+        // was sacking rook at d4
+        let position = String::from("8/5ppp/2ppk3/P2p4/3Pr1b1/4B1R1/1r5P/2R3K1 b - - 5 45");
+        
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(position);
+    
+        let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
+        assert_ne!(best_move.to, 27);
+    }
+
+        #[test]
+    fn test_sacking_knight(){
+        // was sacking knight on a2
+        let position = String::from("r2qkb1r/pppbpp1p/5np1/1B1p4/1n1P1B2/2N1P3/PPP1QPPP/R3K1NR b KQkq - 3 7");
+        
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(position);
+    
+        let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
+        assert_ne!(best_move.to, 8);
+    }
+
+
 }
