@@ -21,14 +21,12 @@ use super::{
     transposition::transposition::Transposition,
 };
 
-#[derive(Debug, Clone, Copy)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct PossibleMove {
     pub from: usize,
     pub to: usize,
     pub promoted_to: Option<Promotion>,
 }
-
 
 #[derive(Debug, Clone, Copy)]
 pub struct MoveWithRating {
@@ -172,10 +170,11 @@ fn iterative_deepening(
             repetition_is_possible,
             &twice_played_moved,
             &timer_clone,
+            false
         );
         let alpha = -first_move_calculation.rating;
         let mut moves_with_rating: Vec<MoveWithRating> = valid_moves
-            .par_iter() 
+            .par_iter()
             .map(|single| {
                 let mut new_board = board;
                 new_board.move_figure(single.from, single.to, single.promoted_to);
@@ -190,6 +189,7 @@ fn iterative_deepening(
                     repetition_is_possible,
                     &twice_played_moved,
                     &timer_clone,
+                    false
                 );
                 MoveWithRating {
                     from: single.from,
@@ -237,6 +237,7 @@ fn calculate(
     repetition_is_possible: bool,
     twice_played_moved: &Vec<u64>,
     timer: &AtomicBool,
+    use_transposition: bool,
 ) -> MoveWithRating {
     // todo: check if timer can be removed from calculation as it is dropped in other position anyways?
     if timer.load(Ordering::Relaxed) || (depth == max_depth_takes && !calculate_all_moves) {
@@ -260,6 +261,7 @@ fn calculate(
             repetition_is_possible,
             twice_played_moved,
             timer,
+            true,
         );
     }
     let depth_to_end = if calculate_all_moves {
@@ -267,17 +269,19 @@ fn calculate(
     } else {
         max_depth_takes - depth
     };
-    if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
-        // only use value from transposition if it does not result in a repetition
-        if !(repetition_is_possible
-            && results_in_repetition(val, &mut board.clone(), twice_played_moved))
-        {
-            return MoveWithRating {
-                from: val.best_move.from,
-                to: val.best_move.to,
-                promoted_to: val.best_move.promoted_to,
-                rating: val.evaluation,
-            };
+    if use_transposition {
+        if let Some(val) = get_entry(board.zobrist_key, depth_to_end, alpha, beta) {
+            // only use value from transposition if it does not result in a repetition
+            if !(repetition_is_possible
+                && results_in_repetition(val, &mut board.clone(), twice_played_moved))
+            {
+                return MoveWithRating {
+                    from: val.best_move.from,
+                    to: val.best_move.to,
+                    promoted_to: val.best_move.promoted_to,
+                    rating: val.evaluation,
+                };
+            }
         }
     }
 
@@ -322,6 +326,7 @@ fn calculate(
                     repetition_is_possible,
                     twice_played_moved,
                     timer,
+                    true
                 )
             };
         let adjusted_evaluation = -move_with_rating.rating;
@@ -382,56 +387,65 @@ fn results_in_repetition(
 // test all kinds of positions which made problems during development
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_sacking_queen(){
+    fn test_sacking_queen() {
         // sacked queen by moving knight
-        let position = String::from("r3k2r/pppq1pp1/2n1p2p/3p1b2/1b1PnP2/2N1P1B1/PPPQB1PP/R4KNR w kq - 8 11");
-        
-        let mut board = Chessboard{..Default::default()};
+        let position =
+            String::from("r3k2r/pppq1pp1/2n1p2p/3p1b2/1b1PnP2/2N1P1B1/PPPQB1PP/R4KNR w kq - 8 11");
+
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(position);
-    
+
         let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
         assert_ne!(best_move.from, 18);
     }
 
     #[test]
-    fn test_not_taking_figure(){
+    fn test_not_taking_figure() {
         // does not take +3 figure
-        let position = String::from("2r1kb1r/pppq1ppp/4p3/3pPb2/4NB2/4P3/PPPQBPPP/R3K2R b KQk - 0 11");
-        
-        let mut board = Chessboard{..Default::default()};
+        let position =
+            String::from("2r1kb1r/pppq1ppp/4p3/3pPb2/4NB2/4P3/PPPQBPPP/R3K2R b KQk - 0 11");
+
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(position);
-    
+
         let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
         assert_eq!(best_move.to, 28);
     }
 
     #[test]
-    fn test_sacking_rook(){
+    fn test_sacking_rook() {
         // was sacking rook at d4
         let position = String::from("8/5ppp/2ppk3/P2p4/3Pr1b1/4B1R1/1r5P/2R3K1 b - - 5 45");
-        
-        let mut board = Chessboard{..Default::default()};
+
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(position);
-    
+
         let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
         assert_ne!(best_move.to, 27);
     }
 
-        #[test]
-    fn test_sacking_knight(){
+    #[test]
+    fn test_sacking_knight() {
         // was sacking knight on a2
-        let position = String::from("r2qkb1r/pppbpp1p/5np1/1B1p4/1n1P1B2/2N1P3/PPP1QPPP/R3K1NR b KQkq - 3 7");
-        
-        let mut board = Chessboard{..Default::default()};
+        let position =
+            String::from("r2qkb1r/pppbpp1p/5np1/1B1p4/1n1P1B2/2N1P3/PPP1QPPP/R3K1NR b KQkq - 3 7");
+
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(position);
-    
+
         let (best_move, _) = calculate_root_level(5000, board, false, Vec::new());
         assert_ne!(best_move.to, 8);
     }
-
-
 }
