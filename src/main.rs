@@ -115,8 +115,8 @@ fn map_input_to_action(
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
-        "go" => make_move(commands, &chessboard, twice_played_positions),
-        "debug" => debug_moves(&chessboard),
+        "go" => make_move(commands, chessboard, twice_played_positions),
+        "debug" => debug_moves(chessboard),
         "quit" => quit(),
         _ => quit(),
     }
@@ -125,7 +125,7 @@ fn map_input_to_action(
 fn debug_moves(chessboard: &Chessboard) {
     let now = SystemTime::now();
     let max_depth: u8 = 4;
-    let moves = count_moves(&chessboard, max_depth);
+    let moves = count_moves(chessboard, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,
@@ -158,10 +158,10 @@ fn update_board(
     }
 }
 
-fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &Vec<u64>) {
+fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64]) {
     let time_for_move = get_time_for_move(commands, board.current_move);
     let possible_repetition = !twice_played_positions.is_empty();
-    search_for_best_move(time_for_move, &board, possible_repetition, twice_played_positions);
+    search_for_best_move(time_for_move, board, possible_repetition, twice_played_positions);
 }
 
 fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{

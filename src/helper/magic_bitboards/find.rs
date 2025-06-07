@@ -13,7 +13,7 @@ pub fn init_bishop_magics() -> ([MagicBitboard; 64], [Vec<Bitboard>; 64]) {
     let possible_moves: FxHashMap<usize, MoveInEveryDirection> = get_moves_for_each_field();
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let blockers = get_bishop_blockers_for_field(column, row);
             let (magic_bitboard, positions) =
                 find_magic(blockers, position, &possible_moves, false);
@@ -31,7 +31,7 @@ pub fn init_rook_magics() -> ([MagicBitboard; 64], [Vec<Bitboard>; 64]) {
     let mut magic_positions = [const { Vec::new() }; 64];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let blockers = get_rook_blockers_for_field(column, row);
             let (magic_bitboard, positions) =
                 find_magic(blockers, position, &possible_moves, true);
@@ -57,7 +57,7 @@ fn find_magic(
             magic_key: magic,
             index: shift,
         };
-        if let Some(valid) = create_possible_moves_vec(&magic_bitboard, position, &moves_by_field, is_rook) {
+        if let Some(valid) = create_possible_moves_vec(&magic_bitboard, position, moves_by_field, is_rook) {
             return (magic_bitboard, valid);
         }
     }
@@ -73,7 +73,7 @@ fn create_possible_moves_vec(
     let mut table = vec![Bitboard::new(); 1 << index_bits];
     let mut blockers = Bitboard::new();
     loop {
-        let moves = get_valid_moves_for_position_with_given_blockers(blockers, own_position, &moves_by_field, is_rook);
+        let moves = get_valid_moves_for_position_with_given_blockers(blockers, own_position, moves_by_field, is_rook);
         let table_entry = &mut table[get_magic_index(blockers, magic_bitboard)];
         if table_entry.board == 0 {
             *table_entry = moves;

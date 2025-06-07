@@ -153,7 +153,7 @@ pub fn init_bishop_magic_moves_array() -> [Vec<Bitboard>; 64] {
     let moves_by_field = get_moves_for_each_field();
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let magic_bitboard = BISHOP_MAGIC_BITBOARDS[position];
             magic_positions[position] =
                 create_moves_vec(&magic_bitboard, position, &moves_by_field, false);
@@ -166,7 +166,7 @@ pub fn init_bishop_magic_arrays() -> [MagicBitboard; 64] {
     let mut magic_bitboards: [MagicBitboard; 64] = [Default::default(); 64];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let blockers = get_bishop_blockers_for_field(column, row);
             let shift: u8 = 64 - blockers.get_used_fields().len() as u8;
             let magic_key = BISHOP_MAGIC_NUMBERS[position];
@@ -185,7 +185,7 @@ pub fn init_rook_magic_moves_array() -> [Vec<Bitboard>; 64] {
     let moves_by_field = get_moves_for_each_field();
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let magic_bitboard = ROOK_MAGIC_BITBOARDS[position];
             magic_positions[position] =
                 create_moves_vec(&magic_bitboard, position, &moves_by_field, true);
@@ -198,7 +198,7 @@ pub fn init_rook_magic_arrays() -> [MagicBitboard; 64] {
     let mut magic_bitboards: [MagicBitboard; 64] = [Default::default(); 64];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             let blockers = get_rook_blockers_for_field(column, row);
             let shift: u8 = 64 - blockers.get_used_fields().len() as u8;
             let magic_key = ROOK_MAGIC_NUMBERS[position];

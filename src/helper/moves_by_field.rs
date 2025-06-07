@@ -48,7 +48,7 @@ pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
             let mut left_back= Vec::new();
             let mut right_forward= Vec::new();
             let mut right_back= Vec::new();
-            let index: usize = usize::from(column * 8 + row);
+            let index: usize = column *8 + row;
 
             for val in 0..row{
                 left.push(index - val -1)
@@ -117,7 +117,7 @@ pub fn get_pawn_promotion_moves() -> Bitboard{
 
 pub fn get_bishop_blockers_for_field(column: usize, row: usize) -> Bitboard {
     let mut blockers = Bitboard::new();
-    let position: usize = usize::from(column as usize * 8 + row as usize);
+    let position: usize = column *8 + row;
     let left = 0..row;
     let right = 0..(7 - row);
     let forward = 1..(8 - column);
@@ -153,7 +153,7 @@ pub fn get_bishop_blockers_for_field(column: usize, row: usize) -> Bitboard {
 
 pub fn get_rook_blockers_for_field(column: usize, row: usize) -> Bitboard {
     let mut moves = Bitboard::new();
-    let position: usize = usize::from(column as usize * 8 + row as usize);
+    let position: usize = column *8 + row;
 
     if row > 1 {
         for val in 0..(row - 1) {
@@ -183,7 +183,7 @@ pub fn get_douplicate_pawn_boards() -> [Bitboard; 8]{
 
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             fields[row].set_field(position);
         }
     }
@@ -195,7 +195,7 @@ pub fn get_pawn_takes_for_field() -> [[Bitboard; 64];2] {
     let mut moves  = [[Bitboard::new(); 64],[Bitboard::new(); 64]];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
 
             if row >=1{
                 if column <=6{
@@ -222,7 +222,7 @@ pub fn get_king_moves_for_field() -> [Bitboard; 64] {
     let mut moves: [Bitboard; 64] = [Bitboard::new(); 64];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             if column >=1 {
                 moves[position].set_field(position - 8);
                 if row >=1 {
@@ -256,7 +256,7 @@ pub fn get_knight_moves_for_field() -> [Bitboard; 64] {
     let mut moves: [Bitboard; 64] = [Bitboard::new(); 64];
     for column in 0..8 {
         for row in 0..8 {
-            let position: usize = usize::from(column as usize * 8 + row as usize);
+            let position: usize = column *8 + row;
             if row >= 2 {
                 if column >= 1 {
                     moves[position].set_field(position - 10);
