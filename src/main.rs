@@ -165,7 +165,7 @@ fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &
 }
 
 fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
-    return match color{
+    match color{
         Color::White => get_time(commands, "wtime", "winc"),
         Color::Black => get_time(commands, "btime", "binc")
     }
@@ -223,7 +223,7 @@ fn get_value_from_commands(commands:  &Vec<&str>, key: &str) -> Option<u64>{
             }
         }
     }
-    return None;
+    None
 }
 
 fn quit() {
@@ -244,12 +244,12 @@ fn send_uci_message() {
 }
 
 fn init_static_values(){
-    let _ = KING_MOVES.get(0);
-    let _ = KNIGHT_MOVES.get(0);
-    let _ = PAWN_THREATS.get(0);
+    let _ = KING_MOVES.first();
+    let _ = KNIGHT_MOVES.first();
+    let _ = PAWN_THREATS.first();
     let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
-    let _ = DOUPLICATE_PAWN_TARIFF.get(0);
-    let _ = ZOBRIST_FIGURE_NUMBERS.get(0);
+    let _ = DOUPLICATE_PAWN_TARIFF.first();
+    let _ = ZOBRIST_FIGURE_NUMBERS.first();
     // positions are based on magic and impl. init magics
     let _ = BISHOP_MAGIC_POSITIONS[0];
     let _ = ROOK_MAGIC_POSITIONS[0];

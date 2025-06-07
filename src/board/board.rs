@@ -152,19 +152,19 @@ impl Chessboard {
         if self.get_pieces(color, Piece::King).field_is_used(position) {
             return Some(Piece::King);
         };
-        return None;
+        None
     }
 
     pub fn is_queen_or_rook(&self, color: Color, position: usize) -> bool {
-        return self.get_pieces(color, Piece::Rook).field_is_used(position)
-            || self.get_pieces(color, Piece::Queen).field_is_used(position);
+        self.get_pieces(color, Piece::Rook).field_is_used(position)
+            || self.get_pieces(color, Piece::Queen).field_is_used(position)
     }
 
     pub fn is_queen_or_bishop(&self, color: Color, position: usize) -> bool {
-        return self
+        self
             .get_pieces(color, Piece::Bishop)
             .field_is_used(position)
-            || self.get_pieces(color, Piece::Queen).field_is_used(position);
+            || self.get_pieces(color, Piece::Queen).field_is_used(position)
     }
 
     pub fn get_opponents(&self) -> &Bitboard {
@@ -289,7 +289,7 @@ impl Chessboard {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn is_en_passant_white(&mut self, old_field: usize, new_field: usize) -> bool {
@@ -305,7 +305,7 @@ impl Chessboard {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn castle(&mut self, old_field: usize, new_field: usize) {
@@ -459,9 +459,7 @@ impl Chessboard {
             Regex::new(r"\A[abcdefgh][1-8][abcdefgh][1-8]([qrbkQrbK]?)").unwrap();
         let valid_move = valid_move_regex.captures(mov);
 
-        if valid_move.is_none() {
-            return None;
-        }
+        valid_move.as_ref()?;
 
         //not beautiful or fast, but not important
         let valid_move_unpacked = valid_move.unwrap().get(1);
@@ -473,13 +471,13 @@ impl Chessboard {
 
         let split_move_regex = Regex::new(r"((\S)(\S)(\S)(\S))").unwrap();
         let split_moves = split_move_regex.captures(mov).unwrap();
-        return Some((
+        Some((
             split_moves.get(2).unwrap().as_str(),
             split_moves.get(3).unwrap().as_str().parse::<u8>().unwrap(),
             split_moves.get(4).unwrap().as_str(),
             split_moves.get(5).unwrap().as_str().parse::<u8>().unwrap(),
             promoted_to_piece,
-        ));
+        ))
     }
 
     fn get_position_id(&self, row: &str, column: u8) -> usize {
@@ -548,12 +546,12 @@ impl Chessboard {
                 }
             } else {
                 if c == '/' {
-                    current_position = current_position - 16;
+                    current_position -= 16;
                 }
-                if c.is_digit(10) {
+                if c.is_ascii_digit() {
                     // can u feel the magic? :D
                     let as_digit = usize::from(c as u8 - 0x30);
-                    current_position = current_position + as_digit;
+                    current_position += as_digit;
                 }
                 if c.is_alphabetic() {
                     let piece = self.get_figure_from_char(c);
@@ -566,7 +564,7 @@ impl Chessboard {
                         self.zobrist_key ^= ZOBRIST_FIGURE_NUMBERS[Color::White as usize]
                             [piece as usize][current_position];
                     }
-                    current_position = current_position + 1;
+                    current_position += 1;
                 }
             }
         }

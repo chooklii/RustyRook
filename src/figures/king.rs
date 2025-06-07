@@ -51,15 +51,15 @@ pub fn get_possible_king_moves(
     // castle
     if board.castle.can_castle(own_color) && !opponent_moves.field_is_used(own_position) {
         match own_color {
-            Color::White => white_castle(&board, opponent_moves, possible_moves),
-            Color::Black => black_castle(&board, opponent_moves, possible_moves),
+            Color::White => white_castle(board, opponent_moves, possible_moves),
+            Color::Black => black_castle(board, opponent_moves, possible_moves),
         }
     }
 }
 
 pub fn get_fields_threatened_by_king(own_position: usize) -> Bitboard {
     // fail is okay - we need to know as it would be a big bug
-    return *KING_MOVES.get(own_position).unwrap();
+    *KING_MOVES.get(own_position).unwrap()
 }
 
 fn is_possible_castle(
@@ -77,10 +77,10 @@ fn is_possible_castle(
         }
     }
 
-    return !(opponent_moves.field_is_used(field_between)
+    !(opponent_moves.field_is_used(field_between)
         || opponent_moves.field_is_used(new_king_position)
         || board.positions.field_is_used(field_between)
-        || board.positions.field_is_used(new_king_position));
+        || board.positions.field_is_used(new_king_position))
 }
 
 fn white_castle(

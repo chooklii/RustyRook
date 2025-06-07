@@ -15,7 +15,7 @@ pub fn get_fields_threatened_by_knight(
     own_position: usize
 ) -> Bitboard {
     // if field is not defined we want to know and fail
-    return *KNIGHT_MOVES.get(own_position).unwrap();
+    *KNIGHT_MOVES.get(own_position).unwrap()
 }
 
 pub fn get_possible_knight_moves_to_prevent_check(

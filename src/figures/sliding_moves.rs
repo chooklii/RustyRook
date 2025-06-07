@@ -5,8 +5,8 @@ pub fn get_fields_threatened_by_queen(
     position: usize,
     king_position: usize
 ) -> Bitboard {
-    let bishop_threats = get_fields_threatened_by_bishop(&board, position, king_position);
-    let rook_threats = get_fields_threatened_by_rook(&board, position, king_position);
+    let bishop_threats = get_fields_threatened_by_bishop(board, position, king_position);
+    let rook_threats = get_fields_threatened_by_rook(board, position, king_position);
     Bitboard { board: bishop_threats.board | rook_threats.board }
 }
 
@@ -21,7 +21,7 @@ pub fn get_fields_threatened_by_bishop(
 
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board_without_king, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board_without_king, magic_options)];
 
     Bitboard{board:magic_moves.board}
 }
@@ -37,7 +37,7 @@ pub fn get_fields_threatened_by_rook(
 
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board_without_king, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board_without_king, magic_options)];
 
     Bitboard{board:magic_moves.board}
 }
@@ -47,8 +47,8 @@ pub fn get_possible_queen_moves(
     position: usize,
     possible_moves: &mut Vec<PossibleMove>
 ) {
-    get_possible_bishop_moves(&board, position, possible_moves);
-    get_possible_rook_moves(&board, position, possible_moves);
+    get_possible_bishop_moves(board, position, possible_moves);
+    get_possible_rook_moves(board, position, possible_moves);
 
 }
 
@@ -59,7 +59,7 @@ pub fn get_possible_bishop_moves(
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
     let moves = Bitboard{board:magic_moves.board & !board.positions.board};
     moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
 }
@@ -71,7 +71,7 @@ pub fn get_possible_rook_moves(
 ) {
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
     let moves = Bitboard{board:magic_moves.board & !board.positions.board};
     moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
 }
@@ -84,7 +84,7 @@ pub fn get_possible_rook_moves_to_prevent_check(
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
 
     let moves = Bitboard{board:magic_moves.board & prevent_check_fields.board};
     moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
@@ -97,7 +97,7 @@ pub fn get_possible_bishop_takes(
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
 
     let moves = Bitboard{board:magic_moves.board & board.get_opponents().board};
 
@@ -112,7 +112,7 @@ pub fn get_possible_bishop_moves_to_prevent_check(
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
 
     let moves = Bitboard{board:magic_moves.board & prevent_check_fields.board};
     moves.iterate_board(|mov| possible_moves.push(PossibleMove { from: position, to: mov, promoted_to: None }));
@@ -125,7 +125,7 @@ pub fn get_possible_rook_takes(
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
-    let magic_moves = move_options[get_magic_index(board.positions, &magic_options)];
+    let magic_moves = move_options[get_magic_index(board.positions, magic_options)];
 
     let moves = Bitboard{board:magic_moves.board & board.get_opponents().board};
 

@@ -15,7 +15,7 @@ fn make_moves_and_count_moves(
 ) -> u64 {
     let mut calculated_positions: u64 = 0;
 
-    let (valid_moves, _) = get_valid_moves_in_position(&board, true);
+    let (valid_moves, _) = get_valid_moves_in_position(board, true);
     if max_depth == 1{
         // debug
         println!("{:?}", valid_moves);
@@ -43,5 +43,5 @@ fn make_moves_and_count_moves(
         }
     }
 
-    return calculated_positions;
+    calculated_positions
 }

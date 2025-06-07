@@ -22,21 +22,13 @@ use super::{
 };
 
 #[derive(Debug, Clone, Copy)]
+#[derive(Default)]
 pub struct PossibleMove {
     pub from: usize,
     pub to: usize,
     pub promoted_to: Option<Promotion>,
 }
 
-impl Default for PossibleMove {
-    fn default() -> PossibleMove {
-        PossibleMove {
-            from: 0,
-            to: 0,
-            promoted_to: None,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Copy)]
 pub struct MoveWithRating {
@@ -81,25 +73,25 @@ pub fn search_for_best_move(
 }
 
 fn lost_game(depth: u8) -> MoveWithRating {
-    return MoveWithRating {
+    MoveWithRating {
         // m8 in 2 > m8 in 5
         rating: -3000.0 + depth as f32,
         ..Default::default()
-    };
+    }
 }
 
 fn draw() -> MoveWithRating {
-    return MoveWithRating {
+    MoveWithRating {
         rating: 0.0,
         ..Default::default()
-    };
+    }
 }
 
 fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
     if !calculate_all_moves {
-        return evaluate_for_own_color(&board);
+        return evaluate_for_own_color(board);
     }
-    return -3001.0;
+    -3001.0
 }
 
 fn calculate_root_level(
@@ -122,7 +114,7 @@ fn calculate_root_level(
     let timer_clone = Arc::clone(&timer);
     thread::spawn(move || {
         iterative_deepening(
-            board.clone(),
+            board,
             repetition_is_possible,
             twice_played_moved.clone(),
             tx,
@@ -146,7 +138,7 @@ fn calculate_root_level(
         println!("Recieved at Depth {} {:?}", depth, received);
         best_move = received;
     }
-    return (best_move, depth);
+    (best_move, depth)
 }
 
 fn iterative_deepening(
@@ -167,7 +159,7 @@ fn iterative_deepening(
         let max_depth_takes = if max_depth % 2 == 0 { 4 } else { 3 };
         // calculate prev. best move sequential to get baseline alpha
         let first_move = valid_moves.remove(0);
-        let mut new_board = board.clone();
+        let mut new_board = board;
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
         let first_move_calculation = calculate(
             &new_board,
@@ -185,7 +177,7 @@ fn iterative_deepening(
         let mut moves_with_rating: Vec<MoveWithRating> = valid_moves
             .par_iter() 
             .map(|single| {
-                let mut new_board = board.clone();
+                let mut new_board = board;
                 new_board.move_figure(single.from, single.to, single.promoted_to);
                 let move_with_rating = calculate(
                     &new_board,
@@ -248,7 +240,7 @@ fn calculate(
 ) -> MoveWithRating {
     // todo: check if timer can be removed from calculation as it is dropped in other position anyways?
     if timer.load(Ordering::Relaxed) || (depth == max_depth_takes && !calculate_all_moves) {
-        let evaluation = evaluate_for_own_color(&board);
+        let evaluation = evaluate_for_own_color(board);
         // init without a best move is no issue as long as we calculate more than depth = 1
         return MoveWithRating {
             rating: evaluation,
@@ -258,7 +250,7 @@ fn calculate(
     // calculate only takes
     if depth == max_depth && calculate_all_moves {
         return calculate(
-            &board,
+            board,
             alpha,
             beta,
             0,
@@ -290,7 +282,7 @@ fn calculate(
     }
 
     let mut best_move_rating = init_best_move(board, calculate_all_moves);
-    let (valid_moves, is_in_check) = get_valid_moves_in_position(&board, calculate_all_moves);
+    let (valid_moves, is_in_check) = get_valid_moves_in_position(board, calculate_all_moves);
     if is_in_check && valid_moves.is_empty() {
         return lost_game(depth);
     } else if calculate_all_moves && valid_moves.is_empty() && !is_in_check {
@@ -370,7 +362,7 @@ fn calculate(
             },
         );
     }
-    return best_move;
+    best_move
 }
 
 // if repetition is possible make move and check if it is a repetition
@@ -384,7 +376,7 @@ fn results_in_repetition(
         transposition.best_move.to,
         transposition.best_move.promoted_to,
     );
-    return twice_played_moved.contains(&board.zobrist_key);
+    twice_played_moved.contains(&board.zobrist_key)
 }
 
 // test all kinds of positions which made problems during development

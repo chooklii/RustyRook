@@ -3,7 +3,7 @@ use log::info;
 use crate::board::promotion::{convert_promotion_to_output_string, Promotion};
 
 fn get_row_from_number(row: &usize) -> &str {
-    return match row % 8 {
+    match row % 8 {
         0 => "a",
         1 => "b",
         2 => "c",
@@ -12,7 +12,7 @@ fn get_row_from_number(row: &usize) -> &str {
         5 => "f",
         6 => "g",
         _ => "h",
-    };
+    }
 }
 
 fn convert_number_to_chess_notation(position: &usize) -> String {

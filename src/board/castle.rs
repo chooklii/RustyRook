@@ -1,6 +1,7 @@
 use crate::figures::color::Color;
 
 #[derive(Clone, Copy, Debug)]
+#[derive(Default)]
 pub struct Castle {
     pub white_castle_long: bool,
     pub white_castle_short: bool,
@@ -8,24 +9,14 @@ pub struct Castle {
     pub black_castle_short: bool,
 }
 
-impl Default for Castle {
-    fn default() -> Castle {
-        Castle {
-            white_castle_long: false,
-            white_castle_short: false,
-            black_castle_long: false,
-            black_castle_short: false,
-        }
-    }
-}
 
 impl Castle {
     pub fn white_can_castle(&self) -> bool {
-        return self.white_castle_long || self.white_castle_short;
+        self.white_castle_long || self.white_castle_short
     }
 
     pub fn black_can_castle(&self) -> bool {
-        return self.black_castle_long || self.black_castle_short;
+        self.black_castle_long || self.black_castle_short
     }
 
     pub fn can_castle(&self, color: Color) -> bool{

@@ -39,11 +39,11 @@ pub fn get_fields_to_prevent_check(
 }
 
 fn is_rook_movement_figure(board: &Chessboard,position: usize) -> bool {
-    return board.is_queen_or_rook(board.get_opponent_color(), position);
+    board.is_queen_or_rook(board.get_opponent_color(), position)
 }
 
 fn is_bishop_movement_figure(board: &Chessboard,position: usize) -> bool {
-    return board.is_queen_or_bishop(board.get_opponent_color(), position);
+    board.is_queen_or_bishop(board.get_opponent_color(), position)
 }
 
 fn check_and_get_bishop_movement_check_field(
@@ -90,7 +90,7 @@ fn check_and_get_bishop_movement_check_field(
             return right_bw;
         }
     }
-    return None;
+    None
 }
 
 fn check_and_get_rook_movement_check_field(
@@ -140,7 +140,7 @@ fn check_and_get_rook_movement_check_field(
         }
     }
 
-    return None;
+    None
 }
 
 fn check_single_direction_check(
@@ -152,7 +152,7 @@ fn check_single_direction_check(
     let mut fields_to_prevent_check: Bitboard = Bitboard::new();
     for &movement in moves {
         if board.positions.field_is_used(movement) {
-                if figure_check(&board, movement) {
+                if figure_check(board, movement) {
                     fields_to_prevent_check.set_field(movement);
                     return Some(fields_to_prevent_check);
                 }
@@ -164,7 +164,7 @@ fn check_single_direction_check(
         }
         fields_to_prevent_check.set_field(movement);
     }
-    return None;
+    None
 }
 
 fn check_and_get_knight_check_field(
@@ -177,7 +177,7 @@ fn check_and_get_knight_check_field(
             return Some(checking_knigh_board.get_first_field());
         }
     }
-    return None;
+    None
 }
 
 fn check_and_get_pawn_check_field(board: &Chessboard, position: usize) -> Option<usize> {
@@ -185,9 +185,9 @@ fn check_and_get_pawn_check_field(board: &Chessboard, position: usize) -> Option
     let possible_checks = Bitboard{board: relevant_pawn_fields.board & board.get_opponent_piece(Piece::Pawn).board};
 
     if possible_checks.board == 0{
-        return None;
+        None
     }else{
-        return Some(possible_checks.get_first_field());
+        Some(possible_checks.get_first_field())
     }
 }
 

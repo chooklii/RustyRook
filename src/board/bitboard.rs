@@ -32,7 +32,7 @@ impl Bitboard{
 
     // mainly used to find king which is only one 
     pub fn get_first_field(&self) -> usize{
-        return self.board.trailing_zeros() as usize
+        self.board.trailing_zeros() as usize
     }
 
     // todo perf analyze other options

@@ -42,21 +42,21 @@ pub fn get_valid_moves_in_position(
         .get_first_field();
     // get moves from opponent - we ignore our own king position for rook/bishop/queen to standing on d8, and going to c8 to prevent check from h8
     let (opponent_moves, count_of_checks) =
-        get_all_threatened_fields(&board, board.get_opponent_color(), king_position);
+        get_all_threatened_fields(board, board.get_opponent_color(), king_position);
     // if opponent moves include own king -> we are in check
     let is_in_check = opponent_moves.field_is_used(king_position);
     let is_in_double_check = is_in_check && count_of_checks > 1;
 
     let moves: Vec<PossibleMove> = get_all_possible_moves(
-        &board,
+        board,
         board.current_move,
         opponent_moves,
         is_in_check,
         is_in_double_check,
         calculate_all_moves,
     );
-    let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(&board, &king_position, moves);
-    return (not_pinned_moves, is_in_check);
+    let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(board, &king_position, moves);
+    (not_pinned_moves, is_in_check)
 }
 
 // get all fields threadned (ignore if opponent figure is on field)
@@ -71,7 +71,7 @@ fn get_all_threatened_fields(
     let pawn_positions = board.get_pieces(color, Piece::Pawn);
     pawn_positions.iterate_board(|position| {
         let pawn_moves = get_fields_threatened_by_pawn(position, color);
-        moves.board = moves.board | pawn_moves.board;
+        moves.board |= pawn_moves.board;
 
         if pawn_moves.field_is_used(king_position) {
             cound_of_checks += 1;
@@ -80,8 +80,8 @@ fn get_all_threatened_fields(
 
     let rook_positions: &Bitboard = board.get_pieces(color, Piece::Rook);
     rook_positions.iterate_board(|position| {
-        let rook_moves = get_fields_threatened_by_rook(&board, position, king_position);
-        moves.board = moves.board | rook_moves.board;
+        let rook_moves = get_fields_threatened_by_rook(board, position, king_position);
+        moves.board |= rook_moves.board;
 
         if rook_moves.field_is_used(king_position) {
             cound_of_checks += 1;
@@ -90,8 +90,8 @@ fn get_all_threatened_fields(
 
     let bishop_positions = board.get_pieces(color, Piece::Bishop);
     bishop_positions.iterate_board(|position| {
-        let bishop_moves = get_fields_threatened_by_bishop(&board, position, king_position);
-        moves.board = moves.board | bishop_moves.board;
+        let bishop_moves = get_fields_threatened_by_bishop(board, position, king_position);
+        moves.board |= bishop_moves.board;
 
         if bishop_moves.field_is_used(king_position) {
             cound_of_checks += 1;
@@ -100,8 +100,8 @@ fn get_all_threatened_fields(
 
     let queen_positions = board.get_pieces(color, Piece::Queen);
     queen_positions.iterate_board(|position| {
-        let queen_moves = get_fields_threatened_by_queen(&board, position, king_position);
-        moves.board = moves.board | queen_moves.board;
+        let queen_moves = get_fields_threatened_by_queen(board, position, king_position);
+        moves.board |= queen_moves.board;
 
         if queen_moves.field_is_used(king_position) {
             cound_of_checks += 1;
@@ -111,7 +111,7 @@ fn get_all_threatened_fields(
     let knight_positions = board.get_pieces(color, Piece::Knight);
     knight_positions.iterate_board(|position| {
         let knight_moves = get_fields_threatened_by_knight(position);
-        moves.board = moves.board | knight_moves.board;
+        moves.board |= knight_moves.board;
 
         if knight_moves.field_is_used(king_position) {
             cound_of_checks += 1;
@@ -119,7 +119,7 @@ fn get_all_threatened_fields(
     });
 
     let king_position = board.get_pieces(color, Piece::King).get_first_field();
-    moves.board = moves.board | get_fields_threatened_by_king(king_position).board;
+    moves.board |= get_fields_threatened_by_king(king_position).board;
     (moves, cound_of_checks)
 }
 
@@ -129,14 +129,14 @@ fn get_all_prevent_check_moves(
     opponent_moves: Bitboard,
 ) -> Vec<PossibleMove> {
     let king_position = board.get_pieces(color, Piece::King).get_first_field();
-    let prevent_check_fields = get_fields_to_prevent_check(&board, king_position, opponent_moves);
+    let prevent_check_fields = get_fields_to_prevent_check(board, king_position, opponent_moves);
 
     let mut moves = Vec::new();
 
     let bishop_positions = board.get_pieces(color, Piece::Bishop);
     bishop_positions.iterate_board(|position| {
         get_possible_bishop_moves_to_prevent_check(
-            &board,
+            board,
             position,
             prevent_check_fields,
             &mut moves,
@@ -146,7 +146,7 @@ fn get_all_prevent_check_moves(
     let queen_positions = board.get_pieces(color, Piece::Queen);
     queen_positions.iterate_board(|position| {
         get_possible_queen_moves_to_prevent_check(
-            &board,
+            board,
             position,
             prevent_check_fields,
             &mut moves,
@@ -161,7 +161,7 @@ fn get_all_prevent_check_moves(
     let rook_positions = board.get_pieces(color, Piece::Rook);
     rook_positions.iterate_board(|position| {
         get_possible_rook_moves_to_prevent_check(
-            &board,
+            board,
             position,
             prevent_check_fields,
             &mut moves,
@@ -174,7 +174,7 @@ fn get_all_prevent_check_moves(
     let pawn_positions = board.get_pieces(color, Piece::Pawn);
     pawn_positions.iterate_board(|position| {
         get_possible_pawn_moves_to_prevent_check(
-            &board,
+            board,
             position,
             color,
             prevent_check_fields,
@@ -197,7 +197,7 @@ fn get_all_possible_moves(
     // if we are in double check only moving the king can save us
     if is_in_double_check {
         let king_position = board.get_pieces(color, Piece::King).get_first_field();
-        get_all_king_moves_in_check(&board, king_position, opponent_moves, &mut moves);
+        get_all_king_moves_in_check(board, king_position, opponent_moves, &mut moves);
         return moves;
     }
     if is_in_check {
@@ -213,25 +213,25 @@ fn get_all_possible_moves(
 
     // add all takes to possible Moves
     pawn_positions.iterate_board(|position| {
-        get_possible_pawn_takes_and_promotion(&board, position, color, &mut moves);
+        get_possible_pawn_takes_and_promotion(board, position, color, &mut moves);
     });
 
     rook_positions.iterate_board(|position| {
-        get_possible_rook_takes(&board, position, &mut moves);
+        get_possible_rook_takes(board, position, &mut moves);
     });
 
     bishop_positions.iterate_board(|position| {
-        get_possible_bishop_takes(&board, position, &mut moves);
+        get_possible_bishop_takes(board, position, &mut moves);
     });
 
     queen_positions.iterate_board(|position| {
-        get_possible_queen_takes(&board, position, &mut moves);
+        get_possible_queen_takes(board, position, &mut moves);
     });
 
     knight_positions.iterate_board(|position| {
-        get_possible_knight_takes(&board, position, &mut moves);
+        get_possible_knight_takes(board, position, &mut moves);
     });
-    get_possible_king_takes(&board, king_position, opponent_moves, &mut moves);
+    get_possible_king_takes(board, king_position, opponent_moves, &mut moves);
 
     let prev_best_move_opt = get_entry_without_check(board.zobrist_key);
     // we only want some moves which we think should be calculated
@@ -242,25 +242,25 @@ fn get_all_possible_moves(
 
     // add all silent moves (not takes) at the end
     bishop_positions.iterate_board(|position| {
-        get_possible_bishop_moves(&board, position, &mut moves);
+        get_possible_bishop_moves(board, position, &mut moves);
     });
 
     queen_positions.iterate_board(|position| {
-        get_possible_queen_moves(&board, position, &mut moves);
+        get_possible_queen_moves(board, position, &mut moves);
     });
 
     rook_positions.iterate_board(|position| {
-        get_possible_rook_moves(&board, position, &mut moves);
+        get_possible_rook_moves(board, position, &mut moves);
     });
 
     knight_positions.iterate_board(|position| {
-        get_possible_knight_moves(&board, position, &mut moves);
+        get_possible_knight_moves(board, position, &mut moves);
     });
 
-    get_possible_king_moves(&board, king_position, color, opponent_moves, &mut moves);
+    get_possible_king_moves(board, king_position, color, opponent_moves, &mut moves);
 
     pawn_positions.iterate_board(|position| {
-        get_possible_pawn_moves(&board, position, color, &mut moves);
+        get_possible_pawn_moves(board, position, color, &mut moves);
     });
     add_prev_best_move_as_first_move(&mut moves, prev_best_move_opt);
     moves
@@ -291,7 +291,7 @@ fn get_not_pinned_pieces(
     king_position: &usize,
     moves: Vec<PossibleMove>,
 ) -> Vec<PossibleMove> {
-    let pinned_pieces = get_pinned_pieces_and_possible_moves(&board, &king_position);
+    let pinned_pieces = get_pinned_pieces_and_possible_moves(board, king_position);
 
     if pinned_pieces.is_empty() {
         return moves;

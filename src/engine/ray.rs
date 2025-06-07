@@ -13,43 +13,43 @@ pub fn get_pinned_pieces_and_possible_moves(
     king_position: &usize,
 ) -> FxHashMap<usize, Vec<usize>> {
     let mut pinned_pieces: FxHashMap<usize, Vec<usize>> = FxHashMap::default();
-    if let Some(moves) = MOVES_BY_FIELD.get(&king_position) {
+    if let Some(moves) = MOVES_BY_FIELD.get(king_position) {
         // Rook
-        check_and_add_pin_one_direction(&board, &moves.left, &mut pinned_pieces, is_rook_movement_figure);
+        check_and_add_pin_one_direction(board, &moves.left, &mut pinned_pieces, is_rook_movement_figure);
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.right,
             &mut pinned_pieces,
             is_rook_movement_figure,
         );
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.forward,
             &mut pinned_pieces,
             is_rook_movement_figure,
         );
-        check_and_add_pin_one_direction(&board, &moves.back, &mut pinned_pieces, is_rook_movement_figure);
+        check_and_add_pin_one_direction(board, &moves.back, &mut pinned_pieces, is_rook_movement_figure);
         // Bishop
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.left_back,
             &mut pinned_pieces,
             is_bishop_movement_figure,
         );
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.left_forward,
             &mut pinned_pieces,
             is_bishop_movement_figure,
         );
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.right_back,
             &mut pinned_pieces,
             is_bishop_movement_figure,
         );
         check_and_add_pin_one_direction(
-            &board,
+            board,
             &moves.right_forward,
             &mut pinned_pieces,
             is_bishop_movement_figure,
@@ -59,11 +59,11 @@ pub fn get_pinned_pieces_and_possible_moves(
 }
 
 fn is_rook_movement_figure(board: &Chessboard,position: usize) -> bool {
-    return board.is_queen_or_rook(board.get_opponent_color(), position);
+    board.is_queen_or_rook(board.get_opponent_color(), position)
 }
 
 fn is_bishop_movement_figure(board: &Chessboard,position: usize) -> bool {
-    return board.is_queen_or_bishop(board.get_opponent_color(), position);
+    board.is_queen_or_bishop(board.get_opponent_color(), position)
 }
 
 fn check_and_add_pin_one_direction(
@@ -76,7 +76,7 @@ fn check_and_add_pin_one_direction(
     for &single in moves {
         if board.positions.field_is_used(single) {
             if board.get_opponents().field_is_used(single) {
-                if figure_has_correct_movement(&board, single) {
+                if figure_has_correct_movement(board, single) {
                     if let Some(pinned_piece) = possible_pinned_piece {
                         pinned_pices.insert(pinned_piece, moves.clone());
                     }

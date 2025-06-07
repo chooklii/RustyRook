@@ -10,6 +10,7 @@ use crate::{board::bitboard::Bitboard, figures::color::Color};
  Functions in here should prob. only be used for static values as they are not improved for performance
 */
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct MoveInEveryDirection {
     pub left: Vec<usize>,
     pub right: Vec<usize>,
@@ -21,20 +22,6 @@ pub struct MoveInEveryDirection {
     pub right_back: Vec<usize>,
 }
 
-impl Default for MoveInEveryDirection {
-    fn default() -> MoveInEveryDirection {
-        MoveInEveryDirection {
-            left: Vec::new(),
-            right: Vec::new(),
-            forward: Vec::new(),
-            back: Vec::new(),
-            left_back: Vec::new(),
-            left_forward: Vec::new(),
-            right_back: Vec::new(),
-            right_forward: Vec::new(),
-        }
-    }
-}
 pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
     let mut values: FxHashMap<usize, MoveInEveryDirection> = FxHashMap::default();
 
@@ -100,7 +87,7 @@ pub fn get_moves_for_each_field() -> FxHashMap<usize, MoveInEveryDirection> {
             );
         }
     }
-    return values;
+    values
 }
 
 pub fn get_pawn_promotion_moves() -> Bitboard{

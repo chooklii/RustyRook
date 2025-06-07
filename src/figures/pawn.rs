@@ -9,8 +9,8 @@ use super::piece::Piece;
 
 fn can_move_two_fields(own_position: usize, own_color: Color) -> bool {
     match own_color {
-        Color::White => own_position >= 7 && own_position <= 15,
-        Color::Black => own_position >= 48 && own_position <= 55,
+        Color::White => (7..=15).contains(&own_position),
+        Color::Black => (48..=55).contains(&own_position),
     }
 }
 
@@ -65,8 +65,8 @@ fn figure_will_promote(field: usize, color: &Color) -> bool {
 
 fn calculate_forward_position(own_position: usize, own_color: Color, movement: usize) -> usize {
     match own_color {
-        Color::Black => return own_position - movement,
-        Color::White => return own_position + movement,
+        Color::Black => own_position - movement,
+        Color::White => own_position + movement,
     }
 }
 
@@ -83,18 +83,18 @@ fn en_passant_no_check(
     if let Some(moves) = MOVES_BY_FIELD.get(&own_king_position) {
         if moves.left.contains(own_position) && moves.left.contains(en_passanted) {
             return check_if_other_figure_in_between(
-                &board,
+                board,
                 &moves.left,
-                &en_passanted,
-                &own_position,
+                en_passanted,
+                own_position,
             );
         }
         if moves.right.contains(own_position) && moves.right.contains(en_passanted) {
             return check_if_other_figure_in_between(
                 board,
                 &moves.right,
-                &en_passanted,
-                &own_position,
+                en_passanted,
+                own_position,
             );
         }
     }
@@ -113,7 +113,7 @@ fn check_if_other_figure_in_between(
             return !board.is_queen_or_rook(board.get_opponent_color(), *single);
         }
     }
-    return true;
+    true
 }
 
 fn add_pawn_takes(
@@ -156,22 +156,18 @@ pub fn get_possible_pawn_moves(
 
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
     if let Some(possible_en_passant) = board.en_passant {
-        if figure_can_move_left(own_position, &own_color) {
-            if en_passant_position_left(&own_position, own_color) == possible_en_passant
-                && en_passant_no_check(&board, &own_position, own_color, &possible_en_passant)
-            {
-                let take_left_position = take_left_position(&one_step_forward, own_color);
-                possible_moves.push(PossibleMove {
-                    from: own_position,
-                    to: take_left_position,
-                    promoted_to: None,
-                });
-            }
+        if figure_can_move_left(own_position, &own_color) && en_passant_position_left(&own_position, own_color) == possible_en_passant && en_passant_no_check(board, &own_position, own_color, &possible_en_passant) {
+            let take_left_position = take_left_position(&one_step_forward, own_color);
+            possible_moves.push(PossibleMove {
+                from: own_position,
+                to: take_left_position,
+                promoted_to: None,
+            });
         }
         if figure_can_move_right(own_position, &own_color) {
             if let Some(possible_en_passant) = board.en_passant {
                 if en_passant_position_right(&own_position, own_color) == possible_en_passant
-                    && en_passant_no_check(&board, &own_position, own_color, &possible_en_passant)
+                    && en_passant_no_check(board, &own_position, own_color, &possible_en_passant)
                 {
                     let take_right_position = take_right_position(&one_step_forward, own_color);
                     possible_moves.push(PossibleMove {
@@ -235,7 +231,7 @@ fn add_promotion_to_possible_moves(
 }
 
 pub fn get_fields_threatened_by_pawn(own_position: usize, own_color: Color) -> Bitboard {
-    return PAWN_THREATS[own_color as usize][own_position];
+    PAWN_THREATS[own_color as usize][own_position]
 }
 
 pub fn get_possible_pawn_takes_and_promotion(
@@ -244,7 +240,7 @@ pub fn get_possible_pawn_takes_and_promotion(
     own_color: Color,
     possible_moves: &mut Vec<PossibleMove>,
 ) {
-    add_pawn_takes(&board, own_color, own_position, possible_moves);
+    add_pawn_takes(board, own_color, own_position, possible_moves);
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
     if figure_will_promote(one_step_forward, &own_color)
         && !board.positions.field_is_used(one_step_forward)
@@ -295,29 +291,25 @@ pub fn get_possible_pawn_moves_to_prevent_check(
             let en_passant_field = board.en_passant.unwrap();
             // they are not the same -> no en passant to prevent possible
             if checked_by_field == en_passant_field {
-                if figure_can_move_left(own_position, &own_color) {
-                    if en_passant_position_left(&own_position, own_color) == possible_en_passant
-                        && en_passant_no_check(
-                            &board,
+                if figure_can_move_left(own_position, &own_color) && en_passant_position_left(&own_position, own_color) == possible_en_passant && en_passant_no_check(
+                            board,
                             &own_position,
                             own_color,
                             &possible_en_passant,
-                        )
-                    {
-                        let take_left_position = take_left_position(&one_step_forward, own_color);
-                        possible_moves.push(PossibleMove {
-                            from: own_position,
-                            to: take_left_position,
-                            promoted_to: None,
-                        });
-                    }
+                        ) {
+                    let take_left_position = take_left_position(&one_step_forward, own_color);
+                    possible_moves.push(PossibleMove {
+                        from: own_position,
+                        to: take_left_position,
+                        promoted_to: None,
+                    });
                 }
                 if figure_can_move_right(own_position, &own_color) {
                     if let Some(possible_en_passant) = board.en_passant {
                         if en_passant_position_right(&own_position, own_color)
                             == possible_en_passant
                             && en_passant_no_check(
-                                &board,
+                                board,
                                 &own_position,
                                 own_color,
                                 &possible_en_passant,

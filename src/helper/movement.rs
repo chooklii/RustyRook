@@ -6,9 +6,10 @@ pub fn figure_can_move_right(field: &usize) -> bool{
     field % 8 != 7
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
     fn test_move_left(){
         assert_eq!(false, figure_can_move_left(&8));

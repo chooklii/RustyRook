@@ -9,7 +9,7 @@ pub fn get_entry_without_check(board_hash: u64) -> Option<Transposition> {
             return Some(*transposition);
         }
     }
-    return None;
+    None
 }
 
 pub fn get_entry(board_hash: u64, depth: u8, alpha: f32, beta: f32) -> Option<Transposition> {
@@ -30,5 +30,5 @@ pub fn get_entry(board_hash: u64, depth: u8, alpha: f32, beta: f32) -> Option<Tr
             return Some(*transposition);
         }
     }
-    return None;
+    None
 }

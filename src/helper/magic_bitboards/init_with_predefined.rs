@@ -172,7 +172,7 @@ pub fn init_bishop_magic_arrays() -> [MagicBitboard; 64] {
             let magic_key = BISHOP_MAGIC_NUMBERS[position];
             magic_bitboards[position] = MagicBitboard {
                 relevant_fields: blockers,
-                magic_key: magic_key,
+                magic_key,
                 index: shift,
             };
         }
@@ -204,7 +204,7 @@ pub fn init_rook_magic_arrays() -> [MagicBitboard; 64] {
             let magic_key = ROOK_MAGIC_NUMBERS[position];
             magic_bitboards[position] = MagicBitboard {
                 relevant_fields: blockers,
-                magic_key: magic_key,
+                magic_key,
                 index: shift,
             };
         }
@@ -225,7 +225,7 @@ fn create_moves_vec(
         let moves = get_valid_moves_for_position_with_given_blockers(
             blockers,
             own_position,
-            &moves_by_field,
+            moves_by_field,
             is_rook,
         );
         let table_entry = &mut table[get_magic_index(blockers, magic_bitboard)];

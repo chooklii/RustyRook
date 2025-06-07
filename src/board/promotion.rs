@@ -24,7 +24,7 @@ pub fn convert_promotion_to_output_string(promoted_to: &Option<Promotion>) -> St
     }
     let promotion = promoted_to.unwrap();
 
-    return match promotion{
+    match promotion{
         Promotion::Queen => String::from("Q"),
         Promotion::Knight => String::from("K"),
         Promotion::Bishop => String::from("B"),
@@ -33,13 +33,11 @@ pub fn convert_promotion_to_output_string(promoted_to: &Option<Promotion>) -> St
 }
 
 pub fn convert_input_string_to_promotion(promotion_str: Option<&str>) -> Option<Promotion>{
-    if promotion_str.is_none(){
-        return None
-    };
+    promotion_str?;
     // null checked prior
     let promotion_string = promotion_str.unwrap();
 
-    return match promotion_string{
+    match promotion_string{
         "q" | "Q" => Some(Promotion::Queen),
         "k" | "K" => Some(Promotion::Knight),
         "b" | "B" => Some(Promotion::Bishop),
