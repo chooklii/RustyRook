@@ -149,7 +149,7 @@ fn iterative_deepening(
     timer_clone: Arc<AtomicBool>,
 ) {
     for max_depth in 2..=100 {
-        let beta = 3000.0;
+        let beta = 5000.0;
         if timer_clone.load(Ordering::Relaxed) {
             break;
         }
@@ -163,7 +163,7 @@ fn iterative_deepening(
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
         let first_move_calculation = calculate(
             &new_board,
-            -3000.0,
+            -5000.0,
             beta,
             1,
             max_depth,
