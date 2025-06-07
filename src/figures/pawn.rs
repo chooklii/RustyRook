@@ -109,10 +109,8 @@ fn check_if_other_figure_in_between(
 ) -> bool {
     for single in moves {
         // ignore both pawns involved in en passant
-        if single != en_passanted && single != own_position {
-            if board.positions.field_is_used(*single) {
-                return !board.is_queen_or_rook(board.get_opponent_color(), *single);
-            }
+        if single != en_passanted && single != own_position && board.positions.field_is_used(*single) {
+            return !board.is_queen_or_rook(board.get_opponent_color(), *single);
         }
     }
     return true;

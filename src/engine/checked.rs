@@ -17,14 +17,14 @@ pub fn get_fields_to_prevent_check(
         &king_position,
         opponent_moves,
     ){
-        possible_fields.board = possible_fields.board | rook_checking_field.board;
+        possible_fields.board |= rook_checking_field.board;
     }
     if let Some(bishop_checking_field) = check_and_get_bishop_movement_check_field(
         board,
         &king_position,
         opponent_moves,
     ) {
-        possible_fields.board = possible_fields.board | bishop_checking_field.board;
+        possible_fields.board |= bishop_checking_field.board;
     } 
      if let Some(knight_check_field) =
         check_and_get_knight_check_field(board, king_position)

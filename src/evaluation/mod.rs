@@ -1,8 +1,6 @@
 use std::usize;
 
-use log::info;
-
-use crate::{board::board::Chessboard, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, helper::moves_by_field::MoveInEveryDirection, DOUPLICATE_PAWN_TARIFF};
+use crate::{board::board::Chessboard, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, DOUPLICATE_PAWN_TARIFF};
 
 // a1 to h8
 const PAWN_RATE_KING_CENTER: [f32; 64] = [
@@ -177,9 +175,6 @@ fn get_position_weight(board: &Chessboard, color: Color, king_position: &KingPos
     let mut score: f32 = 0.0;
     board.get_pieces(color, Piece::Pawn).iterate_board(|position| score+=get_pawn_rate(position, color, &king_position));
     board.get_pieces(color, Piece::Knight).iterate_board(|position| score += KNIGHT_RATE[position]);
-    if king_usize == 64{
-        println!("{:?}", board.played_moves);
-    }
     board.get_pieces(color, Piece::Bishop).iterate_board(|position| score+=get_bishop_weight(position, &board, color, king_usize));
     board.get_pieces(color, Piece::Rook).iterate_board(|position| score+=get_rook_weight(position, &board, king_usize));
     board.get_pieces(color, Piece::Queen).iterate_board(|position| score+=get_queen_weight(position, &board, king_usize));
@@ -225,7 +220,15 @@ fn get_pieces_value(board: &Chessboard, color: Color) -> f32{
 }
 
 
-pub fn evaluate(board: &Chessboard) -> f32 {
+pub fn evaluate_for_own_color(board: &Chessboard) -> f32{
+    let evaluation = evaluate(&board);
+    match board.current_move{
+        Color::Black => -evaluation,
+        Color::White => evaluation
+    }
+}
+
+fn evaluate(board: &Chessboard) -> f32 {
  
     let white_pieces_value: f32 = get_pieces_value(&board, Color::White);
     let black_pieces_value: f32 = get_pieces_value(&board, Color::Black);
@@ -247,7 +250,6 @@ pub fn evaluate(board: &Chessboard) -> f32 {
 
     let white_value = white_pieces_value + white_pieces_position_value + white_opponent_king_bonus - white_douplicate_pawn_tariff;
     let black_value = black_pieces_value + black_pieces_position_value + black_opponent_king_bonus - black_douplicate_pawn_tariff;
-
 
     return white_value - black_value;
 }

@@ -2,11 +2,13 @@
 use crate::engine::transposition::zobrist::{get_transposition_figure_random_numbers,get_transposition_en_passant_numbers};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
+use dashmap::DashMap;
 use engine::{
     count::count_moves,
     engine::search_for_best_move,
-    transposition::{self, table::TranspositionTable},
+    transposition::{transposition::Transposition},
 };
+use figures::color::Color;
 use helper::{
     magic_bitboards::{
         init_with_predefined::{
@@ -23,18 +25,19 @@ use helper::{
 };
 use lazy_static::lazy_static;
 use log::info;
+use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use std::{
-    io::{self},
-    time::SystemTime,
+    io::{self}, time::SystemTime
 };
-
 mod board;
 mod engine;
 mod evaluation;
 mod figures;
 mod helper;
+
+static TRANSPOSITION_TABLE: Lazy<DashMap<u64, Transposition>> = Lazy::new(||DashMap::with_capacity(3_200_000));
 
 lazy_static! {
     static ref KNIGHT_MOVES: [Bitboard; 64] = {
@@ -103,7 +106,6 @@ fn main() {
 fn map_input_to_action(
     commands: Vec<&str>,
     chessboard: &mut Chessboard,
-    transposition: &mut TranspositionTable,
     once_played_positions: &mut Vec<u64>,
     twice_played_positions: &mut Vec<u64>
 ) {
@@ -113,17 +115,17 @@ fn map_input_to_action(
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(),
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
-        "go" => make_move(&chessboard, transposition, twice_played_positions),
-        "debug" => debug_moves(&chessboard, transposition),
+        "go" => make_move(commands, &chessboard, twice_played_positions),
+        "debug" => debug_moves(&chessboard),
         "quit" => quit(),
         _ => quit(),
     }
 }
 
-fn debug_moves(chessboard: &Chessboard, transposition: &TranspositionTable) {
+fn debug_moves(chessboard: &Chessboard) {
     let now = SystemTime::now();
     let max_depth: u8 = 4;
-    let moves = count_moves(&chessboard,transposition, max_depth);
+    let moves = count_moves(&chessboard, max_depth);
     println!(
         "Moves: {} - Depth: {} - took: {:?}",
         moves,
@@ -156,13 +158,76 @@ fn update_board(
     }
 }
 
-fn make_move(board: &Chessboard, transposition: &mut TranspositionTable, twice_played_positions: &Vec<u64>) {
+fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &Vec<u64>) {
+    let time_for_move = get_time_for_move(commands, board.current_move);
     let possible_repetition = !twice_played_positions.is_empty();
-    search_for_best_move(&board, transposition, possible_repetition, twice_played_positions);
+    search_for_best_move(time_for_move, &board, possible_repetition, twice_played_positions);
+}
+
+fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
+    return match color{
+        Color::White => get_time(commands, "wtime", "winc"),
+        Color::Black => get_time(commands, "btime", "binc")
+    }
+}
+
+fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) -> u64{
+    let mut user_time: u64 = 0;
+
+    // given a exact time per move
+    let exact_movetime_opt = get_value_from_commands(&commands, "movetime");
+    if let Some(exact_movetime) = exact_movetime_opt{
+        return exact_movetime - 100; // buffer to send and finish calculation
+    }
+
+    let given_time_opt = get_value_from_commands(&commands, overall_time_key);
+    // no timelimit -> we take 5s to calculate
+    if given_time_opt.is_none(){
+        return 5000;
+    }
+    let given_time = given_time_opt.unwrap();
+    
+    // if there is an increment calculate average from rest time and add it to time
+    let moves_until_increment_opt = get_value_from_commands(&commands, "movestogo");
+    if let Some(move_until_increment) = moves_until_increment_opt{
+        user_time += given_time / (move_until_increment +2) // +2 to add some buffer for overhead
+    }else{
+        user_time += given_time / 40 // just make some guess on total count of moves to manage time
+    }
+
+    // add by move increment to each calculation
+    let increment_opt = get_value_from_commands(&commands, increment_key);
+    if let Some(increment) = increment_opt{
+        user_time +=increment;
+    }
+    
+    if user_time > 5000{
+        // max take 5s, so we dont calculate forever
+        return 5000 
+    }
+    if user_time < 1000{
+        // min 1s
+        return 1000;
+    }
+    user_time
+}
+
+
+fn get_value_from_commands(commands:  &Vec<&str>, key: &str) -> Option<u64>{
+    let increment_index_opt = commands.iter().position(|x| x.eq(&key));
+    if let Some(increment_index) = increment_index_opt{
+        if let Some(increment) = commands.get(increment_index+1){
+            let value_result = increment.parse();
+            if value_result.is_ok(){
+                return Some(value_result.unwrap());
+            }
+        }
+    }
+    return None;
 }
 
 fn quit() {
-    panic!("Unknown!");
+    panic!("Unknown Command!");
 }
 
 fn init_new_game() {
@@ -195,9 +260,6 @@ fn parse_input() -> String {
     let mut chessboard = Chessboard {
         ..Default::default()
     };
-    let mut transposition_table: TranspositionTable = TranspositionTable {
-        ..Default::default()
-    };
     // Repetition
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
@@ -207,6 +269,6 @@ fn parse_input() -> String {
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &mut transposition_table, &mut once_played_positions, &mut twice_played_positions);
+        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions);
     }
 }

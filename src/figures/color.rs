@@ -1,11 +1,6 @@
-#[derive(PartialEq, Eq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy, Default)]
 pub enum Color {
+    #[default]
     White,
     Black,
-}
-
-impl Default for Color{
-    fn default() -> Color {
-        Color::White
-    }
 }
