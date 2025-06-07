@@ -499,13 +499,6 @@ impl Chessboard {
     }
 
     pub fn set_to_default(&mut self) {
-        if false {
-            let position_5 =
-                String::from("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
-            self.create_position_from_input_string(position_5);
-            return;
-        }
-
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         self.create_position_from_input_string(default_position);
@@ -835,6 +828,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_position_5() {
+        // this test fails if it is run after the other tests for some reason I dont want to debug :D
         let mut board = Chessboard::empty(Color::White);
 
         let position_5 =
@@ -847,6 +841,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_position_6() {
+        // this test fails if it is run after the other tests for some reason I dont want to debug :D
         let mut board = Chessboard::empty(Color::White);
 
         let position_6 = String::from(
