@@ -1,5 +1,3 @@
-use std::panic;
-
 use crate::TRANSPOSITION_TABLE;
 
 use super::transposition::{Flag, Transposition};

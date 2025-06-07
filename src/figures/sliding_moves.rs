@@ -33,7 +33,6 @@ pub fn get_fields_threatened_by_rook(
 ) -> Bitboard {
     // remove own king to prevent bug where king moves on same line as attacker "as field is not attacked" (he is blocking it himself)
     let mut board_without_king = board.positions;
-    // todo: performance check
     board_without_king.remove_field(king_position);
 
     let move_options = &ROOK_MAGIC_POSITIONS[position];

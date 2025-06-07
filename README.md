@@ -1,23 +1,44 @@
-# RustyRook-
+# RustyRook
 Chess Engine written in Rust
 
-Known Issues:
--> Black not working as intended (initial alpha/beta wrong)
----> Due to transposition table being in the perspective of white -> change to negamax
+Implements UCI Chess Protocol
 
-todos: 
--> Test and Improve Evaluation
--> Cleanup Engine 
+use 
+```
+cargo build 
+or
+cargo build --release
+```
 
+to create an executable to use with your local chess software.
 
-todos maybe later:
--> Refactor Fields of prevent check to magic bitboards
--> Refacotor Pinned Pieces
--> Maybe Refactor Pawn EnPassant, but does not effect performance by much
---> to field figure can move to to en passant
--> Test Rayon
--> Test Move Ordering by Transposition Table 
----> Own Takes where Opponent Cannot Take > Takes > Silent Moves
----> Save Top 3 Moves in Trans. Table
--> Killer Moves & Null Moves
--> Negamax
+To verify the correctness of changes run the Unit-Tests
+
+```
+cargo test
+```
+
+Advanced Unit-Tests based on [Chess Programming Wiki](https://www.chessprogramming.org/Perft_Results) to verify the correctness of the move generation can be used with
+
+```
+cargo test -- --ignored
+```
+
+## Chess Programming
+Rusty Rook implements Basic Chess Engine Algorithms like
+
+- Minimax
+- Alpha Beta Prunning
+- Magic Bitboards
+- Parallel Iterative Deepening with prev. best Move sequentially
+- Transpositional Table
+- Some Move Ordering
+
+___
+
+Possible Improvements for the Future
+
+- Refactor Pinned Pieces
+- Refactor En-Passant (Does not effect performance)
+- Improve Move-Ordering
+- Add more Stuff like Killer Moves & Null Moves

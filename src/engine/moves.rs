@@ -233,8 +233,6 @@ fn get_all_possible_moves(
     });
     get_possible_king_takes(&board, king_position, opponent_moves, &mut moves);
 
-    //todo add checks to opponent here as well
-
     let prev_best_move_opt = get_entry_without_check(board.zobrist_key);
     // we only want some moves which we think should be calculated
     if !get_all_moves {

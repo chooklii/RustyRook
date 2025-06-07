@@ -5,6 +5,7 @@ use crate::{board::bitboard::Bitboard, helper::moves_by_field::{get_bishop_block
 
 use super::{helper::{get_magic_index, get_valid_moves_for_position_with_given_blockers}, magic_bitboard::MagicBitboard};
 
+#[allow(dead_code)]
 pub fn init_bishop_magics() -> ([MagicBitboard; 64], [Vec<Bitboard>; 64]) {
     let mut magic_bitboards = [MagicBitboard{..Default::default()}; 64];
     let mut magic_positions = [const { Vec::new() }; 64];
@@ -23,6 +24,7 @@ pub fn init_bishop_magics() -> ([MagicBitboard; 64], [Vec<Bitboard>; 64]) {
     (magic_bitboards, magic_positions)
 }
 
+#[allow(dead_code)]
 pub fn init_rook_magics() -> ([MagicBitboard; 64], [Vec<Bitboard>; 64]) {
     let mut magic_bitboards = [MagicBitboard{..Default::default()}; 64];
     let possible_moves: FxHashMap<usize, MoveInEveryDirection> = get_moves_for_each_field();

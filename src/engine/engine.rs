@@ -349,10 +349,6 @@ fn calculate(
     }
     // dont save best move from only takes in transposition table
     if calculate_all_moves {
-        if best_move.from == 0 && best_move.to == 0 {
-            panic!("Best Move is 0 -> 0") // Dev Mode
-        }
-
         if best_move_rating <= alpha {
             transposition_flag = Flag::Upperbound;
         } else if best_move_rating >= beta {
