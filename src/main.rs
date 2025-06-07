@@ -113,7 +113,7 @@ fn map_input_to_action(
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
-        "ucinewgame" => init_new_game(),
+        "ucinewgame" => init_new_game(once_played_positions, twice_played_positions),
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
         "go" => make_move(commands, chessboard, twice_played_positions),
         "debug" => debug_moves(chessboard),
@@ -230,7 +230,10 @@ fn quit() {
     panic!("Unknown Command!");
 }
 
-fn init_new_game() {
+fn init_new_game(once_played_positions: &mut Vec<u64>, twice_played_positions: &mut Vec<u64>) {
+    // cleanup
+    once_played_positions.clear();
+    twice_played_positions.clear();
     println!("isready");
 }
 fn send_is_ready() {
