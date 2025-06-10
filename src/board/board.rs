@@ -282,10 +282,10 @@ impl Chessboard {
             if possible_en_passant_field - 8 != new_field {
                 return false;
             }
-            if figure_can_move_left(&old_field) && possible_en_passant_field - 1 == old_field {
+            if figure_can_move_left(&old_field) && possible_en_passant_field + 1 == old_field {
                 return true;
             }
-            if figure_can_move_right(&old_field) && possible_en_passant_field + 1 == old_field {
+            if figure_can_move_right(&old_field) && possible_en_passant_field - 1 == old_field {
                 return true;
             }
         }
@@ -789,6 +789,26 @@ mod tests {
         };
         let count = count_moves(&board, 4);
         assert_eq!(197281, count);
+    }
+
+    #[test]
+    fn test_black_en_passant_on_a_file(){
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(String::from("8/8/8/8/p6k/8/1P5K/8 w - - 0 1"));
+        board.move_figure(9, 25, None);
+        
+        let is_black_en_passant = board.is_en_passant_black(24, 17);
+        assert_eq!(true, is_black_en_passant)
+    }
+
+        #[test]
+    fn test_black_en_passant_on_h_file(){
+        let mut board = Chessboard{..Default::default()};
+        board.create_position_from_input_string(String::from("8/k2K4/8/8/7p/8/6P1/8 w - - 0 1"));
+        board.move_figure(14, 30, None);
+        
+        let is_black_en_passant = board.is_en_passant_black(31, 22);
+        assert_eq!(true, is_black_en_passant)
     }
 
     #[test]
