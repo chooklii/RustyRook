@@ -1,6 +1,6 @@
-use std::usize;
+use std::{u64, usize};
 
-use crate::{board::board::Chessboard, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, DOUPLICATE_PAWN_TARIFF};
+use crate::{board::{board::Chessboard}, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, DOUPLICATE_PAWN_TARIFF, PASSED_PAWN_ROWS};
 
 // a1 to h8
 const PAWN_RATE_KING_CENTER: [f32; 64] = [
@@ -48,7 +48,7 @@ const KNIGHT_RATE: [f32; 64] = [
 ];
 
 const ROOK_RATE: [f32; 64] = [
-    5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
+    5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
@@ -81,7 +81,7 @@ const QUEEN_RATE: [f32; 64] = [
 ];
 
 const EARLY_GAME_KING_RATE: [f32; 64] = [
-    1.0, 1.3, 1.1, 1.0, 1.0, 1.1, 1.3, 1.2,
+    1.1, 1.2, 1.4, 1.0, 1.0, 1.1, 1.4, 1.2,
     0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
@@ -125,10 +125,14 @@ fn check_where_king_is_located(king_position: usize, is_black_king: bool) -> Kin
     }
 }
 
-fn get_king_weight(position: usize, pieces: f32) -> f32 {
+fn get_king_weight(position: usize, color: Color, pieces: f32) -> f32 {
     // if there is less then 10 pieces value left activate king
     if pieces >=15.0{
-        return EARLY_GAME_KING_RATE[position];
+        let adjusted_position = match color{
+            Color::White => position,
+            Color::Black => 63 - position    
+        };
+        return EARLY_GAME_KING_RATE[adjusted_position];
     }
     LATE_GAME_KING_RATE[position]
 }
@@ -178,7 +182,7 @@ fn get_position_weight(board: &Chessboard, color: Color, king_position: &KingPos
     board.get_pieces(color, Piece::Bishop).iterate_board(|position| score+=get_bishop_weight(position, board, color, king_usize));
     board.get_pieces(color, Piece::Rook).iterate_board(|position| score+=get_rook_weight(position, board, king_usize));
     board.get_pieces(color, Piece::Queen).iterate_board(|position| score+=get_queen_weight(position, board, king_usize));
-    score+=get_king_weight(king_usize, pieces);
+    score+=get_king_weight(king_usize, color, pieces);
     score
 }
 
@@ -241,6 +245,7 @@ fn evaluate(board: &Chessboard) -> f32 {
 
     let white_pieces_position_value = get_position_weight(board, Color::White, &white_king_position, black_pieces_value, white_king_usize);
     let black_pieces_position_value = get_position_weight(board, Color::Black, &black_king_position, white_pieces_value, black_king_usize);
+
     // in the endgame push opponent king to the edge of the board
     let white_opponent_king_bonus = get_opponent_king_bonus(black_pieces_value, &black_king_usize);
     let black_opponent_king_bonus = get_opponent_king_bonus(white_pieces_value, &white_king_usize);
@@ -248,8 +253,150 @@ fn evaluate(board: &Chessboard) -> f32 {
     let white_douplicate_pawn_tariff = get_douplicate_pawn_tariff(board, Color::White);
     let black_douplicate_pawn_tariff = get_douplicate_pawn_tariff(board, Color::Black);   
 
-    let white_value = white_pieces_value + white_pieces_position_value + white_opponent_king_bonus - white_douplicate_pawn_tariff;
-    let black_value = black_pieces_value + black_pieces_position_value + black_opponent_king_bonus - black_douplicate_pawn_tariff;
+    // give extra bonus to passed pawns
+    let white_passed_pawn_value = get_passed_pawn_bonus_white(board);
+    let black_passed_pawn_value = get_passed_pawn_bonus_black(board);
+
+    let white_value = white_pieces_value 
+                            + white_pieces_position_value 
+                            + white_opponent_king_bonus 
+                            + white_passed_pawn_value 
+                            - white_douplicate_pawn_tariff;
+
+    let black_value = black_pieces_value 
+                            + black_pieces_position_value 
+                            + black_opponent_king_bonus 
+                            + black_passed_pawn_value 
+                            - black_douplicate_pawn_tariff;
 
     white_value - black_value
+}
+
+fn get_passed_pawn_bonus_white(board: &Chessboard) -> f32{
+    let mut bonus = 0.0;
+
+    let white_pawns = board.get_pieces(Color::White, Piece::Pawn);
+    white_pawns.iterate_board(|pawn_position| {
+        let (column, row) = get_column_and_row_from_position(pawn_position);
+        // get all fields where opponent pawns can prevent this pawn from beeing a passed one
+        let relevant_columns = u64::MAX << 8*column;
+        let relevant_rows = PASSED_PAWN_ROWS[row-1];
+
+        let blockers =  relevant_columns & relevant_rows.board & board.get_pieces(Color::Black, Piece::Pawn).board;
+        // no opponent pawn on these fields -> we got a passed pawn!
+        if blockers == 0{
+            // the higher up the pawn - the better!
+            bonus += 0.3 * column as f32
+        }
+    });
+
+    bonus
+}
+
+fn get_passed_pawn_bonus_black(board: &Chessboard) -> f32{
+    let mut bonus = 0.0;
+
+    let white_pawns = board.get_pieces(Color::Black, Piece::Pawn);
+    white_pawns.iterate_board(|pawn_position| {
+        let (column, row) = get_column_and_row_from_position(pawn_position);
+        // get all fields where opponent pawns can prevent this pawn from beeing a passed one
+        let relevant_columns = u64::MAX >> 8*(9-column);
+        let relevant_rows = PASSED_PAWN_ROWS[row-1];
+
+        let blockers =  relevant_columns & relevant_rows.board & board.get_pieces(Color::White, Piece::Pawn).board;
+        // no opponent pawn on these fields -> we got a passed pawn!
+        if blockers == 0{
+            // the higher up the pawn - the better!
+            bonus += 0.3 * (9-column) as f32
+        }
+    });
+
+    bonus
+}
+
+
+// both starting at 1 and ending at 8
+fn get_column_and_row_from_position(position: usize) -> (usize, usize){
+    let column = position / 8 +1 ;
+    let row = position % 8 +1;
+    (column, row)
+}
+
+#[cfg(test)]
+
+mod tests{
+    use crate::{board::board::Chessboard, evaluation::{get_column_and_row_from_position, get_passed_pawn_bonus_black, get_passed_pawn_bonus_white}};
+
+    #[test]
+    fn test_column_and_row_finder(){
+        let (column, row) = get_column_and_row_from_position(0);
+        assert_eq!(1, column);
+        assert_eq!(1, row);
+
+        let (column, row) = get_column_and_row_from_position(27);
+        assert_eq!(4, column);
+        assert_eq!(4, row);
+
+        let (column, row) = get_column_and_row_from_position(22);
+        assert_eq!(3, column);
+        assert_eq!(7, row);
+
+        let (column, row) = get_column_and_row_from_position(63);
+        assert_eq!(8, column);
+        assert_eq!(8, row);
+
+        let (column, row) = get_column_and_row_from_position(43);
+        assert_eq!(6, column);
+        assert_eq!(4, row);
+    }
+
+    #[test]
+    fn test_white_passed_pawn(){
+        let mut board = Chessboard{..Default::default()};
+
+        // three passed pawns - all at 2nd rank
+        board.create_position_from_input_string(String::from("k7/8/8/8/8/8/1P1P1P2/K7 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_white(&board);
+        assert_eq!(1.8, (bonus * 10.0).round() / 10.0);
+
+        // now two of them are blocked by a black pawn
+        board.create_position_from_input_string(String::from("k7/2p5/8/8/8/8/1P1P1P2/K7 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_white(&board);
+        assert_eq!(0.6, bonus);
+
+        // only one is blocked and pawn on a-row should not be effected by opponent pawn on h
+        board.create_position_from_input_string(String::from("k7/3p3p/8/8/8/8/P2P1P2/K7 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_white(&board);
+        assert_eq!(1.2, bonus);
+
+        // same with h not effected by a 
+        board.create_position_from_input_string(String::from("k7/p2p4/8/8/8/8/P2P3P/K7 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_white(&board);
+        assert_eq!(0.6, bonus);
+
+        // pawn is one field from promotion!
+        board.create_position_from_input_string(String::from("8/1p1p2pP/8/1P1P4/8/K2k4/8/8 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_white(&board);
+        assert_eq!(2.1, (bonus * 10.0).round() / 10.0)
+    }
+
+    #[test]
+    fn test_black_passed_pawn(){
+        let mut board = Chessboard{..Default::default()};
+
+        // one passed pawn on 7th rank
+        board.create_position_from_input_string(String::from("8/1p1p2pP/8/1P1P4/8/K2k4/8/8 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_black(&board);
+        assert_eq!(0.6, bonus);
+
+        // one passed pawn  - but on 3rd rank!
+        board.create_position_from_input_string(String::from("8/1p1p3P/8/1P1P4/8/K2k2p1/8/8 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_black(&board);
+        assert_eq!(1.8, (bonus * 10.0).round() / 10.0);
+
+        // pawn on A not effected by pawn on H
+        board.create_position_from_input_string(String::from("8/8/p1pp4/2PP3P/8/K2k4/8/8 w - - 0 1"));
+        let bonus = get_passed_pawn_bonus_black(&board);
+        assert_eq!(0.9, (bonus * 10.0).round() / 10.0);
+    }
 }

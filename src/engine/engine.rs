@@ -70,10 +70,10 @@ pub fn search_for_best_move(
     send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
 }
 
-fn lost_game(depth: u8) -> MoveWithRating {
+fn lost_game(depth_to_end: u8) -> MoveWithRating {
     MoveWithRating {
         // m8 in 2 > m8 in 5
-        rating: -3000.0 + depth as f32,
+        rating: -3000.0 - depth_to_end as f32,
         ..Default::default()
     }
 }
@@ -288,7 +288,7 @@ fn calculate(
     let mut best_move_rating = init_best_move(board, calculate_all_moves);
     let (valid_moves, is_in_check) = get_valid_moves_in_position(board, calculate_all_moves);
     if is_in_check && valid_moves.is_empty() {
-        return lost_game(depth);
+        return lost_game(depth_to_end);
     } else if calculate_all_moves && valid_moves.is_empty() && !is_in_check {
         return draw();
     } else if valid_moves.is_empty() && !is_in_check {

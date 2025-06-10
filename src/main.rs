@@ -1,5 +1,5 @@
 
-use crate::engine::transposition::zobrist::{get_transposition_figure_random_numbers,get_transposition_en_passant_numbers};
+use crate::{engine::transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}, helper::moves_by_field::get_passed_pawn_rows};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
 use dashmap::DashMap;
@@ -73,6 +73,9 @@ lazy_static! {
     static ref DOUPLICATE_PAWN_TARIFF: [Bitboard; 8] = {
         get_douplicate_pawn_boards()
     };
+    static ref PASSED_PAWN_ROWS: [Bitboard; 8] = {
+        get_passed_pawn_rows()
+    };
     // static u64 to calculate zobrist hash for each color
     static ref ZOBRIST_FIGURE_NUMBERS: [[[u64; 64];6];2] = {
         get_transposition_figure_random_numbers()
@@ -117,8 +120,8 @@ fn map_input_to_action(
         "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
         "go" => make_move(commands, chessboard, twice_played_positions),
         "debug" => debug_moves(chessboard),
-        "quit" => quit(),
-        _ => quit(),
+        "quit" => quit(String::from("Ending Game")),
+        _ => quit(String::from("Unknown Command!")),
     }
 }
 
@@ -201,9 +204,9 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
         user_time +=increment;
     }
     
-    if user_time > 5000{
-        // max take 5s, so we dont calculate forever
-        return 5000 
+    if user_time > 8000{
+        // max take 8s, so we dont calculate forever
+        return 8000 
     }
     if user_time < 1000{
         // min 1s
@@ -226,8 +229,8 @@ fn get_value_from_commands(commands:  &Vec<&str>, key: &str) -> Option<u64>{
     None
 }
 
-fn quit() {
-    panic!("Unknown Command!");
+fn quit(message: String) {
+    panic!("{}", message);
 }
 
 fn init_new_game(once_played_positions: &mut Vec<u64>, twice_played_positions: &mut Vec<u64>) {
@@ -252,6 +255,7 @@ fn init_static_values(){
     let _ = PAWN_THREATS.first();
     let _ = PAWN_PROMOTION_FIELDS.field_is_used(0);
     let _ = DOUPLICATE_PAWN_TARIFF.first();
+    let _ = PASSED_PAWN_ROWS.first();
     let _ = ZOBRIST_FIGURE_NUMBERS.first();
     // positions are based on magic and impl. init magics
     let _ = BISHOP_MAGIC_POSITIONS[0];

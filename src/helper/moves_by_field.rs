@@ -177,6 +177,28 @@ pub fn get_douplicate_pawn_boards() -> [Bitboard; 8]{
     fields
 }
 
+// relevant rows for possible passed pawns (a -> a,b, c -> b,c,d)
+pub fn get_passed_pawn_rows() -> [Bitboard; 8]{
+    let mut fields = [Bitboard::new(); 8];
+
+    for column in 0..8 {
+        for row in 0..8 { 
+            let position: usize = column *8 + row;
+
+            fields[row].set_field(position);
+            // to the left
+            if row != 0{
+                fields[row -1].set_field(position);
+            }
+            // to the right
+            if row != 7{
+                fields[row +1].set_field(position);
+            }
+        }
+    }
+    fields
+}
+
 
 pub fn get_pawn_takes_for_field() -> [[Bitboard; 64];2] {
     let mut moves  = [[Bitboard::new(); 64],[Bitboard::new(); 64]];
