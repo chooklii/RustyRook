@@ -1,7 +1,7 @@
 # RustyRook
 Chess Engine written in Rust
 
-Implements UCI Chess Protocol
+This Engine has no UI - It implements the UCI Chess Protocol. Use the [Lichess Bot](https://lichess.org/@/RustyRookChessBot) or any other Chess Software to play against it. 
 
 use 
 ```
