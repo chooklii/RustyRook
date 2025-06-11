@@ -133,7 +133,6 @@ fn calculate_root_level(
             now.elapsed().unwrap_or(Duration::new(0, 0)).as_millis(),
             (received.rating * 100.0).round()
         );
-        println!("Recieved at Depth {} {:?}", depth, received);
         best_move = received;
     }
     (best_move, depth)

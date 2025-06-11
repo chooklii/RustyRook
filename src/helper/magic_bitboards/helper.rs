@@ -1,6 +1,6 @@
 use rustc_hash::FxHashMap;
 
-use crate::{board::bitboard::Bitboard, helper::moves_by_field::MoveInEveryDirection};
+use crate::{board::bitboard::Bitboard, evaluation::KingPosition, figures::color::Color, helper::moves_by_field::MoveInEveryDirection};
 
 use super::magic_bitboard::MagicBitboard;
 
@@ -25,6 +25,29 @@ fn itter_direction(
             return
         }
     }
+}
+
+// for each color and each position of the king
+pub fn init_king_safety_bitboards() -> [[Bitboard; 3]; 2]{
+    let mut return_value = [[Bitboard::new(), Bitboard::new(), Bitboard::new()], [Bitboard::new(), Bitboard::new(), Bitboard::new()]];
+
+    return_value[Color::White as usize][KingPosition::LEFT as usize].set_field(8);
+    return_value[Color::White as usize][KingPosition::LEFT as usize].set_field(9);
+    return_value[Color::White as usize][KingPosition::LEFT as usize].set_field(10);
+
+    return_value[Color::White as usize][KingPosition::RIGHT as usize].set_field(13);
+    return_value[Color::White as usize][KingPosition::RIGHT as usize].set_field(14);
+    return_value[Color::White as usize][KingPosition::RIGHT as usize].set_field(15);
+
+    return_value[Color::Black as usize][KingPosition::LEFT as usize].set_field(53);
+    return_value[Color::Black as usize][KingPosition::LEFT as usize].set_field(54);
+    return_value[Color::Black as usize][KingPosition::LEFT as usize].set_field(55);
+
+    return_value[Color::Black as usize][KingPosition::RIGHT as usize].set_field(48);
+    return_value[Color::Black as usize][KingPosition::RIGHT as usize].set_field(49);
+    return_value[Color::Black as usize][KingPosition::RIGHT as usize].set_field(50);
+
+    return_value
 }
 
 pub fn get_valid_moves_for_position_with_given_blockers(

@@ -1,5 +1,5 @@
 
-use crate::{engine::transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}, helper::moves_by_field::get_passed_pawn_rows};
+use crate::{engine::transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows}};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
 use dashmap::DashMap;
@@ -57,6 +57,10 @@ lazy_static! {
     // magic bitboards split into magic and possible moves for magic
     static ref BISHOP_MAGIC_BITBOARDS: [MagicBitboard; 64] = {
         init_bishop_magic_arrays()
+    };
+    // relevant fields for king safety 
+    static ref KING_SAFETY_FIELDS: [[Bitboard; 3]; 2] = {
+        init_king_safety_bitboards()
     };
     static ref BISHOP_MAGIC_POSITIONS: [Vec<Bitboard>; 64] = {
         init_bishop_magic_moves_array()
@@ -257,6 +261,7 @@ fn init_static_values(){
     let _ = DOUPLICATE_PAWN_TARIFF.first();
     let _ = PASSED_PAWN_ROWS.first();
     let _ = ZOBRIST_FIGURE_NUMBERS.first();
+    let _ = KING_SAFETY_FIELDS.first();
     // positions are based on magic and impl. init magics
     let _ = BISHOP_MAGIC_POSITIONS[0];
     let _ = ROOK_MAGIC_POSITIONS[0];

@@ -498,6 +498,14 @@ impl Chessboard {
         }
     }
 
+    // moves king instead of knight
+    // r3k1nr/pb3ppp/8/8/2pB1P2/2N5/PP5P/R4RK1 b kq - 0 20
+
+
+    // illegal move 
+    // 7k/5R2/5N2/6p1/2pB2K1/7r/PP6/8 b - - 2 40
+    // 2b2br1/p1k1p2p/6p1/4Np2/1P1p1PPQ/8/P6P/1K6 b - - 6 31
+
     pub fn set_to_default(&mut self) {
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

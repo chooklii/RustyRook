@@ -1,17 +1,17 @@
 use std::{u64, usize};
 
-use crate::{board::{board::Chessboard}, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, DOUPLICATE_PAWN_TARIFF, PASSED_PAWN_ROWS};
+use crate::{board::{bitboard::Bitboard, board::Chessboard}, figures::{color::Color, piece::Piece, sliding_moves::{get_fields_threatened_by_bishop, get_fields_threatened_by_queen, get_fields_threatened_by_rook}}, DOUPLICATE_PAWN_TARIFF, KING_SAFETY_FIELDS, PASSED_PAWN_ROWS};
 
 // a1 to h8
 const PAWN_RATE_KING_CENTER: [f32; 64] = [
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
     0.8, 0.8, 1.0, 1.1, 1.1, 1.0, 0.8, 0.8, 
-    0.9, 0.8, 1.2, 1.3, 1.3, 1.2, 0.8, 0.9, 
-    1.0, 1.0, 1.2, 1.3, 1.3, 1.2, 1.0, 1.0, 
-    1.0, 1.0, 1.1, 1.1, 1.1, 1.1, 1.0, 1.0, 
+    0.9, 0.8, 1.1, 1.3, 1.3, 1.1, 0.8, 0.9, 
+    1.0, 1.0, 1.1, 1.3, 1.3, 1.1, 1.0, 1.0, 
+    1.0, 1.0, 1.1, 1.2, 1.2, 1.1, 1.0, 1.0, 
     2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 
-    9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 ];
 
 const PAWN_RATE_KING_LEFT: [f32; 64] = [
@@ -22,33 +22,33 @@ const PAWN_RATE_KING_LEFT: [f32; 64] = [
     1.0, 1.0, 1.2, 1.3, 1.3, 1.3, 1.3, 1.3, 
     1.0, 1.0, 1.1, 1.1, 1.1, 1.3, 1.3, 1.3, 
     2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 
-    9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 ];
 
 const PAWN_RATE_KING_RIGHT: [f32; 64] = [
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
     1.1, 1.1, 1.1, 1.1, 1.1, 0.7, 0.7, 0.7, 
-    1.3, 1.3, 1.3, 1.3, 1.3, 1.7, 0.7, 0.7, 
+    1.3, 1.3, 1.3, 1.3, 1.3, 0.7, 0.7, 0.7, 
     1.3, 1.3, 1.3, 1.3, 1.3, 1.2, 1.0, 1.0, 
     1.3, 1.3, 1.3, 1.1, 1.1, 1.1, 1.0, 1.0, 
-    2.5, 2.5, 2.5, 2.0, 2.0, 2.0, 2.0, 2.0, 
-    9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 
+    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 ];
 
 const KNIGHT_RATE: [f32; 64] = [
-    1.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 1.5, 
+    1.8, 2.9, 2.0, 2.0, 2.0, 2.0, 2.9, 1.8, 
     2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 
-    2.0, 3.1, 3.2, 3.2, 3.2, 3.2, 3.1, 2.0, 
-    2.0, 3.0, 3.5, 3.5, 3.5, 3.5, 3.0, 2.0, 
-    2.0, 3.0, 3.5, 3.5, 3.5, 3.5, 3.0, 2.0, 
-    2.0, 3.1, 3.2, 3.2, 3.2, 3.2, 3.1, 2.0, 
+    2.0, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 2.0, 
+    2.0, 3.0, 3.2, 3.2, 3.2, 3.2, 3.0, 2.0, 
+    2.0, 3.0, 3.2, 3.2, 3.2, 3.2, 3.0, 2.0, 
+    2.0, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 2.0, 
     2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 
-    1.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 1.5,
+    1.8, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.8,
 ];
 
 const ROOK_RATE: [f32; 64] = [
-    5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 
+    4.95,5.0, 5.05,5.1, 5.1, 5.05,5.0, 4.95, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
@@ -59,29 +59,30 @@ const ROOK_RATE: [f32; 64] = [
 ];
 
 const BISHOP_RATE: [f32; 64] = [
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 
     3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 
+    3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.1, 3.0, 
+    3.0, 3.0, 3.1, 3.0, 3.0, 3.1, 3.0, 3.0, 
+    3.0, 3.0, 3.0, 3.1, 3.1, 3.0, 3.0, 3.0, 
+    3.0, 3.0, 3.0, 3.1, 3.1, 3.0, 3.0, 3.0, 
+    3.0, 3.0, 3.1, 3.0, 3.0, 3.1, 3.0, 3.0, 
+    3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.1, 3.0, 
     3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 
-    3.0, 3.2, 3.0, 3.0, 3.0, 3.0, 3.2, 3.0, 
-    3.0, 3.0, 3.2, 3.0, 3.0, 3.2, 3.0, 3.0, 
-    3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 
-    3.0, 3.2, 3.0, 3.0, 3.0, 3.0, 3.2, 3.0, 
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
 ];
 
 const QUEEN_RATE: [f32; 64] = [
-    8.6, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 8.6, 
-    8.6, 9.0, 9.2, 9.2, 9.2, 9.2, 9.0, 8.6, 
-    8.7, 9.0, 9.2, 9.3, 9.3, 9.2, 9.0, 8.7, 
-    8.7, 9.0, 9.2, 9.3, 9.3, 9.2, 9.0, 8.7, 
-    8.7, 9.0, 9.2, 9.3, 9.3, 9.2, 9.0, 8.7, 
-    8.7, 9.0, 9.2, 9.3, 9.3, 9.2, 9.0, 8.7, 
-    8.6, 9.0, 9.2, 9.2, 9.2, 9.2, 9.0, 8.6, 
-    8.6, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 8.6,
+    8.7, 8.8, 9.0, 9.0, 9.0, 9.0, 8.8, 8.7, 
+    8.8, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.8, 
+    8.9, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.9, 
+    8.9, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.9, 
+    8.9, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.9, 
+    8.9, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.9, 
+    8.8, 9.0, 9.1, 9.1, 9.1, 9.1, 9.0, 8.8, 
+    8.7, 8.8, 9.0, 9.0, 9.0, 9.0, 8.8, 8.7,
 ];
 
-const EARLY_GAME_KING_RATE: [f32; 64] = [
-    1.1, 1.2, 1.4, 1.0, 1.0, 1.1, 1.4, 1.2,
+// white and black is different rate due to king castle (and starting on other square)
+const EARLY_GAME_KING_RATE_WHITE: [f32; 64] = [
+    1.2, 1.3, 1.3, 1.0, 1.0, 1.1, 1.3, 1.2,
     0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
@@ -89,6 +90,18 @@ const EARLY_GAME_KING_RATE: [f32; 64] = [
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
     0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+];
+
+// from back pov (so reverse)
+const EARLY_GAME_KING_RATE_BLACK: [f32; 64] = [
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 
+    0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,
+    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,  
+    1.2, 1.3, 1.3, 1.0, 1.0, 1.1, 1.3, 1.2,
 ];
 
 const LATE_GAME_KING_RATE: [f32; 64] = [
@@ -103,7 +116,7 @@ const LATE_GAME_KING_RATE: [f32; 64] = [
 ];
 
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy)]
-enum KingPosition{
+pub enum KingPosition{
     CENTER,
     LEFT,
     RIGHT
@@ -125,28 +138,27 @@ fn check_where_king_is_located(king_position: usize, is_black_king: bool) -> Kin
     }
 }
 
-fn get_king_weight(position: usize, color: Color, pieces: f32) -> f32 {
-    // if there is less then 10 pieces value left activate king
-    if pieces >=15.0{
-        let adjusted_position = match color{
-            Color::White => position,
-            Color::Black => 63 - position    
-        };
-        return EARLY_GAME_KING_RATE[adjusted_position];
+fn get_king_weight(position: usize, king_position: KingPosition, color: Color, own_positions: &Bitboard, pieces: f32) -> f32 {
+    // if there is less then 15 pieces value left activate king
+    if pieces <=15.0{
+        return LATE_GAME_KING_RATE[position];
     }
-    LATE_GAME_KING_RATE[position]
+    // add a little bonus for all used fields in front of the king -> king safety!
+    let fields = KING_SAFETY_FIELDS[color as usize][king_position as usize].board & own_positions.board;
+
+    let safety_bonus = fields.count_ones() as f32 * 0.07;
+    match color{
+        Color::White => safety_bonus + EARLY_GAME_KING_RATE_WHITE[position],
+        Color::Black => safety_bonus + EARLY_GAME_KING_RATE_BLACK[position]
+    }
 }
 
-fn get_pawn_rate(position: usize, color: Color, king_position: &KingPosition) -> f32{
-    let adjusted_position = match color{
-        Color::White => position,
-        Color::Black => 63 - position    
-    };
+fn get_pawn_rate(position: usize, king_position: &KingPosition) -> f32{
     // push pawns on side where out king is not!
     match king_position{
-        KingPosition::CENTER => PAWN_RATE_KING_CENTER[adjusted_position],
-        KingPosition::LEFT => PAWN_RATE_KING_LEFT[adjusted_position],
-        KingPosition::RIGHT => PAWN_RATE_KING_RIGHT[adjusted_position]
+        KingPosition::CENTER => PAWN_RATE_KING_CENTER[position],
+        KingPosition::LEFT => PAWN_RATE_KING_LEFT[position],
+        KingPosition::RIGHT => PAWN_RATE_KING_RIGHT[position]
     }
 }
 
@@ -157,13 +169,9 @@ fn get_rook_weight(position: usize, board: &Chessboard, king_position: usize) ->
     threat_bonus
 }
 
-fn get_bishop_weight( position: usize, board: &Chessboard, color: Color, king_position: usize) -> f32{
-    let adjusted_position = match color{
-        Color::White => position,
-        Color::Black => 63 - position    
-    };
+fn get_bishop_weight( position: usize, board: &Chessboard, king_position: usize) -> f32{
     let threatened_fields = get_fields_threatened_by_bishop(board, position, king_position);
-    let mut weight = BISHOP_RATE[adjusted_position];
+    let mut weight = BISHOP_RATE[position];
     weight += 0.02*threatened_fields.board.count_ones() as f32;
     weight
 }
@@ -175,15 +183,32 @@ fn get_queen_weight(position: usize, board: &Chessboard, king_position: usize) -
     weight
 }
 
-fn get_position_weight(board: &Chessboard, color: Color, king_position: &KingPosition, pieces: f32, king_usize: usize) -> f32 {
+fn get_position_weight(board: &Chessboard, color: Color, king_position: KingPosition, pieces: f32, king_usize: usize) -> f32 {
     let mut score: f32 = 0.0;
-    board.get_pieces(color, Piece::Pawn).iterate_board(|position| score+=get_pawn_rate(position, color, king_position));
-    board.get_pieces(color, Piece::Knight).iterate_board(|position| score += KNIGHT_RATE[position]);
-    board.get_pieces(color, Piece::Bishop).iterate_board(|position| score+=get_bishop_weight(position, board, color, king_usize));
-    board.get_pieces(color, Piece::Rook).iterate_board(|position| score+=get_rook_weight(position, board, king_usize));
-    board.get_pieces(color, Piece::Queen).iterate_board(|position| score+=get_queen_weight(position, board, king_usize));
-    score+=get_king_weight(king_usize, color, pieces);
+    board.get_pieces(color, Piece::Pawn).iterate_board(|position| 
+        score+=get_pawn_rate(get_position(position, color), &king_position));
+
+    board.get_pieces(color, Piece::Knight).iterate_board(|position| 
+        score += KNIGHT_RATE[get_position(position, color)]);
+
+    board.get_pieces(color, Piece::Bishop).iterate_board(|position| 
+        score+=get_bishop_weight(get_position(position, color), board, king_usize));
+
+    board.get_pieces(color, Piece::Rook).iterate_board(|position| 
+        score+=get_rook_weight(get_position(position, color), board, king_usize));
+
+    board.get_pieces(color, Piece::Queen).iterate_board(|position| 
+        score+=get_queen_weight(get_position(position, color), board, king_usize));
+
+    score+=get_king_weight(king_usize, king_position, color,board.get_positions_by_current_player(), pieces);
     score
+}
+
+fn get_position(position: usize, color: Color) -> usize{
+    match color{
+            Color::White => position,
+            Color::Black => 63 - position    
+        }
 }
 
 fn get_opponent_king_bonus(piece_value: f32, king_position: &usize) -> f32{
@@ -243,8 +268,8 @@ fn evaluate(board: &Chessboard) -> f32 {
     let white_king_position = check_where_king_is_located(white_king_usize, false);
     let black_king_position = check_where_king_is_located(black_king_usize, true);
 
-    let white_pieces_position_value = get_position_weight(board, Color::White, &white_king_position, black_pieces_value, white_king_usize);
-    let black_pieces_position_value = get_position_weight(board, Color::Black, &black_king_position, white_pieces_value, black_king_usize);
+    let white_pieces_position_value = get_position_weight(board, Color::White, white_king_position, black_pieces_value, white_king_usize);
+    let black_pieces_position_value = get_position_weight(board, Color::Black, black_king_position, white_pieces_value, black_king_usize);
 
     // in the endgame push opponent king to the edge of the board
     let white_opponent_king_bonus = get_opponent_king_bonus(black_pieces_value, &black_king_usize);
