@@ -21,6 +21,8 @@ use super::{
     transposition::transposition::Transposition,
 };
 
+const PLACEHOLDER_RATING: f32 = 5000.0;
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PossibleMove {
     pub from: usize,
@@ -89,7 +91,7 @@ fn init_best_move(board: &Chessboard, calculate_all_moves: bool) -> f32 {
     if !calculate_all_moves {
         return evaluate_for_own_color(board);
     }
-    -3001.0
+    -PLACEHOLDER_RATING
 }
 
 fn calculate_root_level(
@@ -102,7 +104,7 @@ fn calculate_root_level(
     let now = SystemTime::now();
     let timer = Arc::new(AtomicBool::new(false));
     let mut depth = 0;
-    let best_move_rating = -3001.0;
+    let best_move_rating = -PLACEHOLDER_RATING;
     let mut best_move: MoveWithRating = MoveWithRating {
         rating: best_move_rating,
         ..Default::default()
@@ -146,7 +148,7 @@ fn iterative_deepening(
     timer_clone: Arc<AtomicBool>,
 ) {
     for max_depth in 2..=100 {
-        let beta = 5000.0;
+        let beta = PLACEHOLDER_RATING;
         if timer_clone.load(Ordering::Relaxed) {
             break;
         }
@@ -160,7 +162,7 @@ fn iterative_deepening(
         new_board.move_figure(first_move.from, first_move.to, first_move.promoted_to);
         let first_move_calculation = calculate(
             &new_board,
-            -5000.0,
+            -PLACEHOLDER_RATING,
             beta,
             1,
             max_depth,
