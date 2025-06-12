@@ -6,11 +6,11 @@ use crate::{board::{bitboard::Bitboard, board::Chessboard}, figures::{color::Col
 const PAWN_RATE_KING_CENTER: [f32; 64] = [
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-    0.8, 0.8, 1.0, 1.1, 1.1, 1.0, 0.8, 0.8, 
+    0.8, 0.8, 1.0, 1.2, 1.2, 1.0, 0.8, 0.8, 
     0.9, 0.8, 1.1, 1.3, 1.3, 1.1, 0.8, 0.9, 
     1.0, 1.0, 1.1, 1.3, 1.3, 1.1, 1.0, 1.0, 
     1.0, 1.0, 1.1, 1.2, 1.2, 1.1, 1.0, 1.0, 
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 
+    1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 ];
 
@@ -21,7 +21,7 @@ const PAWN_RATE_KING_LEFT: [f32; 64] = [
     0.7, 0.7, 0.7, 1.3, 1.3, 1.3, 1.3, 1.3, 
     1.0, 1.0, 1.2, 1.3, 1.3, 1.3, 1.3, 1.3, 
     1.0, 1.0, 1.1, 1.1, 1.1, 1.3, 1.3, 1.3, 
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 
+    1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 ];
 
@@ -32,12 +32,12 @@ const PAWN_RATE_KING_RIGHT: [f32; 64] = [
     1.3, 1.3, 1.3, 1.3, 1.3, 0.7, 0.7, 0.7, 
     1.3, 1.3, 1.3, 1.3, 1.3, 1.2, 1.0, 1.0, 
     1.3, 1.3, 1.3, 1.1, 1.1, 1.1, 1.0, 1.0, 
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 
+    1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 ];
 
 const KNIGHT_RATE: [f32; 64] = [
-    1.8, 2.9, 2.0, 2.0, 2.0, 2.0, 2.9, 1.8, 
+    1.8, 2.7, 2.0, 2.0, 2.0, 2.0, 2.7, 1.8, 
     2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 
     2.0, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 2.0, 
     2.0, 3.0, 3.2, 3.2, 3.2, 3.2, 3.0, 2.0, 
@@ -48,7 +48,7 @@ const KNIGHT_RATE: [f32; 64] = [
 ];
 
 const ROOK_RATE: [f32; 64] = [
-    4.95,5.0, 5.05,5.1, 5.1, 5.05,5.0, 4.95, 
+    4.9, 5.0, 5.1, 5.1, 5.1, 5.1, 5.0, 4.9, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
     5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 
@@ -59,14 +59,14 @@ const ROOK_RATE: [f32; 64] = [
 ];
 
 const BISHOP_RATE: [f32; 64] = [
-    3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 
-    3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.1, 3.0, 
-    3.0, 3.0, 3.1, 3.0, 3.0, 3.1, 3.0, 3.0, 
-    3.0, 3.0, 3.0, 3.1, 3.1, 3.0, 3.0, 3.0, 
-    3.0, 3.0, 3.0, 3.1, 3.1, 3.0, 3.0, 3.0, 
-    3.0, 3.0, 3.1, 3.0, 3.0, 3.1, 3.0, 3.0, 
-    3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.1, 3.0, 
-    3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 
+    2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 
+    2.9, 3.2, 3.0, 3.0, 3.0, 3.0, 3.2, 2.9, 
+    2.9, 3.1, 3.2, 3.0, 3.0, 3.2, 3.1, 2.9, 
+    2.9, 3.1, 3.1, 3.2, 3.2, 3.1, 3.1, 2.9, 
+    2.9, 3.1, 3.1, 3.2, 3.2, 3.1, 3.1, 2.9, 
+    2.9, 3.1, 3.2, 3.1, 3.1, 3.2, 3.1, 2.9, 
+    2.9, 3.2, 3.0, 3.0, 3.0, 3.0, 3.2, 2.9, 
+    2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9,
 ];
 
 const QUEEN_RATE: [f32; 64] = [
@@ -107,10 +107,10 @@ const EARLY_GAME_KING_RATE_BLACK: [f32; 64] = [
 const LATE_GAME_KING_RATE: [f32; 64] = [
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
     1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 
-    1.0, 1.1, 1.3, 1.3, 1.3, 1.3, 1.1, 1.0, 
-    1.0, 1.1, 1.3, 1.5, 1.5, 1.3, 1.1, 1.0, 
-    1.0, 1.1, 1.3, 1.5, 1.5, 1.3, 1.1, 1.0, 
-    1.0, 1.1, 1.3, 1.3, 1.3, 1.3, 1.1, 1.0, 
+    1.0, 1.1, 1.2, 1.3, 1.3, 1.2, 1.1, 1.0, 
+    1.0, 1.1, 1.2, 1.3, 1.3, 1.2, 1.1, 1.0, 
+    1.0, 1.1, 1.2, 1.3, 1.3, 1.2, 1.1, 1.0, 
+    1.0, 1.1, 1.2, 1.2, 1.2, 1.2, 1.1, 1.0, 
     1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 
     1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
 ];
@@ -146,7 +146,7 @@ fn get_king_weight(position: usize, king_position: KingPosition, color: Color, o
     // add a little bonus for all used fields in front of the king -> king safety!
     let fields = KING_SAFETY_FIELDS[color as usize][king_position as usize].board & own_positions.board;
 
-    let safety_bonus = fields.count_ones() as f32 * 0.07;
+    let safety_bonus = fields.count_ones() as f32 * 0.05;
     match color{
         Color::White => safety_bonus + EARLY_GAME_KING_RATE_WHITE[position],
         Color::Black => safety_bonus + EARLY_GAME_KING_RATE_BLACK[position]
@@ -162,10 +162,15 @@ fn get_pawn_rate(position: usize, king_position: &KingPosition) -> f32{
     }
 }
 
-fn get_rook_weight(position: usize, board: &Chessboard, king_position: usize) -> f32{
+fn get_rook_weight(position: usize, color: Color, board: &Chessboard, king_position: usize) -> f32{
     let threatened_fields = get_fields_threatened_by_rook(board, position, king_position);
     let mut threat_bonus = ROOK_RATE[position];
     threat_bonus += 0.02 * threatened_fields.board.count_ones() as f32;
+
+    // add extra bonus if rook can capture our other rook (connecting rooks always a good idea)
+    let our_rooks = board.get_pieces(color, Piece::Rook);
+    let connected_rooks = our_rooks.board & threatened_fields.board;
+    threat_bonus += 0.1 * connected_rooks.count_ones() as f32;
     threat_bonus
 }
 
@@ -179,7 +184,7 @@ fn get_bishop_weight( position: usize, board: &Chessboard, king_position: usize)
 fn get_queen_weight(position: usize, board: &Chessboard, king_position: usize) -> f32{
     let threatened_fields = get_fields_threatened_by_queen(board, position, king_position);
     let mut weight = QUEEN_RATE[position];
-    weight += 0.02 * threatened_fields.board.count_ones() as f32;
+    weight += 0.005 * threatened_fields.board.count_ones() as f32;
     weight
 }
 
@@ -195,7 +200,7 @@ fn get_position_weight(board: &Chessboard, color: Color, king_position: KingPosi
         score+=get_bishop_weight(get_position(position, color), board, king_usize));
 
     board.get_pieces(color, Piece::Rook).iterate_board(|position| 
-        score+=get_rook_weight(get_position(position, color), board, king_usize));
+        score+=get_rook_weight(get_position(position, color), color, board, king_usize));
 
     board.get_pieces(color, Piece::Queen).iterate_board(|position| 
         score+=get_queen_weight(get_position(position, color), board, king_usize));
@@ -231,7 +236,7 @@ fn get_douplicate_pawn_tariff(board: &Chessboard, color: Color) -> f32{
         let fields = board.get_pieces(color, Piece::Pawn).board & field.board;
         let used_fields = fields.count_ones();
         if used_fields > 1{
-            tariff += (used_fields-1) as f32 * 0.3
+            tariff += (used_fields-1) as f32 * 0.2
         }
     }
     tariff

@@ -1,5 +1,5 @@
 
-use crate::{engine::transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows}};
+use crate::{engine::{sender::send_move, transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows}};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
 use dashmap::DashMap;
@@ -26,6 +26,7 @@ use helper::{
 use lazy_static::lazy_static;
 use log::info;
 use once_cell::sync::Lazy;
+use rand::seq::IndexedRandom;
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use std::{
@@ -114,15 +115,16 @@ fn map_input_to_action(
     commands: Vec<&str>,
     chessboard: &mut Chessboard,
     once_played_positions: &mut Vec<u64>,
-    twice_played_positions: &mut Vec<u64>
+    twice_played_positions: &mut Vec<u64>,
+    played_moves: &mut u8
 ) {
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(once_played_positions, twice_played_positions),
-        "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
-        "go" => make_move(commands, chessboard, twice_played_positions),
+        "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions, played_moves),
+        "go" => make_move(commands, chessboard, twice_played_positions, *played_moves),
         "debug" => debug_moves(chessboard),
         "quit" => quit(String::from("Ending Game")),
         _ => quit(String::from("Unknown Command!")),
@@ -145,14 +147,17 @@ fn update_board(
     move_vec: Vec<&str>, 
     board: &mut Chessboard,
     once_played_positions: &mut Vec<u64>, 
-    twice_played_positions: &mut Vec<u64>) {
+    twice_played_positions: &mut Vec<u64>,
+    played_moves: &mut u8) {
     // not beautiful - but also not really important for performance
     board.set_to_default();
     once_played_positions.clear();
     twice_played_positions.clear();
+    *played_moves = 0;
     for single_move in move_vec {
         // ignore both for now - should not be needed as ucinewgame resets game
         if single_move != "position" && single_move != "startpos" && single_move != "moves" {
+            *played_moves+=1;
             board.update_position_from_uci_input(single_move);
             
             // performance does not matter for these few moves
@@ -165,10 +170,34 @@ fn update_board(
     }
 }
 
-fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64]) {
+fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64], played_moves: u8) {
+    if played_moves < 2{
+        play_opening(board, played_moves);
+        return;
+    }
     let time_for_move = get_time_for_move(commands, board.current_move);
     let possible_repetition = !twice_played_positions.is_empty();
     search_for_best_move(time_for_move, board, possible_repetition, twice_played_positions);
+}
+
+
+// first move for each color -> position figure in center
+const WHITE_OPENINGS: [(usize, usize); 2] = [(11, 27), (12, 28)];
+fn play_opening(board: &Chessboard, played_moves: u8){
+    // white
+    if played_moves == 0{
+        let mut rng = rand::rng();
+        let (from, to) = WHITE_OPENINGS.choose(&mut rng).unwrap();
+        send_move(*from, *to, None);
+        return;
+    }
+    // black
+    // if opponent played e4 match with e5, else play d5
+    if board.positions.field_is_used(28){
+        send_move(52, 36, None);
+        return;
+    }
+    send_move(51, 35, None);
 }
 
 fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
@@ -188,9 +217,9 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
     }
 
     let given_time_opt = get_value_from_commands(&commands, overall_time_key);
-    // no timelimit -> we take 5s to calculate
+    // no timelimit -> we take 10s to calculate
     if given_time_opt.is_none(){
-        return 5000;
+        return 10000;
     }
     let given_time = given_time_opt.unwrap();
     
@@ -208,9 +237,9 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
         user_time +=increment;
     }
     
-    if user_time > 8000{
-        // max take 8s, so we dont calculate forever
-        return 8000 
+    if user_time > 15000{
+        // max take 15s, so we dont calculate forever
+        return 15000 
     }
     if user_time < 1000{
         // min 1s
@@ -276,11 +305,13 @@ fn parse_input() -> String {
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
     init_static_values();
+    // played moves
+    let mut played_moves: u8 = 0;
     loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions);
+        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions, &mut played_moves);
     }
 }

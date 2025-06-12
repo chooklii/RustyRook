@@ -69,7 +69,7 @@ pub fn search_for_best_move(
         "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
         depth, time_for_move, best_move.rating
     );
-    send_move(&best_move.from, &best_move.to, &best_move.promoted_to);
+    send_move(best_move.from, best_move.to, best_move.promoted_to);
 }
 
 fn lost_game(depth_to_end: u8) -> MoveWithRating {
@@ -351,6 +351,12 @@ fn calculate(
             transposition_flag = Flag::Upperbound;
         } else if best_move_rating >= beta {
             transposition_flag = Flag::Lowerbound;
+        }
+
+        if best_move.from == 0 && best_move.to == 0{
+            // is going to stay here for some time to make sure there is no bug
+            info!("Panic as bestMove is 0 -> 0");
+            panic!("BestMove From and to was 0 - Should not happen!")
         }
 
         TRANSPOSITION_TABLE.insert(

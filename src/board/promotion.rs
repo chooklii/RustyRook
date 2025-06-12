@@ -18,7 +18,7 @@ pub fn convert_promotion_to_figure(promoted_to: Promotion) -> Piece{
     }
 }
 
-pub fn convert_promotion_to_output_string(promoted_to: &Option<Promotion>) -> String{
+pub fn convert_promotion_to_output_string(promoted_to: Option<Promotion>) -> String{
     if promoted_to.is_none(){
         return String::from("");
     }
@@ -26,7 +26,7 @@ pub fn convert_promotion_to_output_string(promoted_to: &Option<Promotion>) -> St
 
     match promotion{
         Promotion::Queen => String::from("Q"),
-        Promotion::Knight => String::from("K"),
+        Promotion::Knight => String::from("N"),
         Promotion::Bishop => String::from("B"),
         Promotion::Rook => String::from("R")
     }

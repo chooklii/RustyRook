@@ -24,7 +24,7 @@ pub struct Chessboard {
     // possible field with figure that can be taken en passant
     pub en_passant: Option<usize>,
     pub castle: Castle,
-    pub zobrist_key: u64
+    pub zobrist_key: u64,
 }
 
 impl Default for Chessboard {
@@ -498,14 +498,8 @@ impl Chessboard {
         }
     }
 
-    // moves king instead of knight
-    // r3k1nr/pb3ppp/8/8/2pB1P2/2N5/PP5P/R4RK1 b kq - 0 20
-
-
-    // illegal move 
-    // 7k/5R2/5N2/6p1/2pB2K1/7r/PP6/8 b - - 2 40
-    // 2b2br1/p1k1p2p/6p1/4Np2/1P1p1PPQ/8/P6P/1K6 b - - 6 31
-
+    // disconnect 
+    // r1b2rk1/3pqpp1/p4Bp1/2p5/1bp1P3/2N5/PPP1N1PP/R2Q1RK1 b - - 0 16
     pub fn set_to_default(&mut self) {
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -899,7 +893,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
         board.create_position_from_input_string(position);
-        make_move(Vec::new(),&board, &mut Vec::new());
+        make_move(Vec::new(),&board, &mut Vec::new(), 20);
         // just count to check if we run into issues with king related zo zobrist
     }
 }
