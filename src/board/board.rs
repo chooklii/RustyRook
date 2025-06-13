@@ -98,7 +98,7 @@ impl Chessboard {
         self.castle = Castle {
             ..Default::default()
         };
-        self.zobrist_key = u64::default()
+        self.zobrist_key = *ZOBRIST_SEED
     }
     fn set_current_move(&mut self) {
         self.zobrist_key ^= *ZOBRIST_CURRENT_MOVE;
@@ -202,6 +202,17 @@ impl Chessboard {
             let promoted_figure = convert_input_string_to_promotion(promoted_to_piece);
             self.move_figure(old_field, new_field, promoted_figure);
         }
+    }
+
+    pub fn get_old_and_new_field_from_uci_input(self, mov: &str) -> Option<(usize, usize)>{
+                if let Some((from_row, from_column, to_row, to_column, _)) =
+            self.validate_string_position(mov)
+        {
+            let old_field = self.get_position_id(from_row, from_column);
+            let new_field = self.get_position_id(to_row, to_column);
+            return Some((old_field, new_field));
+        }
+        None
     }
 
     fn update_figure_to_promoted_one(
@@ -552,12 +563,8 @@ impl Chessboard {
                     let piece = self.get_figure_from_char(c);
                     if c.is_lowercase() {
                         self.add_piece(Color::Black, piece, current_position);
-                        self.zobrist_key ^= ZOBRIST_FIGURE_NUMBERS[Color::Black as usize]
-                            [piece as usize][current_position];
                     } else {
                         self.add_piece(Color::White, piece, current_position);
-                        self.zobrist_key ^= ZOBRIST_FIGURE_NUMBERS[Color::White as usize]
-                            [piece as usize][current_position];
                     }
                     current_position += 1;
                 }
@@ -893,7 +900,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
         board.create_position_from_input_string(position);
-        make_move(Vec::new(),&board, &mut Vec::new(), 20);
+        make_move(Vec::new(),&board, &mut Vec::new());
         // just count to check if we run into issues with king related zo zobrist
     }
 }

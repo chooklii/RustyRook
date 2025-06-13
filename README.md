@@ -42,3 +42,4 @@ Possible Improvements for the Future
 - Refactor En-Passant (Does not effect performance)
 - Improve Move-Ordering
 - Add more Stuff like Killer Moves & Null Moves
+- Improve convertion from UCI-Position to Position usize (a1 -> 0)
