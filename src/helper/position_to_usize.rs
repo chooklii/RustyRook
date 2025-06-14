@@ -61,7 +61,7 @@ fn validate_string_position<'a>(
     ))
 }
 
-fn get_position_id(row: &str, column: u8) -> usize {
+pub fn get_position_id(row: &str, column: u8) -> usize {
     usize::from(get_row_from_string(row) + ((column - 1) * 8) - 1)
 }
 

@@ -1,10 +1,16 @@
-use std::usize;
 use crate::{
+    board::fen::FEN,
     figures::{color::Color, piece::Piece},
-    helper::{movement::{figure_can_move_left, figure_can_move_right}, position_to_usize::get_validated_position_from_input},
+    helper::{
+        movement::{figure_can_move_left, figure_can_move_right},
+        position_to_usize::{
+            get_position_id, get_validated_position_from_input,
+        },
+    },
     ZOBRIST_CASTLE_NUMBERS, ZOBRIST_CURRENT_MOVE, ZOBRIST_EN_PASSANT, ZOBRIST_FIGURE_NUMBERS,
     ZOBRIST_SEED,
 };
+use std::usize;
 
 use super::{
     bitboard::Bitboard,
@@ -52,7 +58,7 @@ impl Default for Chessboard {
             castle: Castle {
                 ..Default::default()
             },
-            zobrist_key: *ZOBRIST_SEED
+            zobrist_key: *ZOBRIST_SEED,
         };
         board.set_to_default();
         board
@@ -63,13 +69,15 @@ impl Chessboard {
     // used by tests
     #[allow(dead_code)]
     pub fn empty(color: Color) -> Chessboard {
-        let mut board = Chessboard{..Default::default()};
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.set_empty();
         board.current_move = color;
         board
     }
 
-    fn set_empty(&mut self){
+    fn set_empty(&mut self) {
         self.positions = Bitboard::new();
         self.used_positions = [Bitboard::new(), Bitboard::new()];
         self.figures = [
@@ -158,8 +166,7 @@ impl Chessboard {
     }
 
     pub fn is_queen_or_bishop(&self, color: Color, position: usize) -> bool {
-        self
-            .get_pieces(color, Piece::Bishop)
+        self.get_pieces(color, Piece::Bishop)
             .field_is_used(position)
             || self.get_pieces(color, Piece::Queen).field_is_used(position)
     }
@@ -190,8 +197,12 @@ impl Chessboard {
     }
 
     pub fn update_position_from_uci_input(&mut self, mov: &str) {
-        if let Some(possible_move) = get_validated_position_from_input(mov){
-            self.move_figure(possible_move.from, possible_move.to, possible_move.promoted_to);
+        if let Some(possible_move) = get_validated_position_from_input(mov) {
+            self.move_figure(
+                possible_move.from,
+                possible_move.to,
+                possible_move.promoted_to,
+            );
         }
     }
 
@@ -245,7 +256,7 @@ impl Chessboard {
         // no possible en passant no need to check any longer
         if self.en_passant.is_none() {
             return;
-        }        
+        }
         // we have none checked en_passant at this point
         let en_passanted_figure = self.en_passant.unwrap();
         // remove possible prev. en passant from zobrist
@@ -451,36 +462,12 @@ impl Chessboard {
     pub fn create_position_from_input_string(&mut self, position: String) {
         self.set_empty();
         let mut current_position: usize = 56;
-        let mut positions_finished = false;
+        let mut current_state = FEN::FIGURES;
+        let mut en_passant_row = ' ';
         for c in position.chars() {
-            if current_position == 8 && c == ' ' && !positions_finished {
-                positions_finished = true;
-            } else if positions_finished {
-                // handle base game state stuff
-                if c == 'w' {
-                    self.current_move = Color::White;
-                }
-                if c == 'b' {
-                    self.zobrist_key ^= *ZOBRIST_CURRENT_MOVE;
-                    self.current_move = Color::Black;
-                }
-                if c == 'K' {
-                    self.castle.white_castle_short = true;
-                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[0];
-                }
-                if c == 'Q' {
-                    self.castle.white_castle_long = true;
-                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[1];
-                }
-                if c == 'k' {
-                    self.castle.black_castle_short = true;
-                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[2];
-                }
-                if c == 'q' {
-                    self.castle.black_castle_long = true;
-                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[3];
-                }
-            } else {
+            if c == ' ' {
+                current_state = current_state.update_to_next_state();
+            } else if current_state == FEN::FIGURES {
                 if c == '/' {
                     current_position -= 16;
                 }
@@ -497,6 +484,40 @@ impl Chessboard {
                         self.add_piece(Color::White, piece, current_position);
                     }
                     current_position += 1;
+                }
+            } else if current_state == FEN::CASTLING {
+                if c == 'K' {
+                    self.castle.white_castle_short = true;
+                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[0];
+                }
+                if c == 'Q' {
+                    self.castle.white_castle_long = true;
+                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[1];
+                }
+                if c == 'k' {
+                    self.castle.black_castle_short = true;
+                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[2];
+                }
+                if c == 'q' {
+                    self.castle.black_castle_long = true;
+                    self.zobrist_key ^= ZOBRIST_CASTLE_NUMBERS[3];
+                }
+            } else if current_state == FEN::MOVE {
+                if c == 'w' {
+                    self.current_move = Color::White;
+                }
+                if c == 'b' {
+                    self.zobrist_key ^= *ZOBRIST_CURRENT_MOVE;
+                    self.current_move = Color::Black;
+                }
+            } else if current_state == FEN::ENPASSANT {
+                if c.is_alphabetic() {
+                    en_passant_row = c;
+                } else if c != '-' {
+                    let possible_en_passanted =
+                        get_position_id(&en_passant_row.to_string(), c.to_digit(10).unwrap() as u8);
+                    self.zobrist_key ^= ZOBRIST_EN_PASSANT[possible_en_passanted];
+                    self.en_passant = Some(possible_en_passanted);
                 }
             }
         }
@@ -519,8 +540,8 @@ impl Chessboard {
 #[cfg(test)]
 mod tests {
 
-    use crate::{engine::{count::count_moves}, make_move};
     use super::*;
+    use crate::{engine::count::count_moves, make_move};
 
     #[test]
     fn short_castle_white() {
@@ -731,21 +752,25 @@ mod tests {
     }
 
     #[test]
-    fn test_black_en_passant_on_a_file(){
-        let mut board = Chessboard{..Default::default()};
+    fn test_black_en_passant_on_a_file() {
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(String::from("8/8/8/8/p6k/8/1P5K/8 w - - 0 1"));
         board.move_figure(9, 25, None);
-        
+
         let is_black_en_passant = board.is_en_passant_black(24, 17);
         assert_eq!(true, is_black_en_passant)
     }
 
-        #[test]
-    fn test_black_en_passant_on_h_file(){
-        let mut board = Chessboard{..Default::default()};
+    #[test]
+    fn test_black_en_passant_on_h_file() {
+        let mut board = Chessboard {
+            ..Default::default()
+        };
         board.create_position_from_input_string(String::from("8/k2K4/8/8/7p/8/6P1/8 w - - 0 1"));
         board.move_figure(14, 30, None);
-        
+
         let is_black_en_passant = board.is_en_passant_black(31, 22);
         assert_eq!(true, is_black_en_passant)
     }
@@ -758,7 +783,7 @@ mod tests {
         let position_2 =
             String::from("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
         board.create_position_from_input_string(position_2);
-        let count = count_moves(&board,4);
+        let count = count_moves(&board, 4);
         assert_eq!(4085603, count);
     }
 
@@ -826,11 +851,12 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_if_zobrist_for_color_works(){
+    fn test_if_zobrist_for_color_works() {
         let mut board = Chessboard::empty(Color::White);
-        let position = String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
+        let position =
+            String::from("r1k2b1r/p1p1pppp/2p1q1b1/3pN3/3P1B2/2Q1PP2/PPP3PP/R3K2R w KQ - 2 13");
         board.create_position_from_input_string(position);
-        make_move(Vec::new(),&board, &mut Vec::new());
+        make_move(Vec::new(), &board, &mut Vec::new());
         // just count to check if we run into issues with king related zo zobrist
     }
 }

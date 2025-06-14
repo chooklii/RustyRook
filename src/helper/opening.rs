@@ -1,7 +1,5 @@
 use std::{
-    fs::File,
-    io::{self, BufRead},
-    path::Path
+    fs::File, io::{self, BufRead}, path::Path
 };
 
 use dashmap::DashMap;

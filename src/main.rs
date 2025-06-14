@@ -260,9 +260,10 @@ fn quit(message: String) {
 }
 
 fn init_new_game(once_played_positions: &mut Vec<u64>, twice_played_positions: &mut Vec<u64>) {
-    // cleanup
+    // cleanup and init of static values
     once_played_positions.clear();
     twice_played_positions.clear();
+    init_static_values();
     println!("isready");
 }
 fn send_is_ready() {
@@ -298,8 +299,6 @@ fn parse_input() -> String {
     // Repetition
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
-    init_static_values();
-
     loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
