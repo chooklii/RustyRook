@@ -1,5 +1,5 @@
 
-use crate::{engine::{engine::PossibleMove, sender::send_move, transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows, opening::{create_opening_map, OpeningMove}}};
+use crate::{engine::{sender::send_move, transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows, opening::{create_opening_map, OpeningMove}}};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
 use dashmap::DashMap;
@@ -173,6 +173,7 @@ fn update_board(
 fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64]) {
     // we are still in our opening
     if OPENINGS.contains_key(&board.zobrist_key){
+        info!("Playing move from Opening Book");
         play_opening(board);
         return;
     }
@@ -275,7 +276,6 @@ fn send_uci_message() {
 }
 
 fn init_static_values(){
-    println!("Starting to init static values");
     let _ = KING_MOVES.first();
     let _ = KNIGHT_MOVES.first();
     let _ = PAWN_THREATS.first();
@@ -288,7 +288,6 @@ fn init_static_values(){
     let _ = BISHOP_MAGIC_POSITIONS[0];
     let _ = ROOK_MAGIC_POSITIONS[0];
     let _ = OPENINGS.get(&1);
-    println!("Finished init static values");
 }
 
 // recieve input from UCI

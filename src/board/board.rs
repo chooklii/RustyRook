@@ -1,10 +1,7 @@
 use std::usize;
-
-use regex::Regex;
-
 use crate::{
     figures::{color::Color, piece::Piece},
-    helper::movement::{figure_can_move_left, figure_can_move_right},
+    helper::{movement::{figure_can_move_left, figure_can_move_right}, position_to_usize::get_validated_position_from_input},
     ZOBRIST_CASTLE_NUMBERS, ZOBRIST_CURRENT_MOVE, ZOBRIST_EN_PASSANT, ZOBRIST_FIGURE_NUMBERS,
     ZOBRIST_SEED,
 };
@@ -12,7 +9,7 @@ use crate::{
 use super::{
     bitboard::Bitboard,
     castle::Castle,
-    promotion::{convert_input_string_to_promotion, convert_promotion_to_figure, Promotion},
+    promotion::{convert_promotion_to_figure, Promotion},
 };
 
 #[derive(Clone, Copy)]
@@ -193,26 +190,9 @@ impl Chessboard {
     }
 
     pub fn update_position_from_uci_input(&mut self, mov: &str) {
-        if let Some((from_row, from_column, to_row, to_column, promoted_to_piece)) =
-            self.validate_string_position(mov)
-        {
-            let old_field = self.get_position_id(from_row, from_column);
-            let new_field = self.get_position_id(to_row, to_column);
-
-            let promoted_figure = convert_input_string_to_promotion(promoted_to_piece);
-            self.move_figure(old_field, new_field, promoted_figure);
+        if let Some(possible_move) = get_validated_position_from_input(mov){
+            self.move_figure(possible_move.from, possible_move.to, possible_move.promoted_to);
         }
-    }
-
-    pub fn get_old_and_new_field_from_uci_input(self, mov: &str) -> Option<(usize, usize)>{
-                if let Some((from_row, from_column, to_row, to_column, _)) =
-            self.validate_string_position(mov)
-        {
-            let old_field = self.get_position_id(from_row, from_column);
-            let new_field = self.get_position_id(to_row, to_column);
-            return Some((old_field, new_field));
-        }
-        None
     }
 
     fn update_figure_to_promoted_one(
@@ -461,56 +441,6 @@ impl Chessboard {
         }
     }
 
-    fn validate_string_position<'a>(
-        &'a self,
-        mov: &'a str,
-    ) -> Option<(&'a str, u8, &'a str, u8, Option<&'a str>)> {
-        // first validate that input is in valid format - then split it into x/y for both positions (new and old)
-        let valid_move_regex =
-            Regex::new(r"\A[abcdefgh][1-8][abcdefgh][1-8]([qrbkQrbK]?)").unwrap();
-        let valid_move = valid_move_regex.captures(mov);
-
-        valid_move.as_ref()?;
-
-        //not beautiful or fast, but not important
-        let valid_move_unpacked = valid_move.unwrap().get(1);
-        let promoted_to_piece = if !valid_move_unpacked.unwrap().is_empty() {
-            Some(valid_move_unpacked.unwrap().as_str())
-        } else {
-            None
-        };
-
-        let split_move_regex = Regex::new(r"((\S)(\S)(\S)(\S))").unwrap();
-        let split_moves = split_move_regex.captures(mov).unwrap();
-        Some((
-            split_moves.get(2).unwrap().as_str(),
-            split_moves.get(3).unwrap().as_str().parse::<u8>().unwrap(),
-            split_moves.get(4).unwrap().as_str(),
-            split_moves.get(5).unwrap().as_str().parse::<u8>().unwrap(),
-            promoted_to_piece,
-        ))
-    }
-
-    fn get_position_id(&self, row: &str, column: u8) -> usize {
-        usize::from(self.get_row_from_string(row) + ((column - 1) * 8) - 1)
-    }
-
-    fn get_row_from_string(&self, row: &str) -> u8 {
-        match row {
-            "a" => 1,
-            "b" => 2,
-            "c" => 3,
-            "d" => 4,
-            "e" => 5,
-            "f" => 6,
-            "g" => 7,
-            "h" => 8,
-            _ => 0,
-        }
-    }
-
-    // disconnect 
-    // r1b2rk1/3pqpp1/p4Bp1/2p5/1bp1P3/2N5/PPP1N1PP/R2Q1RK1 b - - 0 16
     pub fn set_to_default(&mut self) {
         let default_position =
             String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

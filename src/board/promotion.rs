@@ -18,20 +18,6 @@ pub fn convert_promotion_to_figure(promoted_to: Promotion) -> Piece{
     }
 }
 
-pub fn convert_promotion_to_output_string(promoted_to: Option<Promotion>) -> String{
-    if promoted_to.is_none(){
-        return String::from("");
-    }
-    let promotion = promoted_to.unwrap();
-
-    match promotion{
-        Promotion::Queen => String::from("Q"),
-        Promotion::Knight => String::from("N"),
-        Promotion::Bishop => String::from("B"),
-        Promotion::Rook => String::from("R")
-    }
-}
-
 pub fn convert_input_string_to_promotion(promotion_str: Option<&str>) -> Option<Promotion>{
     promotion_str?;
     // null checked prior
@@ -43,5 +29,19 @@ pub fn convert_input_string_to_promotion(promotion_str: Option<&str>) -> Option<
         "b" | "B" => Some(Promotion::Bishop),
         "r" | "R" => Some(Promotion::Rook),
         _ => None
+    }
+}
+
+pub fn convert_promotion_to_output_string(promoted_to: Option<Promotion>) -> String{
+    if promoted_to.is_none(){
+        return String::from("");
+    }
+    let promotion = promoted_to.unwrap();
+
+    match promotion{
+        Promotion::Queen => String::from("Q"),
+        Promotion::Knight => String::from("N"),
+        Promotion::Bishop => String::from("B"),
+        Promotion::Rook => String::from("R")
     }
 }

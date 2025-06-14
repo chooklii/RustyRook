@@ -6,7 +6,7 @@ use std::{
 
 use dashmap::DashMap;
 
-use crate::board::board::Chessboard;
+use crate::{board::board::Chessboard, helper::position_to_usize::get_position_from_input};
 
 #[derive(Debug, Clone, Copy)]
 pub struct OpeningMove {
@@ -18,20 +18,17 @@ pub fn create_opening_map() -> DashMap<u64, Vec<OpeningMove>> {
     let openings = DashMap::new();
     if let Ok(lines) = read_lines("./openings.txt") {
         // Consumes the iterator, returns an (Optional) String
-        let mut current_key = 0;
-
+        let mut board = Chessboard {..Default::default()};
         for line in lines.map_while(Result::ok) {
             // indicating new position
             if line.contains("pos") {
-                let mut board = Chessboard {..Default::default()};
                 // not really performant, but it is not important here in static map
                 let fen: String = line.chars().skip(4).collect();
-                board.create_position_from_input_string(fen.clone());
-                current_key = board.zobrist_key;
-                openings.insert(current_key, Vec::new());
+                board.create_position_from_input_string(fen);
+                openings.insert(board.zobrist_key, Vec::new());
             } else {
                 let (from, to) = get_position_from_input(line);
-                openings.entry(current_key).or_insert(Vec::new()).push(OpeningMove { from, to });
+                openings.entry(board.zobrist_key).or_insert(Vec::new()).push(OpeningMove { from, to });
             }
         }
     } else {
@@ -39,34 +36,7 @@ pub fn create_opening_map() -> DashMap<u64, Vec<OpeningMove>> {
     }
     openings
 }
-// All not beautiful - But works for now
-fn get_position_from_input(line: String) -> (usize, usize) {
-    let chars: Vec<char> = line.chars().take(4).collect();
-    let from_row: String = chars.get(0).unwrap().to_string();
-    let from_column: u8 = chars.get(1).unwrap().to_digit(10).unwrap() as u8;
-    let to_row: String = chars.get(2).unwrap().to_string();
-    let to_column: u8 = chars.get(3).unwrap().to_digit(10).unwrap() as u8;
 
-    (get_position_id(&from_row, from_column), get_position_id(&to_row, to_column)) 
-}
-
-fn get_position_id(row: &str, column: u8) -> usize {
-    usize::from(get_row_from_string(row) + ((column - 1) * 8) - 1)
-}
-
-fn get_row_from_string(row: &str) -> u8 {
-    match row {
-        "a" => 1,
-        "b" => 2,
-        "c" => 3,
-        "d" => 4,
-        "e" => 5,
-        "f" => 6,
-        "g" => 7,
-        "h" => 8,
-        _ => 0,
-    }
-}
 
 
 // taken from Rust Book
