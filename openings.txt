@@ -7799,6 +7799,13 @@ g1f3 342
 g2g3 161
 f1b5 34
 d2d3 26
+pos r1bqkbnr/pppp1ppp/2n5/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq e4
+f1c4 536
+f2f4 362
+g1f3 342
+g2g3 161
+f1b5 34
+d2d3 26
 pos r1bqkbnr/pppp1ppp/2n5/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R b KQkq -
 g8f6 1621
 f8c5 344
