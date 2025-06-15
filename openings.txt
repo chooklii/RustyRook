@@ -15784,7 +15784,10 @@ pos rnbqk2r/ppp1ppbp/3p1np1/8/3PP2P/2N5/PPP1BPP1/R1BQK1NR b KQkq -
 h7h5 45
 pos rn1qkbnr/pbpp1ppp/1p2p3/8/2PPP3/3B4/PP3PPP/RNBQK1NR b KQkq -
 f7f5 33
-pos rnbqkbnr/pp2pppp/8/2pp4/8/1P3N2/P1PPPPPP/RNBQKB1R w KQkq -
+pos rnbqkbnr/pp2pppp/8/2pp4/8/1P3N2/P1PPPPPP/RNBQKB1R w KQkq c5
+c1b2 125
+e2e3 39
+pos rnbqkbnr/pp2pppp/8/2pp4/8/1P3N2/P1PPPPPP/RNBQKB1R w KQkq d5
 c1b2 125
 e2e3 39
 pos rnbqkbnr/pp2pppp/8/2pp4/8/1P3N2/PBPPPPPP/RN1QKB1R b KQkq -
