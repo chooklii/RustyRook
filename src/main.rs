@@ -1,5 +1,5 @@
 
-use crate::{engine::{sender::send_move, transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows}};
+use crate::{engine::{sender::send_move, transposition::zobrist::{get_transposition_en_passant_numbers, get_transposition_figure_random_numbers}}, helper::{magic_bitboards::helper::init_king_safety_bitboards, moves_by_field::get_passed_pawn_rows, opening::{create_opening_map, OpeningMove}}};
 use board::bitboard::Bitboard;
 use board::board::Chessboard;
 use dashmap::DashMap;
@@ -103,6 +103,10 @@ lazy_static! {
             982374928374928374
         ]
     };
+    // Openings Book
+    static ref OPENINGS: DashMap<u64, Vec<OpeningMove>> = {
+        create_opening_map()
+    };
 }
 
 
@@ -116,15 +120,14 @@ fn map_input_to_action(
     chessboard: &mut Chessboard,
     once_played_positions: &mut Vec<u64>,
     twice_played_positions: &mut Vec<u64>,
-    played_moves: &mut u8
 ) {
     let differentiation: &str = commands.first().unwrap_or(&"stop");
     match differentiation {
         "uci" => send_uci_message(),
         "isready" => send_is_ready(),
         "ucinewgame" => init_new_game(once_played_positions, twice_played_positions),
-        "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions, played_moves),
-        "go" => make_move(commands, chessboard, twice_played_positions, *played_moves),
+        "position" => update_board(commands, chessboard, once_played_positions, twice_played_positions),
+        "go" => make_move(commands, chessboard, twice_played_positions),
         "debug" => debug_moves(chessboard),
         "quit" => quit(String::from("Ending Game")),
         _ => quit(String::from("Unknown Command!")),
@@ -147,17 +150,14 @@ fn update_board(
     move_vec: Vec<&str>, 
     board: &mut Chessboard,
     once_played_positions: &mut Vec<u64>, 
-    twice_played_positions: &mut Vec<u64>,
-    played_moves: &mut u8) {
+    twice_played_positions: &mut Vec<u64>) {
     // not beautiful - but also not really important for performance
     board.set_to_default();
     once_played_positions.clear();
     twice_played_positions.clear();
-    *played_moves = 0;
     for single_move in move_vec {
         // ignore both for now - should not be needed as ucinewgame resets game
         if single_move != "position" && single_move != "startpos" && single_move != "moves" {
-            *played_moves+=1;
             board.update_position_from_uci_input(single_move);
             
             // performance does not matter for these few moves
@@ -170,9 +170,11 @@ fn update_board(
     }
 }
 
-fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64], played_moves: u8) {
-    if played_moves < 2{
-        play_opening(board, played_moves);
+fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &[u64]) {
+    // we are still in our opening
+    if OPENINGS.contains_key(&board.zobrist_key){
+        info!("Playing move from Opening Book");
+        play_opening(board);
         return;
     }
     let time_for_move = get_time_for_move(commands, board.current_move);
@@ -181,23 +183,14 @@ fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &
 }
 
 
-// first move for each color -> position figure in center
-const WHITE_OPENINGS: [(usize, usize); 2] = [(11, 27), (12, 28)];
-fn play_opening(board: &Chessboard, played_moves: u8){
-    // white
-    if played_moves == 0{
-        let mut rng = rand::rng();
-        let (from, to) = WHITE_OPENINGS.choose(&mut rng).unwrap();
-        send_move(*from, *to, None);
+fn play_opening(board: &Chessboard){
+    if let Some(options) = OPENINGS.get(&board.zobrist_key){
+        let mut rng = rand::rng(); 
+        let move_to_play = options.choose(&mut rng).unwrap();
+        send_move(move_to_play.from, move_to_play.to, None);
         return;
     }
-    // black
-    // if opponent played e4 match with e5, else play d5
-    if board.positions.field_is_used(28){
-        send_move(52, 36, None);
-        return;
-    }
-    send_move(51, 35, None);
+    panic!("Opening Book says there are moves but there arent :(");
 }
 
 fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
@@ -267,9 +260,10 @@ fn quit(message: String) {
 }
 
 fn init_new_game(once_played_positions: &mut Vec<u64>, twice_played_positions: &mut Vec<u64>) {
-    // cleanup
+    // cleanup and init of static values
     once_played_positions.clear();
     twice_played_positions.clear();
+    init_static_values();
     println!("isready");
 }
 fn send_is_ready() {
@@ -294,6 +288,7 @@ fn init_static_values(){
     // positions are based on magic and impl. init magics
     let _ = BISHOP_MAGIC_POSITIONS[0];
     let _ = ROOK_MAGIC_POSITIONS[0];
+    let _ = OPENINGS.get(&1);
 }
 
 // recieve input from UCI
@@ -304,14 +299,11 @@ fn parse_input() -> String {
     // Repetition
     let mut once_played_positions: Vec<u64> = Vec::new();
     let mut twice_played_positions: Vec<u64> = Vec::new();
-    init_static_values();
-    // played moves
-    let mut played_moves: u8 = 0;
     loop {
         let mut buffer_string = String::new();
         io::stdin().read_line(&mut buffer_string).ok().unwrap();
         info!("Recieved Message: {buffer_string}");
         let commands: Vec<&str> = buffer_string.split_whitespace().collect();
-        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions, &mut played_moves);
+        map_input_to_action(commands, &mut chessboard, &mut once_played_positions, &mut twice_played_positions);
     }
 }

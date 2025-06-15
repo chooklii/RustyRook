@@ -61,10 +61,6 @@ pub fn search_for_best_move(
         repetition_is_possible,
         twice_played_moved.to_owned(),
     );
-    println!(
-        "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
-        depth, time_for_move, best_move.rating
-    );
     info!(
         "Calculated Positions to depth {} and took {:?}ms - Net Rating: {}",
         depth, time_for_move, best_move.rating
