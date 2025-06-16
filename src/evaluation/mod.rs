@@ -236,7 +236,7 @@ fn get_douplicate_pawn_tariff(board: &Chessboard, color: Color) -> f32{
         let fields = board.get_pieces(color, Piece::Pawn).board & field.board;
         let used_fields = fields.count_ones();
         if used_fields > 1{
-            tariff += (used_fields-1) as f32 * 0.2
+            tariff += (used_fields-1) as f32 * 0.1
         }
     }
     tariff
