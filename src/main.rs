@@ -26,7 +26,7 @@ use helper::{
 use lazy_static::lazy_static;
 use log::info;
 use once_cell::sync::Lazy;
-use rand::seq::IndexedRandom;
+use rand::{distr::{weighted::WeightedIndex, Distribution}};
 use rustc_hash::FxHashMap;
 use simple_file_logger::init_logger;
 use std::{
@@ -186,7 +186,10 @@ fn make_move(commands:  Vec<&str>, board: &Chessboard, twice_played_positions: &
 fn play_opening(board: &Chessboard){
     if let Some(options) = OPENINGS.get(&board.zobrist_key){
         let mut rng = rand::rng(); 
-        let move_to_play = options.choose(&mut rng).unwrap();
+        // play moves based on play count
+        let weights: Vec<u32> = options.iter().map(|x| x.count).collect();
+        let dist = WeightedIndex::new(&weights).unwrap();
+        let move_to_play = options[dist.sample(&mut rng)];
         send_move(move_to_play.from, move_to_play.to, None);
         return;
     }

@@ -5,12 +5,13 @@ use std::{
 use dashmap::DashMap;
 use log::info;
 
-use crate::{board::board::Chessboard, helper::position_to_usize::get_position_from_input};
+use crate::{board::board::Chessboard, helper::position_to_usize::get_values_from_input};
 
 #[derive(Debug, Clone, Copy)]
 pub struct OpeningMove {
     pub from: usize,
     pub to: usize,
+    pub count: u32
 }
 
 // book taken from https://github.com/SebLague/Chess-Coding-Adventure :-)
@@ -28,8 +29,8 @@ pub fn create_opening_map() -> DashMap<u64, Vec<OpeningMove>> {
                 board.create_position_from_input_string(fen);
                 openings.insert(board.zobrist_key, Vec::new());
             } else {
-                let (from, to) = get_position_from_input(line);
-                openings.entry(board.zobrist_key).or_insert(Vec::new()).push(OpeningMove { from, to });
+                let (from, to, count) = get_values_from_input(line);
+                openings.entry(board.zobrist_key).or_insert(Vec::new()).push(OpeningMove { from, to, count });
             }
         }
     } else {

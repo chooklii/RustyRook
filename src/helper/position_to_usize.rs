@@ -3,16 +3,18 @@ use regex::Regex;
 use crate::{board::promotion::convert_input_string_to_promotion, engine::engine::PossibleMove};
 
 // unchecked and only for opening book 
-pub fn get_position_from_input(line: String) -> (usize, usize) {
+// returns (from, to, count)
+pub fn get_values_from_input(line: String) -> (usize, usize, u32) {
     let chars: Vec<char> = line.chars().take(4).collect();
     let from_row: String = chars.get(0).unwrap().to_string();
     let from_column: u8 = chars.get(1).unwrap().to_digit(10).unwrap() as u8;
     let to_row: String = chars.get(2).unwrap().to_string();
     let to_column: u8 = chars.get(3).unwrap().to_digit(10).unwrap() as u8;
-
+    let played_count = line[5..].parse::<u32>().unwrap();
     (
         get_position_id(&from_row, from_column),
         get_position_id(&to_row, to_column),
+        played_count
     )
 }
 
