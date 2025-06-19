@@ -237,10 +237,6 @@ fn get_time(commands:  Vec<&str>, overall_time_key: &str, increment_key: &str ) 
         // max take 15s, so we dont calculate forever
         return 15000 
     }
-    if user_time < 1000{
-        // min 1s
-        return 1000;
-    }
     user_time
 }
 
