@@ -5,7 +5,7 @@ use crate::{board::{bitboard::Bitboard, board::Chessboard}, engine::engine::Poss
 pub fn get_possible_knight_moves(
     board: &Chessboard,
     own_position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(moves) = KNIGHT_MOVES.get(own_position) {
         let movement = Bitboard{board: moves.board & !board.positions.board};
@@ -23,7 +23,7 @@ pub fn get_fields_threatened_by_knight(
 pub fn get_possible_knight_moves_to_prevent_check(
     own_position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let moves = Bitboard{board: KNIGHT_MOVES[own_position].board & prevent_check_fields.board};
     moves.iterate_board(|single| possible_moves.push(PossibleMove { from:own_position, to: single, promoted_to: None }));
@@ -32,7 +32,7 @@ pub fn get_possible_knight_moves_to_prevent_check(
 pub fn get_possible_knight_takes(
     board: &Chessboard,
     own_position: usize,
-    possible_takes: &mut SmallVec<[PossibleMove; 32]>
+    possible_takes: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(moves) = KNIGHT_MOVES.get(own_position) {
         let movement = Bitboard{board: moves.board & board.get_opponents().board};

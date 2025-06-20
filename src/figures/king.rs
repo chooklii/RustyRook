@@ -10,7 +10,7 @@ pub fn get_possible_king_takes(
     board: &Chessboard,
     own_position: usize,
     opponent_moves: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(moves_by_field) = KING_MOVES.get(own_position){
         let takes = Bitboard{board: moves_by_field.board & !opponent_moves.board & board.get_opponents().board};
@@ -23,7 +23,7 @@ pub fn get_all_king_moves_in_check(
     board: &Chessboard,
     own_position: usize,
     opponent_moves: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>){
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>){
         if let Some(move_by_field) = KING_MOVES.get(own_position){
             let normal_movement = Bitboard{board: 
                 move_by_field.board 
@@ -39,7 +39,7 @@ pub fn get_possible_king_moves(
     own_position: usize,
     own_color: Color,
     opponent_moves: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(move_by_field) = KING_MOVES.get(own_position){
         let normal_movement = Bitboard{board: 
@@ -88,7 +88,7 @@ fn is_possible_castle(
 fn white_castle(
     board: &Chessboard,
     opponent_moves: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     // short
     if board.castle.white_castle_short && is_possible_castle(board, opponent_moves, 6, 5, None) {
@@ -111,7 +111,7 @@ fn white_castle(
 fn black_castle(
     board: &Chessboard,
     opponent_moves: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     // short
     if board.castle.black_castle_short && is_possible_castle(board, opponent_moves, 62, 61, None) {

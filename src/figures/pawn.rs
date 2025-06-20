@@ -122,7 +122,7 @@ fn add_pawn_takes(
     board: &Chessboard,
     own_color: Color,
     own_position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     let possible_takes = &PAWN_THREATS[own_color as usize][own_position];
 
@@ -153,7 +153,7 @@ pub fn get_possible_pawn_moves(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
 
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
@@ -208,7 +208,7 @@ pub fn get_possible_pawn_moves(
 fn add_promotion_to_possible_moves(
     old_field: usize,
     new_field: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     possible_moves.push(PossibleMove {
         to: new_field,
@@ -240,7 +240,7 @@ pub fn get_possible_pawn_takes_and_promotion(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     add_pawn_takes(board, own_color, own_position, possible_moves);
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
@@ -256,7 +256,7 @@ pub fn get_possible_pawn_moves_to_prevent_check(
     own_position: usize,
     own_color: Color,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     // Takes
     let possible_takes = &PAWN_THREATS[own_color as usize][own_position];

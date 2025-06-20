@@ -47,7 +47,7 @@ pub fn get_fields_threatened_by_rook(
 pub fn get_possible_queen_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     get_possible_bishop_moves(board, position, possible_moves);
     get_possible_rook_moves(board, position, possible_moves);
@@ -57,7 +57,7 @@ pub fn get_possible_queen_moves(
 pub fn get_possible_bishop_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -69,7 +69,7 @@ pub fn get_possible_bishop_moves(
 pub fn get_possible_rook_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -82,7 +82,7 @@ pub fn get_possible_rook_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -95,7 +95,7 @@ pub fn get_possible_rook_moves_to_prevent_check(
 pub fn get_possible_bishop_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -110,7 +110,7 @@ pub fn get_possible_bishop_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -123,7 +123,7 @@ pub fn get_possible_bishop_moves_to_prevent_check(
 pub fn get_possible_rook_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -137,7 +137,7 @@ pub fn get_possible_rook_takes(
 pub fn get_possible_queen_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     get_possible_rook_takes(board, position, possible_moves);
     get_possible_bishop_takes(board, position, possible_moves);
@@ -147,7 +147,7 @@ pub fn get_possible_queen_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut SmallVec<[PossibleMove; 32]>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     get_possible_rook_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
     get_possible_bishop_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
