@@ -349,12 +349,6 @@ fn calculate(
             transposition_flag = Flag::Lowerbound;
         }
 
-        if best_move.from == 0 && best_move.to == 0{
-            // is going to stay here for some time to make sure there is no bug
-            info!("Panic as bestMove is 0 -> 0");
-            panic!("BestMove From and to was 0 - Should not happen!")
-        }
-
         TRANSPOSITION_TABLE.insert(
             board.zobrist_key,
             Transposition {

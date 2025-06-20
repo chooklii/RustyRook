@@ -193,7 +193,6 @@ fn play_opening(board: &Chessboard){
         send_move(move_to_play.from, move_to_play.to, None);
         return;
     }
-    panic!("Opening Book says there are moves but there arent :(");
 }
 
 fn get_time_for_move(commands:  Vec<&str>, color: Color) -> u64{
@@ -262,6 +261,7 @@ fn init_new_game(once_played_positions: &mut Vec<u64>, twice_played_positions: &
     // cleanup and init of static values
     once_played_positions.clear();
     twice_played_positions.clear();
+    TRANSPOSITION_TABLE.clear();
     init_static_values();
     println!("isready");
 }
