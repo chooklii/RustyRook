@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use crate::board::bitboard::Bitboard;
 use crate::board::board::Chessboard;
 use crate::board::promotion::Promotion;
@@ -120,7 +122,7 @@ fn add_pawn_takes(
     board: &Chessboard,
     own_color: Color,
     own_position: usize,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     let possible_takes = &PAWN_THREATS[own_color as usize][own_position];
 
@@ -151,7 +153,7 @@ pub fn get_possible_pawn_moves(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
 
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
@@ -206,7 +208,7 @@ pub fn get_possible_pawn_moves(
 fn add_promotion_to_possible_moves(
     old_field: usize,
     new_field: usize,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     possible_moves.push(PossibleMove {
         to: new_field,
@@ -238,7 +240,7 @@ pub fn get_possible_pawn_takes_and_promotion(
     board: &Chessboard,
     own_position: usize,
     own_color: Color,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     add_pawn_takes(board, own_color, own_position, possible_moves);
     let one_step_forward = calculate_forward_position(own_position, own_color, 8);
@@ -254,7 +256,7 @@ pub fn get_possible_pawn_moves_to_prevent_check(
     own_position: usize,
     own_color: Color,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     // Takes
     let possible_takes = &PAWN_THREATS[own_color as usize][own_position];
@@ -375,7 +377,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 12, Color::White, &mut moves);
 
         assert_eq!(2, moves.len());
@@ -388,7 +390,7 @@ mod tests {
         board.positions.set_field(23);
         board.positions.set_field(24);
         board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(23);
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 16, Color::White, &mut moves);
 
         // should not be able to take from Field 16(A3) to 23(H3)
@@ -403,7 +405,7 @@ mod tests {
             ..Default::default()
         };
         board.set_to_default();
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 55, Color::Black, &mut moves);
 
         assert_eq!(2, moves.len());
@@ -417,7 +419,7 @@ mod tests {
         board.positions.set_field(34);
         board.used_positions[Color::Black as usize].set_field(34);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 35, Color::White, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(true, move_fields.contains(&42));
@@ -436,7 +438,7 @@ mod tests {
         };
         board.figures[Color::White as usize][Piece::Pawn as usize].set_field(27);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 26, Color::Black, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(true, move_fields.contains(&19));
@@ -462,7 +464,7 @@ mod tests {
         board.used_positions[Color::White as usize].set_field(31);
         board.used_positions[Color::Black as usize].set_field(24);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_moves(&board, 26, Color::Black, &mut moves);
         let move_fields: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(false, move_fields.contains(&19));
@@ -473,7 +475,7 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         board.figures[Color::White as usize][Piece::Pawn as usize].set_field(52);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_takes_and_promotion(&board, 52, Color::White, &mut moves);
         assert_eq!(4, moves.len())
     }
@@ -485,7 +487,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::Knight as usize].set_field(6);
         board.figures[Color::Black as usize][Piece::Pawn as usize].set_field(15);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_pawn_takes_and_promotion(&board, 15, Color::Black, &mut moves);
         assert_eq!(8, moves.len())
     }

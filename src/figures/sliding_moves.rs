@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use crate::{board::{bitboard::Bitboard, board::Chessboard}, engine::engine::PossibleMove, helper::magic_bitboards::helper::get_magic_index, BISHOP_MAGIC_BITBOARDS, BISHOP_MAGIC_POSITIONS, ROOK_MAGIC_BITBOARDS, ROOK_MAGIC_POSITIONS};
 
 pub fn get_fields_threatened_by_queen(
@@ -45,7 +47,7 @@ pub fn get_fields_threatened_by_rook(
 pub fn get_possible_queen_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     get_possible_bishop_moves(board, position, possible_moves);
     get_possible_rook_moves(board, position, possible_moves);
@@ -55,7 +57,7 @@ pub fn get_possible_queen_moves(
 pub fn get_possible_bishop_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -67,7 +69,7 @@ pub fn get_possible_bishop_moves(
 pub fn get_possible_rook_moves(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -80,7 +82,7 @@ pub fn get_possible_rook_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -93,7 +95,7 @@ pub fn get_possible_rook_moves_to_prevent_check(
 pub fn get_possible_bishop_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -108,7 +110,7 @@ pub fn get_possible_bishop_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     let move_options = &BISHOP_MAGIC_POSITIONS[position];
     let magic_options = &BISHOP_MAGIC_BITBOARDS[position];
@@ -121,7 +123,7 @@ pub fn get_possible_bishop_moves_to_prevent_check(
 pub fn get_possible_rook_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     let move_options = &ROOK_MAGIC_POSITIONS[position];
     let magic_options = &ROOK_MAGIC_BITBOARDS[position];
@@ -135,7 +137,7 @@ pub fn get_possible_rook_takes(
 pub fn get_possible_queen_takes(
     board: &Chessboard,
     position: usize,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     get_possible_rook_takes(board, position, possible_moves);
     get_possible_bishop_takes(board, position, possible_moves);
@@ -145,7 +147,7 @@ pub fn get_possible_queen_moves_to_prevent_check(
     board: &Chessboard,
     position: usize,
     prevent_check_fields: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ){
     get_possible_rook_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
     get_possible_bishop_moves_to_prevent_check(board, position, prevent_check_fields, possible_moves);
@@ -161,12 +163,12 @@ mod tests {
     fn move_bishop_empty_board() {
         let board = Chessboard::empty(Color::White);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
 
         get_possible_bishop_moves(&board, 27, &mut moves);
         assert_eq!(13, moves.len());
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_bishop_moves(&board, 0, &mut moves);
         assert_eq!(7, moves.len());
     }
@@ -184,7 +186,7 @@ mod tests {
         board.positions.set_field(9);
         board.positions.set_field(11);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_bishop_moves(&board, 18, &mut moves);
         assert_eq!(0, moves.len());
     }
@@ -199,7 +201,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_bishop_moves(&board, 20, &mut moves);
         assert_eq!(6, moves.len());
     }
@@ -207,12 +209,12 @@ mod tests {
     #[test]
     fn queen_move_empty_board() {
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         let board = Chessboard::empty(Color::White);
         get_possible_queen_moves(&board, 0, &mut moves);
         assert_eq!(21, moves.len());
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_queen_moves(&board, 19, &mut moves);
         assert_eq!(25, moves.len());
     }
@@ -220,7 +222,7 @@ mod tests {
     #[test]
     fn test_bishop_in_corner_empty_board(){
         let board = Chessboard::empty(Color::White);
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_bishop_moves(&board, 0, &mut moves);
         assert_eq!(7, moves.len());
     }
@@ -228,7 +230,7 @@ mod tests {
     #[test]
     fn test_queen_in_corner_empty_board(){
         let board = Chessboard::empty(Color::White);
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_queen_moves(&board, 0, &mut moves);
         assert_eq!(21, moves.len());
     }
@@ -245,7 +247,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut moves = Vec::new();
+        let mut moves =SmallVec::new();
         get_possible_rook_moves(&board, 0, &mut moves);
         assert_eq!(2, moves.len())
     }
@@ -261,7 +263,7 @@ mod tests {
         board.used_positions[Color::White as usize].set_field(25);
         board.used_positions[Color::White as usize].set_field(27);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_rook_moves(&board, 26, &mut moves);
         assert_eq!(4, moves.len())
     }
@@ -269,7 +271,7 @@ mod tests {
     #[test]
     fn rook_test_movement_on_empty_board() {
         let board = Chessboard::empty(Color::White);
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_rook_moves(&board, 11, &mut moves);
         assert_eq!(14, moves.len())
     }

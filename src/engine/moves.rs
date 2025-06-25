@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use crate::{
     board::{bitboard::Bitboard, board::Chessboard},
     figures::{
@@ -36,7 +38,7 @@ use super::{
 pub fn get_valid_moves_in_position(
     board: &Chessboard,
     calculate_all_moves: bool,
-) -> (Vec<PossibleMove>, bool) {
+) -> (SmallVec<[PossibleMove; 64]>, bool) {
     let king_position = board
         .get_pieces(board.current_move, Piece::King)
         .get_first_field();
@@ -47,7 +49,7 @@ pub fn get_valid_moves_in_position(
     let is_in_check = opponent_moves.field_is_used(king_position);
     let is_in_double_check = is_in_check && count_of_checks > 1;
 
-    let moves: Vec<PossibleMove> = get_all_possible_moves(
+    let moves: SmallVec<[PossibleMove; 64]> = get_all_possible_moves(
         board,
         board.current_move,
         opponent_moves,
@@ -55,7 +57,7 @@ pub fn get_valid_moves_in_position(
         is_in_double_check,
         calculate_all_moves,
     );
-    let not_pinned_moves: Vec<PossibleMove> = get_not_pinned_pieces(board, &king_position, moves);
+    let not_pinned_moves: SmallVec<[PossibleMove; 64]> = get_not_pinned_pieces(board, &king_position, moves);
     (not_pinned_moves, is_in_check)
 }
 
@@ -127,11 +129,11 @@ fn get_all_prevent_check_moves(
     board: &Chessboard,
     color: Color,
     opponent_moves: Bitboard,
-) -> Vec<PossibleMove> {
+) -> SmallVec<[PossibleMove; 64]> {
     let king_position = board.get_pieces(color, Piece::King).get_first_field();
     let prevent_check_fields = get_fields_to_prevent_check(board, king_position, opponent_moves);
 
-    let mut moves = Vec::new();
+    let mut moves = SmallVec::new();
 
     let bishop_positions = board.get_pieces(color, Piece::Bishop);
     bishop_positions.iterate_board(|position| {
@@ -192,8 +194,8 @@ fn get_all_possible_moves(
     is_in_check: bool,
     is_in_double_check: bool,
     get_all_moves: bool,
-) -> Vec<PossibleMove> {
-    let mut moves = Vec::new();
+) -> SmallVec<[PossibleMove; 64]> {
+    let mut moves = SmallVec::new();
     // if we are in double check only moving the king can save us
     if is_in_double_check {
         let king_position = board.get_pieces(color, Piece::King).get_first_field();
@@ -267,7 +269,7 @@ fn get_all_possible_moves(
 }
 
 fn add_prev_best_move_as_first_move(
-    moves: &mut Vec<PossibleMove>,
+    moves: &mut SmallVec<[PossibleMove; 64]>,
     prev_best_move_opt: Option<Transposition>,
 ) {
     if prev_best_move_opt.is_none() {
@@ -289,8 +291,8 @@ fn add_prev_best_move_as_first_move(
 fn get_not_pinned_pieces(
     board: &Chessboard,
     king_position: &usize,
-    moves: Vec<PossibleMove>,
-) -> Vec<PossibleMove> {
+    moves: SmallVec<[PossibleMove; 64]>,
+) -> SmallVec<[PossibleMove; 64]> {
     let pinned_pieces = get_pinned_pieces_and_possible_moves(board, king_position);
 
     if pinned_pieces.is_empty() {

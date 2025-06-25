@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use crate::{
     board::{bitboard::Bitboard, board::Chessboard}, engine::engine::PossibleMove, KING_MOVES
 };
@@ -8,7 +10,7 @@ pub fn get_possible_king_takes(
     board: &Chessboard,
     own_position: usize,
     opponent_moves: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(moves_by_field) = KING_MOVES.get(own_position){
         let takes = Bitboard{board: moves_by_field.board & !opponent_moves.board & board.get_opponents().board};
@@ -21,7 +23,7 @@ pub fn get_all_king_moves_in_check(
     board: &Chessboard,
     own_position: usize,
     opponent_moves: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>){
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>){
         if let Some(move_by_field) = KING_MOVES.get(own_position){
             let normal_movement = Bitboard{board: 
                 move_by_field.board 
@@ -37,7 +39,7 @@ pub fn get_possible_king_moves(
     own_position: usize,
     own_color: Color,
     opponent_moves: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ){
     if let Some(move_by_field) = KING_MOVES.get(own_position){
         let normal_movement = Bitboard{board: 
@@ -86,7 +88,7 @@ fn is_possible_castle(
 fn white_castle(
     board: &Chessboard,
     opponent_moves: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>,
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>,
 ) {
     // short
     if board.castle.white_castle_short && is_possible_castle(board, opponent_moves, 6, 5, None) {
@@ -109,7 +111,7 @@ fn white_castle(
 fn black_castle(
     board: &Chessboard,
     opponent_moves: Bitboard,
-    possible_moves: &mut Vec<PossibleMove>
+    possible_moves: &mut SmallVec<[PossibleMove; 64]>
 ) {
     // short
     if board.castle.black_castle_short && is_possible_castle(board, opponent_moves, 62, 61, None) {
@@ -142,15 +144,15 @@ mod tests {
         let mut board = Chessboard::empty(Color::White);
         board.castle.set_has_castled(Color::Black);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 10, Color::Black,Bitboard::new(), &mut moves);
         assert_eq!(8, moves.len());
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 0,Color::Black, Bitboard::new(), &mut moves);
         assert_eq!(3, moves.len());
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 31,Color::Black, Bitboard::new(), &mut moves);
         assert_eq!(5, moves.len());
     }
@@ -167,7 +169,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 4, Color::White,Bitboard::new(), &mut moves);
 
         let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
@@ -192,7 +194,7 @@ mod tests {
         let mut opponent_moves = Bitboard::new();
         opponent_moves.set_field(2);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 4,Color::White, opponent_moves, &mut moves);
         let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(6, own_move_positions.len());
@@ -214,7 +216,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 4,Color::White, Bitboard::new(), &mut moves);
         let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
         assert_eq!(6, own_move_positions.len());
@@ -236,7 +238,7 @@ mod tests {
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(7);
         board.figures[Color::White as usize][Piece::Rook as usize].set_field(0);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 4, Color::White,Bitboard::new(), &mut moves);
         let own_move_positions: Vec<usize> = moves.into_iter().map(|x| x.to).collect();
 
@@ -272,7 +274,7 @@ mod tests {
         opponent_moves.set_field(58);
         opponent_moves.set_field(57);
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         get_possible_king_moves(&board, 59,Color::Black, opponent_moves, &mut moves);
         assert_eq!(0, moves.len());
     }

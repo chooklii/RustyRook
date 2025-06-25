@@ -10,7 +10,10 @@ or
 cargo build --release
 ```
 
-to create an executable to use with your local chess software.
+to create an executable to use with your local chess software. 
+
+You need to copy the 'openings.txt' file to the folder you are running the engine in. If you dont want to use an opening book just create 
+an empty txt file with this name (Config to use no Openings Book will be implemented in the future)
 
 To verify the correctness of changes run the Unit-Tests
 
