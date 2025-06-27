@@ -3,6 +3,9 @@ Chess Engine written in Rust
 
 This Engine has no UI - It implements the UCI Chess Protocol. Use the [Lichess Bot](https://lichess.org/@/RustyRookChessBot) or any other Chess Software to play against it. 
 
+Read More about RustyRook in my [Blog](https://bzenth.de/blog/rustyrook)
+
+
 use 
 ```
 cargo build 
