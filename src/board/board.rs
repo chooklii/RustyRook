@@ -311,21 +311,20 @@ impl Chessboard {
     }
 
     fn castle(&mut self, old_field: usize, new_field: usize) {
-        // not white - nor black castle
         // white castle 4 -> 2/6 || black castle 60 -> 58/62
         if !((old_field == 4 && (new_field == 2 || new_field == 6))
             || ((old_field == 60) && (new_field == 58 || new_field == 62)))
+            // side is not able to castle
+            || !self.castle.can_castle(self.current_move)
+            // figure moving is not the king
+            || !self.get_pieces(self.current_move, Piece::King).field_is_used(old_field)
         {
             return;
         }
-        // side is not able to castle
-        if !self.castle.can_castle(self.current_move) {
-            return;
-        }
 
-        if old_field == 4 {
+        if old_field == 4 && self.current_move.eq(&Color::White) {
             self.white_castle(new_field);
-        } else if old_field == 60 {
+        } else if old_field == 60 && self.current_move.eq(&Color::Black) {
             self.black_castle(new_field);
         }
     }
@@ -705,6 +704,64 @@ mod tests {
                 .len()
         );
         assert_eq!(false, board.positions.field_is_used(36))
+    }
+
+    #[test]
+    fn test_some_no_castle_moves_white(){
+        let mut board = Chessboard::empty(Color::White);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::White, Piece::Queen, 4);
+
+        board.zobrist_key = 1234; // kinda stupid but using the zobrist to check if first if breaks function
+        board.castle(4, 2);
+        assert_eq!(board.zobrist_key, 1234);
+
+        let mut board = Chessboard::empty(Color::White);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::White, Piece::Rook, 4);
+
+        board.zobrist_key = 1234;
+        board.castle(4, 6);
+        assert_eq!(board.zobrist_key, 1234);
+
+        // checky not even possible move (black king from starting position of white king two moves to the left) 
+        // -> Should still be no castle
+        let mut board = Chessboard::empty(Color::Black);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::Black, Piece::King, 4);
+
+        board.zobrist_key = 1234;
+        board.castle(4, 2);
+        assert_eq!(board.zobrist_key, 1234);
+
+
+        // valid castle
+        let mut board = Chessboard::empty(Color::White);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::White, Piece::King, 4);
+
+        board.zobrist_key = 1234;
+        board.castle(4, 2);
+        assert_ne!(board.zobrist_key, 1234);
+    }
+
+    #[test]
+    fn test_some_no_castle_moves_black(){
+        let mut board = Chessboard::empty(Color::Black);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::Black, Piece::Queen, 60);
+
+        board.zobrist_key = 1234; 
+        board.castle(60, 62);
+        assert_eq!(board.zobrist_key, 1234);
+
+        let mut board = Chessboard::empty(Color::Black);
+        board.castle = Castle{white_castle_long: true, white_castle_short: true, black_castle_long: true, black_castle_short: true};
+        board.add_piece(Color::Black, Piece::Rook, 60);
+
+        board.zobrist_key = 1234; 
+        board.castle(60, 58);
+        assert_eq!(board.zobrist_key, 1234);
     }
 
     #[test]
